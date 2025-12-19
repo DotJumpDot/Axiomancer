@@ -8,15 +8,12 @@ This repository contains **Axiomancer**, a full-stack monorepo with:
 When working on the project interactively with an agent, please follow the guidelines below
 to ensure smooth development with Hot Module Replacement (HMR) and proper service management.
 
-When working on the project interactively with an agent, please follow the guidelines below
-to ensure smooth development with Hot Module Replacement (HMR) and proper service management.
-
 ---
 
 ## 1. Development Workflow
 
 ### Backend (Elysia)
-* **Always use `bun run dev`** for hot-reloading during development
+* **Do _not_ run dev** during development
 * **Do _not_ run production builds** during development
 * **Restart dev server** after dependency changes
 * **Never run database migrations blindly** — review schema changes first
@@ -28,7 +25,7 @@ bun run dev
 ```
 
 ### Frontend (Svelte)
-* **Always use `npm run dev`** while iterating on the frontend
+* **Do _not_ run dev** during development
 * **Do _not_ run `npm run build`** inside agent sessions — this disables HMR
 * **Restart dev server** after dependency changes
 * **Update languages Folder** after you change any text in the frontend or add new text

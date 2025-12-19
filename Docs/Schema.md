@@ -16,6 +16,7 @@
   - [SQL Schema](#sql-schema)
     - [Create Tables](#create-tables)
   - [Sample Data](#sample-data)
+    - [PostgreSQL Sample Data](#postgresql-sample-data)
   - [Data Types Notes](#data-types-notes)
   - [Migration Notes](#migration-notes)
 
@@ -125,6 +126,9 @@ chat (1) ──── (many) search_log
 ## SQL Schema
 
 ### Create Tables
+
+For PostgreSQL deployment, use the following adapted schema:
+
 ```sql
 -- Drop tables if they exist (for clean setup)
 DROP TABLE IF EXISTS search_log;
@@ -132,11 +136,11 @@ DROP TABLE IF EXISTS chat;
 DROP TABLE IF EXISTS prompt_profile;
 DROP TABLE IF EXISTS ai_model;
 DROP TABLE IF EXISTS conversation;
-DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS "user";
 
 -- User table
-CREATE TABLE user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE "user" (
+    id SERIAL PRIMARY KEY,
     uuid TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
@@ -146,8 +150,8 @@ CREATE TABLE user (
     role TEXT NOT NULL DEFAULT 'user',
     tel TEXT,
     picture_url TEXT NOT NULL DEFAULT 'unidentified.jpg',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 -- Conversation table
@@ -156,10 +160,10 @@ CREATE TABLE conversation (
     user_id INTEGER,
     title TEXT NOT NULL,
     system_prompt_snapshot TEXT,
-    auto_routing_enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES user(id)
+    auto_routing_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "user"(id)
 );
 
 -- AI Model table
@@ -170,10 +174,10 @@ CREATE TABLE ai_model (
     display_name TEXT NOT NULL,
     context_length INTEGER NOT NULL,
     cost_per_1k_token DECIMAL(10,4) NOT NULL,
-    capabilities TEXT NOT NULL, -- JSON
-    enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    capabilities JSONB NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Prompt Profile table
@@ -182,8 +186,8 @@ CREATE TABLE prompt_profile (
     name TEXT NOT NULL,
     description TEXT,
     system_prompt TEXT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Chat table
@@ -195,13 +199,13 @@ CREATE TABLE chat (
     model_id TEXT,
     prompt_profile_id TEXT,
     routing_mode TEXT NOT NULL CHECK (routing_mode IN ('auto', 'manual')),
-    used_web_search BOOLEAN NOT NULL DEFAULT 0,
-    used_image_search BOOLEAN NOT NULL DEFAULT 0,
-    search_context TEXT, -- JSON
-    token_usage TEXT, -- JSON
+    used_web_search BOOLEAN NOT NULL DEFAULT FALSE,
+    used_image_search BOOLEAN NOT NULL DEFAULT FALSE,
+    search_context JSONB,
+    token_usage JSONB,
     latency_ms INTEGER,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES conversation(id),
     FOREIGN KEY (model_id) REFERENCES ai_model(id),
     FOREIGN KEY (prompt_profile_id) REFERENCES prompt_profile(id)
@@ -214,8 +218,8 @@ CREATE TABLE search_log (
     provider TEXT NOT NULL CHECK (provider IN ('duckduckgo', 'pixabay')),
     query TEXT NOT NULL,
     result_count INTEGER NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (message_id) REFERENCES chat(id)
 );
 
@@ -225,23 +229,23 @@ CREATE INDEX idx_chat_conversation_id ON chat(conversation_id);
 CREATE INDEX idx_chat_model_id ON chat(model_id);
 CREATE INDEX idx_chat_created_at ON chat(created_at);
 CREATE INDEX idx_search_log_message_id ON search_log(message_id);
-CREATE INDEX idx_user_username ON user(username);
+CREATE INDEX idx_user_username ON "user"(username);
 ```
-
----
 
 ## Sample Data
 
+### PostgreSQL Sample Data
+
 ```sql
 -- Insert sample user
-INSERT INTO user (uuid, username, password, firstname, lastname, nickname, role, tel, picture_url, created_at) 
+INSERT INTO "user" (uuid, username, password, firstname, lastname, nickname, role, tel, picture_url, created_at) 
 VALUES ('550e8400-e29b-41d4-a716-446655440000', 'admin', '1234', 'John', 'Doe', 'Johnny', 'user', '+1234567890', 'john.jpg', CURRENT_TIMESTAMP);
 
 -- Insert sample AI models
 INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at) VALUES
-('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'mistral-7b', 'Mistral 7B', 4096, 0.0001, '{"reasoning": true, "coding": true, "vision": false, "fast": true}', 1, CURRENT_TIMESTAMP),
-('6ba7b811-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'gpt-4', 'GPT-4', 8192, 0.0300, '{"reasoning": true, "coding": true, "vision": true, "fast": false}', 1, CURRENT_TIMESTAMP),
-('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 32768, 0.0014, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', 1, CURRENT_TIMESTAMP);
+('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'mistral-7b', 'Mistral 7B', 4096, 0.0001, '{"reasoning": true, "coding": true, "vision": false, "fast": true}', TRUE, CURRENT_TIMESTAMP),
+('6ba7b811-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'gpt-4', 'GPT-4', 8192, 0.0300, '{"reasoning": true, "coding": true, "vision": true, "fast": false}', TRUE, CURRENT_TIMESTAMP),
+('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 32768, 0.0014, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', TRUE, CURRENT_TIMESTAMP);
 
 -- Insert sample prompt profiles
 INSERT INTO prompt_profile (id, name, description, system_prompt, created_at) VALUES
@@ -250,12 +254,12 @@ INSERT INTO prompt_profile (id, name, description, system_prompt, created_at) VA
 
 -- Insert sample conversation
 INSERT INTO conversation (id, user_id, title, system_prompt_snapshot, auto_routing_enabled, created_at, updated_at) 
-VALUES ('8ba7b810-9dad-11d1-80b4-00c04fd430c8', 1, 'First Conversation', 'You are a helpful assistant.', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('8ba7b810-9dad-11d1-80b4-00c04fd430c8', 1, 'First Conversation', 'You are a helpful assistant.', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample chat messages
 INSERT INTO chat (id, conversation_id, role, content, model_id, prompt_profile_id, routing_mode, used_web_search, used_image_search, token_usage, latency_ms, created_at, updated_at) VALUES
-('9ba7b810-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'user', 'Hello, how are you?', NULL, NULL, 'auto', 0, 0, '{"prompt": 4, "completion": 0, "total": 4}', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('9ba7b811-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'assistant', 'I am doing well, thank you for asking! How can I help you today?', '6ba7b810-9dad-11d1-80b4-00c04fd430c8', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'auto', 0, 0, '{"prompt": 4, "completion": 15, "total": 19}', 1200, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('9ba7b810-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'user', 'Hello, how are you?', NULL, NULL, 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 0, "total": 4}', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('9ba7b811-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'assistant', 'I am doing well, thank you for asking! How can I help you today?', '6ba7b810-9dad-11d1-80b4-00c04fd430c8', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 15, "total": 19}', 1200, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
 ---
