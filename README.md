@@ -1,4 +1,4 @@
-# � Axiomancer
+# 🧭 Axiomancer
 
 [![Svelte](https://img.shields.io/badge/Svelte-5.x-FF3E00?logo=svelte)](https://svelte.dev/)
 [![Elysia](https://img.shields.io/badge/Elysia-1.x+-FF6B35)](https://elysiajs.com/)
@@ -6,30 +6,12 @@
 [![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite)](https://vitejs.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://www.postgresql.org/)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-API-FF6B35)](https://openrouter.ai/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 
-> 🌐 **[Complete API Documentation](Docs/)**  🌐 **[Complete Schema Documentation](Docs/Schema)** 
+> 🌐 **[Complete API Documentation](Docs/)**  🌐 **[Complete Schema Documentation](Docs/Schema.md)** 
 
 **Axiomancer** is a lightweight AI chat platform designed to dynamically select and route AI models based on conversation context and user intent, without using complex agent frameworks.
 
 The system emphasizes model flexibility, prompt control, and extensible search augmentation, while remaining simple and production-friendly.
-
----
-
-## Table of Contents
-
-- [Project Goals](#project-goals)
-- [Core Features](#core-features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Installation](#installation)
-- [API Endpoints](#api-endpoints)
-- [Development](#development)
-- [Database Schema](Docs/Schema.MD)
-- [Contributing](#contributing)
-- [License](#license)
-
----
 
 ## 🎯 Project Goals
 
