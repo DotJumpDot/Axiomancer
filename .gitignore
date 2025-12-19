@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.*
+.pnp.js
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -14,6 +15,9 @@
 /.next/
 /out/
 /build
+dist
+dist-ssr
+*.local
 
 .DS_Store
 *.pem
@@ -22,37 +26,46 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
 # Env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .vercel
 
 *.tsbuildinfo
 next-env.d.ts
+
+**/*.trace
+**/*.zip
+**/*.tar.gz
+**/*.tgz
+**/*.log
+package-lock.json
+**/*.bun
 
 
 # ------------------------------
 # 🐍 Python / FastAPI
 # ------------------------------
 /__pycache__/
-/__pycache__/
-__pycache__/
 *.pyc
 /*.py[cod]
 *$py.class
 /.pytest_cache/
 /.venv/
 /venv/
-/env/
 env/
-/env.bak/
+env.bak/
 /pip-wheel-metadata/
 /*.egg-info/
 /dist/
-/build/
+/build
 /instance/
 /.mypy_cache/
-/.pytest_cache/
 /coverage_html_report/
 /htmlcov/
 /celerybeat-schedule
@@ -87,8 +100,14 @@ venv/
 # 💻 IDE / Editor
 # ------------------------------
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.code-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 
 # ------------------------------
@@ -98,3 +117,7 @@ Thumbs.db
 ehthumbs.db
 Icon?
 desktop.ini
+
+
+# Logs
+logs
