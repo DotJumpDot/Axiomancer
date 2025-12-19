@@ -1,76 +1,108 @@
-# 🧭 AxionSync
+# � Axiomancer
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.0.1-black?logo=next.js)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.103.1-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Svelte](https://img.shields.io/badge/Svelte-5.x-FF3E00?logo=svelte)](https://svelte.dev/)
+[![Elysia](https://img.shields.io/badge/Elysia-1.x+-FF6B35)](https://elysiajs.com/)
+[![Bun](https://img.shields.io/badge/Bun-1.x+-FBF0DF?logo=bun)](https://bun.sh/)
+[![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite)](https://vitejs.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-Queue-DC382D?logo=redis)](https://redis.io/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com/)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-API-FF6B35)](https://openrouter.ai/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 
-> 🌐 **[ภาษาไทย (Thai Version)](Docs/README_TH.md)**
-> 🌐 **[Complete Schema & Sample data](Docs/Schema.md)**
+> 🌐 **[Complete API Documentation](Docs/)**  🌐 **[Complete Schema Documentation](Docs/Schema)** 
 
-**AxionSync** is a comprehensive personal life management platform — bringing everything important together in one place.  
-Whether it's **Daily Tasks, Personal Notes, Media Tracker (Books, Movies, Games, Anime)**, or even ideas throughout the day,  
-everything is synced and organized systematically to help you focus on what truly matters.
+**Axiomancer** is a lightweight AI chat platform designed to dynamically select and route AI models based on conversation context and user intent, without using complex agent frameworks.
+
+The system emphasizes model flexibility, prompt control, and extensible search augmentation, while remaining simple and production-friendly.
 
 ---
 
-## 🚀 Features
+## Table of Contents
 
-### ✅ Task Management (Todo)
-- Full CRUD operations for daily tasks
-- Status tracking: `Pending`, `In Progress`, `Completed`, `Cancelled`
-- Priority levels: `Low`, `Medium`, `High`, `Urgent`
-- **Mood tracking** per task: Motivated, Focused, Stressed, etc.
-- **Checklist/Sub-tasks** support within todos
-- **Recurring tasks**: Daily, Weekly, Monthly repeat options
-- **Todo sharing** with other users (view/edit permissions)
-- **Streak tracking** & completion analytics
-- **Scheduled notifications** via Redis queue (in-app, email, push)
-- Soft delete with trash/restore functionality
+- [Project Goals](#project-goals)
+- [Core Features](#core-features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [API Endpoints](#api-endpoints)
+- [Development](#development)
+- [Database Schema](Docs/Schema.MD)
+- [Contributing](#contributing)
+- [License](#license)
 
-### 📝 Notes & Memos
-- Create and organize notes with custom tabs
-- Tab customization: colors, fonts, font sizes
-- Rich memo organization with color coding
-- Quick search through all notes
-- Soft delete with restoration support
-- Real-time sync across devices
+---
 
-### 📚 Media Tracker (Bookmark)
-- Track: **Games, Movies, Novels, Manga, Manhwa, Anime, Series**
-- Status management: `On Going`, `Finished`, `Pre-Watch`, `Dropped`
-- **Multi-category ratings**: Story, Action, Graphics, Sound
-- **Mood tags**: 20+ mood options (happy, mind-blown, thrilling, etc.)
-- Chapter/progress tracking
-- Custom cover image uploads
-- **Tag system** for categorization
-- Public/Private bookmark visibility
-- Reviews and short reviews
-- Soft delete with trash/restore functionality
+## 🎯 Project Goals
 
-### 🔔 Smart Notifications
-- **Redis-based background worker** for scheduled notifications
-- Multiple channels: In-App, Email, Push
-- Graceful shutdown & automatic retry with exponential backoff
-- Dead letter queue for failed notifications
-- Device token management for push notifications
+- Build an AI chat backend that can automatically choose the most suitable AI model per message
+- Allow users to manually switch models and prompts
+- Support optional web and image search augmentation
+- Store chat history and metadata in a database
+- Keep the system simple (no agent frameworks) and easy to maintain
 
-### 🌍 Internationalization (i18n)
-- Full multi-language support (English, Thai)
-- Dynamic language switching
-- Locale-persisted user preferences
+---
 
-### ☁️ Cloud Sync & Security
-- All data synced automatically between devices
-- **JWT Bearer Token** authentication
-- **bcrypt** password hashing
-- Role-based access control (User, Admin)
-- **CORS** configured for security
+## 🧩 Core Features
 
-### ⚙️ General
-- Customize Swagger (/docs) to enable login and retrieve the token directly within Swagger
+### 1. Dynamic AI Model Routing
+
+A lightweight AI Router evaluates:
+
+- User prompt
+- Conversation history
+- System rules
+
+Selects the most appropriate model (e.g. fast, cheap, reasoning-focused)
+
+**Example use cases:**
+- Short Q&A → fast / cheap-free model
+- Technical or coding questions → reasoning / coding model
+- Long context chats → larger context window model
+
+### 2. Manual Model & Prompt Switching
+
+Users can:
+
+- Override auto-selected models
+- Switch between predefined prompt profiles
+
+**Useful for:**
+- Testing models
+- Cost control
+- Prompt experimentation
+
+### 3. Optional Web & Image Search
+
+Search is explicitly controlled (on/off toggle)
+
+Backend integrates:
+
+- **DuckDuckGo** for web search
+- **Pixabay** for image search
+
+Search results are injected into prompts as additional context
+
+No tool-calling dependency — the backend controls when and how search is used.
+
+### 4. Chat History & Persistence
+
+Stores:
+
+- Messages
+- Selected model
+- Prompt profile
+- Search usage flags
+
+Enables:
+
+- Chat replay
+- Analytics
+- Model performance comparison
+
+### 5. Streaming Chat Responses
+
+Supports streaming responses from AI providers
+
+Frontend displays messages progressively for better UX
 
 ---
 
@@ -79,211 +111,144 @@ everything is synced and organized systematically to help you focus on what trul
 ### Frontend
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **Next.js** | 16.0.1 | React framework with App Router |
-| **React** | 19.2.0 | UI library |
+| **Svelte** | 5.x | Reactive UI framework |
 | **TypeScript** | 5.x | Type-safe JavaScript |
-| **TailwindCSS** | 4.x | Utility-first CSS |
-| **Zustand** | 5.0.8 | State management |
-| **Ant Design** | 6.1.0 | UI component library |
-| **Mantine** | 8.3.8 | React components |
-| **Framer Motion** | 12.x | Animations |
-| **next-intl** | 4.5.8 | Internationalization |
-| **Axios** | 1.13.2 | HTTP client |
-| **nuqs** | 2.8.1 | URL query state management |
+| **Vite** | 7.x | Fast build tool and dev server |
+| **TailwindCSS** | - | Utility-first CSS (if used) |
 
 ### Backend
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **FastAPI** | 0.103.1 | Modern Python web framework |
-| **PostgreSQL** | 15 | Relational database |
-| **Redis** | - | Job queue & caching |
-| **Pydantic** | v2 | Data validation |
-| **psycopg2** | - | PostgreSQL adapter |
-| **bcrypt** | 4.0.1 | Password hashing |
-| **PyJWT** | - | JWT token handling |
-| **aioredis** | 2.0.1 | Async Redis client |
-| **Uvicorn** | - | ASGI server |
+| **Bun** | 1.x+ | JavaScript runtime |
+| **TypeScript** | 5.x | Type-safe JavaScript |
+| **Elysia** | - | Backend framework |
+| **OpenRouter** | - | AI model API provider |
+| **DuckDuckGo API** | - | Web search integration |
+| **Pixabay API** | - | Image search integration |
+| **PostgreSQL** | - | Database for chat history |
 
 ### DevOps & Tools
 | Technology | Purpose |
 |------------|---------|
-| **Docker Compose** | Container orchestration |
-| **Turbopack** | Fast bundler for Next.js |
+| **Docker** | Containerization (optional) |
 | **ESLint** | Code linting |
-| **PostCSS** | CSS processing |
+| **TypeScript Compiler** | Type checking |
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-AxionSync/
-├── AxionSync_Frontend/          # Next.js 16 Frontend
+Axiomancer/
+├── Axiomancer_Frontend/         # Svelte Frontend
 │   ├── src/
-│   │   ├── app/                 # App Router pages
-│   │   │   └── [locale]/        # i18n routes (en, th)
-│   │   ├── Components/          # Reusable UI components
-│   │   │   ├── Auth/            # Login, Register forms
-│   │   │   ├── Bookmark/        # Media tracker components
-│   │   │   ├── Memo/            # Notes components
-│   │   │   ├── Todo/            # Task management components
-│   │   │   └── Modal/           # Modal components
-│   │   ├── Functions/           # Business logic helpers
-│   │   ├── Service/             # API service layer (Axios)
-│   │   ├── Store/               # Zustand state stores
-│   │   ├── Types/               # TypeScript interfaces
-│   │   └── languages/           # i18n translations
-│   └── public/                  # Static assets
+│   │   ├── App.svelte           # Main app component
+│   │   ├── main.js              # Entry point
+│   │   ├── lib/                 # Reusable components
+│   │   ├── assets/              # Static assets
+│   │   └── store/               # State management
+│   ├── package.json
+│   ├── vite.config.js
+│   └── svelte.config.js
 │
-├── AxionSync_Backend/           # FastAPI Backend
-│   ├── main.py                  # Application entry point
-│   └── src/
-│       ├── api/                 # API route handlers
-│       ├── database/            # Database connection
-│       ├── models/              # Pydantic models
-│       │   ├── entity/          # Database entities
-│       │   └── function/        # Auth functions
-│       ├── services/            # Business logic layer
-│       ├── sql_query/           # SQL query layer
-│       └── workers/             # Background workers
-│           ├── notification_worker.py  # Notification processor
-│           └── redis_queue.py          # Redis job queue
+├── Axiomancer_Backend/          # Elysia Backend
+│   ├── src/
+│   │   ├── index.ts             # Application entry point
+│   │   ├── api/
+│   │   │   ├── ai/              # AI model routing & providers
+│   │   │   │   ├── ai_api.ts
+│   │   │   │   ├── ai_openrouter.ts
+│   │   │   │   ├── ai_prompt.ts
+│   │   │   │   └── ai_type.ts
+│   │   │   ├── auth/            # Authentication
+│   │   │   ├── chat/            # Chat management
+│   │   │   │   ├── chat_api.ts
+│   │   │   │   ├── chat_query.ts
+│   │   │   │   ├── chat_service.ts
+│   │   │   │   └── chat_type.ts
+│   │   │   ├── search/          # Search integrations
+│   │   │   │   ├── search_duckduckgo.ts
+│   │   │   │   └── search_pixabay.ts
+│   │   │   └── user/            # User management
+│   │   │       ├── user_api.ts
+│   │   │       ├── user_query.ts
+│   │   │       ├── user_service.ts
+│   │   │       └── user_type.ts
+│   │   └── database/
+│   │       └── db.ts            # Database connection
+│   ├── package.json
+│   └── tsconfig.json
 │
-└── docker-compose.yml           # Docker orchestration
+└── Docs/                        # Documentation
 ```
-
----
-
-## 📊 Database Schema
-
-### Core Entities
-- **User** - Authentication, profile, roles
-- **Memo** - Notes with tab organization
-- **Tab** - Customizable memo categories
-- **Todo** - Tasks with status, priority, mood
-- **TodoItem** - Checklist sub-tasks
-- **TodoTag** - Custom tags for todos
-- **TodoShare** - Collaborative sharing
-- **TodoStatusHistory** - Change tracking for analytics
-- **Bookmark** - Media tracking
-- **Tag** - Bookmark categorization
-- **TodoNotification** - Scheduled reminders
-- **UserDeviceToken** - Push notification tokens
 
 ---
 
 ## ⚙️ Installation
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.10+
-- PostgreSQL 15+
-- Redis (optional, for notifications)
-- Docker & Docker Compose (optional)
+- Bun 1.x+
+- npm or yarn (for frontend)
 
-### Option 1: Docker Compose (Recommended)
-```bash
-# Clone the repository
-git clone https://github.com/DotJumpDot/AxionSync.git
-cd AxionSync
-
-# Copy environment file
-cp env.example .env
-
-# Start all services
-docker-compose up -d
-```
-
-### Option 2: Manual Setup
+### Setup
 
 **Backend:**
 ```bash
-cd AxionSync_Backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: venv\Scripts\activate  # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run server
-uvicorn main:app --reload --port 8000
+cd Axiomancer_Backend
+bun install
+bun run dev
 ```
 
 **Frontend:**
 ```bash
-cd AxionSync_Frontend
-
-# Install dependencies
+cd Axiomancer_Frontend
 npm install
-
-# Run development server
 npm run dev
 ```
 
 ### Environment Variables
 ```env
+# AI Provider
+OPENROUTER_API_KEY=your-openrouter-key
+
+# Search APIs
+DUCKDUCKGO_API_KEY=your-duckduckgo-key
+PIXABAY_API_KEY=your-pixabay-key
+
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/axionsync
+DATABASE_URL=sqlite://./database.db  # or PostgreSQL URL
 
-# JWT
-JWT_EXPIRE_MINUTES=60
+# Other
 JWT_SECRET=your-secret-key
-
-# API Key
-X_API_KEY=['your-api-key']
-
-# Frontend URL (for CORS)
-FRONTEND_BASE_URL=http://localhost:3000
-
-# Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
 ```
 
 ---
 
-## 🔌 API Documentation
+## 🔌 API Endpoints
 
-Once the backend is running, access the interactive API docs at:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-### Key API Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/auth/login` | User authentication |
-| `POST` | `/users/register` | User registration |
-| `GET` | `/todos/` | Get all todos |
-| `GET` | `/todos/analytics` | Get todo statistics |
-| `GET` | `/todos/streak` | Get streak summary |
-| `POST` | `/todos/` | Create new todo |
-| `GET` | `/memos/` | Get all memos |
-| `GET` | `/bookmarks/` | Get all bookmarks |
-| `GET` | `/bookmarks/public` | Get public bookmarks |
+| `POST` | `/api/chat` | Send chat message with auto model selection |
+| `GET` | `/api/chat/history` | Get chat history |
+| `POST` | `/api/auth/login` | User authentication |
+| `GET` | `/api/models` | List available AI models |
+| `POST` | `/api/search/web` | Perform web search |
+| `POST` | `/api/search/image` | Perform image search |
 
 ---
 
 ## 🛠️ Development
 
 ```bash
-# Frontend (with Turbopack)
+# Frontend
 npm run dev
 
-# Backend (with auto-reload)
-uvicorn main:app --reload
+# Backend
+bun run dev
 
-# Run notification worker
-python -m src.workers.notification_worker
+# Build for production
+npm run build
 ```
-
----
-
-## 📱 Screenshots
-
-*Coming soon*
 
 ---
 
@@ -311,4 +276,4 @@ This project is licensed under the MIT License.
 
 ---
 
-<p align="center">Made with ❤️ using Next.js & FastAPI</p>
+<p align="center">Made with ❤️ using Svelte & Elysia</p>
