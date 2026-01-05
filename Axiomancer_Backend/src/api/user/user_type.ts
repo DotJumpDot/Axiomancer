@@ -3,6 +3,7 @@ export interface User {
   uuid: string;
   username: string;
   password: string; // hashed
+  email: string;
   firstname: string | null;
   lastname: string | null;
   nickname: string | null;
@@ -16,6 +17,7 @@ export interface User {
 export interface CreateUserRequest {
   username: string;
   password: string;
+  email: string;
   firstname?: string;
   lastname?: string;
   nickname?: string;
@@ -24,6 +26,7 @@ export interface CreateUserRequest {
 }
 
 export interface UpdateUserRequest {
+  email?: string;
   firstname?: string | null;
   lastname?: string | null;
   nickname?: string | null;

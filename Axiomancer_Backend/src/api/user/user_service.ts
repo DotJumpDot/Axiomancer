@@ -47,8 +47,11 @@ export class UserService {
     if (data.username.length < 3) {
       throw new Error("Username must be at least 3 characters long");
     }
-    if (data.password.length < 6) {
-      throw new Error("Password must be at least 6 characters long");
+    if (data.password.length < 4) {
+      throw new Error("Password must be at least 4 characters long");
+    }
+    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      throw new Error("Valid email is required");
     }
 
     // Check if username already exists
@@ -60,10 +63,7 @@ export class UserService {
     return await userQuery.createUser(data);
   }
 
-  static async updateUser(
-    id: number,
-    data: UpdateUserRequest
-  ): Promise<User | null> {
+  static async updateUser(id: number, data: UpdateUserRequest): Promise<User | null> {
     const existing = await userQuery.getUserById(id);
     if (!existing) {
       return null;
@@ -73,6 +73,9 @@ export class UserService {
     if (data.password && data.password.length < 6) {
       throw new Error("Password must be at least 6 characters long");
     }
+    if (data.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      throw new Error("Invalid email format");
+    }
 
     return await userQuery.updateUser(id, data);
   }
@@ -81,25 +84,17 @@ export class UserService {
     return await userQuery.deleteUser(id);
   }
 
-  static async authenticateUser(
-    credentials: LoginRequest
-  ): Promise<User | null> {
+  static async authenticateUser(credentials: LoginRequest): Promise<User | null> {
     const user = await userQuery.getUserByUsername(credentials.username);
     if (!user) {
       return null;
     }
 
-    const isValidPassword = await userQuery.verifyPassword(
-      credentials.password,
-      user.password
-    );
+    const isValidPassword = await userQuery.verifyPassword(credentials.password, user.password);
     return isValidPassword ? user : null;
   }
 
-  static async uploadProfilePicture(
-    userId: number,
-    file: File
-  ): Promise<UploadResponse> {
+  static async uploadProfilePicture(userId: number, file: File): Promise<UploadResponse> {
     try {
       // Validate file
       if (!file) {
@@ -161,9 +156,7 @@ export class UserService {
     return publicUser;
   }
 
-  static async validateUser(
-    user: User
-  ): Promise<{ valid: boolean; errors: string[] }> {
+  static async validateUser(user: User): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     if (!user.username || user.username.length < 3) {

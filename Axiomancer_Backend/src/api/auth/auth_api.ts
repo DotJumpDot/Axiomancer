@@ -43,7 +43,7 @@ const apiKeyMiddleware = async (request: Request) => {
   return validation;
 };
 
-export const authApi = new Elysia({ prefix: "/api/auth" })
+export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
   // Login
   .post(
     "/login",
@@ -82,7 +82,7 @@ export const authApi = new Elysia({ prefix: "/api/auth" })
       body: t.Object({
         username: t.String({ minLength: 3 }),
         password: t.String({ minLength: 6 }),
-        email: t.Optional(t.String()),
+        email: t.String(),
         firstname: t.Optional(t.String()),
         lastname: t.Optional(t.String()),
         nickname: t.Optional(t.String()),

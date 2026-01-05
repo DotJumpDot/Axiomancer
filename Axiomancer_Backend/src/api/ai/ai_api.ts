@@ -2,9 +2,9 @@ import { Elysia } from "elysia";
 import { AiService } from "./ai_service";
 import type { CreateAiModelRequest, UpdateAiModelRequest } from "./ai_type";
 
-export const aiApi = new Elysia({ prefix: "/ai" })
+export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
   // AI Models routes
-  .get("/models", async () => {
+  .get("/ai/models", async () => {
     try {
       const models = await AiService.getAllModels();
       return { success: true, data: models };
@@ -15,7 +15,7 @@ export const aiApi = new Elysia({ prefix: "/ai" })
       };
     }
   })
-  .get("/models/enabled", async () => {
+  .get("/ai/models/enabled", async () => {
     try {
       const models = await AiService.getEnabledModels();
       return { success: true, data: models };
@@ -26,7 +26,7 @@ export const aiApi = new Elysia({ prefix: "/ai" })
       };
     }
   })
-  .get("/models/:id", async ({ params }) => {
+  .get("/ai/models/:id", async ({ params }) => {
     try {
       const model = await AiService.getModelById(params.id);
       if (!model) {
@@ -40,7 +40,7 @@ export const aiApi = new Elysia({ prefix: "/ai" })
       };
     }
   })
-  .post("/models", async ({ body }) => {
+  .post("/ai/models", async ({ body }) => {
     try {
       const model = await AiService.createModel(body as CreateAiModelRequest);
       return { success: true, data: model };
@@ -51,12 +51,9 @@ export const aiApi = new Elysia({ prefix: "/ai" })
       };
     }
   })
-  .put("/models/:id", async ({ params, body }) => {
+  .put("/ai/models/:id", async ({ params, body }) => {
     try {
-      const model = await AiService.updateModel(
-        params.id,
-        body as UpdateAiModelRequest
-      );
+      const model = await AiService.updateModel(params.id, body as UpdateAiModelRequest);
       if (!model) {
         return { success: false, error: "Model not found" };
       }
@@ -68,7 +65,7 @@ export const aiApi = new Elysia({ prefix: "/ai" })
       };
     }
   })
-  .delete("/models/:id", async ({ params }) => {
+  .delete("/ai/models/:id", async ({ params }) => {
     try {
       const deleted = await AiService.deleteModel(params.id);
       return { success: true, deleted };

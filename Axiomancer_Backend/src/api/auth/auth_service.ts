@@ -16,11 +16,9 @@ import type {
 } from "./auth_type";
 import type { User } from "../user/user_type";
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
 const JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET ||
-  "your-super-secret-refresh-key-change-in-production";
+  process.env.JWT_REFRESH_SECRET || "your-super-secret-refresh-key-change-in-production";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
@@ -34,10 +32,7 @@ export class AuthService {
       }
 
       // Verify password
-      const isValidPassword = await userQuery.verifyPassword(
-        credentials.password,
-        user.password
-      );
+      const isValidPassword = await userQuery.verifyPassword(credentials.password, user.password);
       if (!isValidPassword) {
         return { success: false, error: "Invalid credentials" };
       }
@@ -55,6 +50,7 @@ export class AuthService {
           id: user.id,
           uuid: user.uuid,
           username: user.username,
+          email: user.email,
           firstname: user.firstname || undefined,
           lastname: user.lastname || undefined,
           nickname: user.nickname || undefined,
@@ -82,6 +78,7 @@ export class AuthService {
       const user = await userQuery.createUser({
         username: data.username,
         password: data.password,
+        email: data.email,
         firstname: data.firstname,
         lastname: data.lastname,
         nickname: data.nickname,
@@ -101,6 +98,7 @@ export class AuthService {
           id: user.id,
           uuid: user.uuid,
           username: user.username,
+          email: user.email,
           firstname: user.firstname || undefined,
           lastname: user.lastname || undefined,
           nickname: user.nickname || undefined,
@@ -119,16 +117,10 @@ export class AuthService {
   static async refreshToken(refreshToken: string): Promise<AuthResponse> {
     try {
       // Verify refresh token
-      const decoded = jwt.verify(
-        refreshToken,
-        JWT_REFRESH_SECRET
-      ) as RefreshTokenPayload;
+      const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as RefreshTokenPayload;
 
       // Check if session exists and refresh token is valid
-      const session = await authQuery.verifyRefreshToken(
-        decoded.tokenId,
-        refreshToken
-      );
+      const session = await authQuery.verifyRefreshToken(decoded.tokenId, refreshToken);
       if (!session) {
         return { success: false, error: "Invalid refresh token" };
       }
@@ -148,6 +140,7 @@ export class AuthService {
           id: user.id,
           uuid: user.uuid,
           username: user.username,
+          email: user.email,
           firstname: user.firstname || undefined,
           lastname: user.lastname || undefined,
           nickname: user.nickname || undefined,
@@ -169,10 +162,7 @@ export class AuthService {
     try {
       if (refreshToken) {
         // Logout specific session
-        const decoded = jwt.verify(
-          refreshToken,
-          JWT_REFRESH_SECRET
-        ) as RefreshTokenPayload;
+        const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as RefreshTokenPayload;
         await authQuery.deleteSession(decoded.tokenId, userId);
       } else {
         // Logout all sessions for user
@@ -190,13 +180,22 @@ export class AuthService {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
 
+      // Get user to include current email
+      const user = await userQuery.getUserById(decoded.userId);
+      if (!user) {
+        return { valid: false, error: "User not found" };
+      }
+
       return {
         valid: true,
         user: {
-          id: decoded.userId,
-          uuid: decoded.uuid,
-          username: decoded.username,
-          role: decoded.role,
+          id: user.id,
+          uuid: user.uuid,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          nickname: user.nickname,
+          picture_url: user.picture_url,
         },
       };
     } catch (error) {
@@ -206,6 +205,16 @@ export class AuthService {
 
   static async validateApiKey(apiKey: string): Promise<ValidateApiKeyResponse> {
     try {
+      // Allow default API key for anonymous access
+      const defaultApiKey = process.env.DEFAULT_API_KEY;
+      if (defaultApiKey && apiKey === defaultApiKey) {
+        return {
+          valid: true,
+          user: undefined, // No associated user for anonymous access
+          permissions: ["read"], // Limited permissions
+        };
+      }
+
       const keyRecord = await authQuery.verifyApiKey(apiKey);
       if (!keyRecord) {
         return { valid: false, error: "Invalid API key" };
@@ -233,10 +242,7 @@ export class AuthService {
     }
   }
 
-  static async createApiKey(
-    userId: number,
-    data: CreateApiKeyRequest
-  ): Promise<ApiKeyResponse> {
+  static async createApiKey(userId: number, data: CreateApiKeyRequest): Promise<ApiKeyResponse> {
     try {
       const result = await authQuery.createApiKey(userId, data);
 
@@ -285,9 +291,7 @@ export class AuthService {
       username: user.username,
       role: user.role,
       iat: Math.floor(Date.now() / 1000),
-      exp:
-        Math.floor(Date.now() / 1000) +
-        parseInt(JWT_EXPIRES_IN.replace("h", "")) * 3600,
+      exp: Math.floor(Date.now() / 1000) + parseInt(JWT_EXPIRES_IN.replace("h", "")) * 3600,
     };
 
     return jwt.sign(payload, JWT_SECRET);

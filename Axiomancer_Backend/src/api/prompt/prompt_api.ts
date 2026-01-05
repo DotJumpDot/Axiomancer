@@ -1,12 +1,9 @@
 import { Elysia } from "elysia";
 import { PromptService } from "./prompt_service";
-import type {
-  CreatePromptProfileRequest,
-  UpdatePromptProfileRequest,
-} from "./prompt_type";
+import type { CreatePromptProfileRequest, UpdatePromptProfileRequest } from "./prompt_type";
 
-export const promptApi = new Elysia({ prefix: "/prompts" })
-  .get("/", async () => {
+export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
+  .get("/prompts", async () => {
     try {
       const profiles = await PromptService.getAllProfiles();
       return { success: true, data: profiles };
@@ -17,7 +14,7 @@ export const promptApi = new Elysia({ prefix: "/prompts" })
       };
     }
   })
-  .get("/:id", async ({ params }) => {
+  .get("/prompt/:id", async ({ params }) => {
     try {
       const profile = await PromptService.getProfileById(params.id);
       if (!profile) {
@@ -31,11 +28,9 @@ export const promptApi = new Elysia({ prefix: "/prompts" })
       };
     }
   })
-  .get("/by-name/:name", async ({ params }) => {
+  .get("/prompt/by-name/:name", async ({ params }) => {
     try {
-      const profile = await PromptService.getProfileByName(
-        decodeURIComponent(params.name)
-      );
+      const profile = await PromptService.getProfileByName(decodeURIComponent(params.name));
       if (!profile) {
         return { success: false, error: "Profile not found" };
       }
@@ -47,11 +42,9 @@ export const promptApi = new Elysia({ prefix: "/prompts" })
       };
     }
   })
-  .post("/", async ({ body }) => {
+  .post("/prompt/create", async ({ body }) => {
     try {
-      const profile = await PromptService.createProfile(
-        body as CreatePromptProfileRequest
-      );
+      const profile = await PromptService.createProfile(body as CreatePromptProfileRequest);
       return { success: true, data: profile };
     } catch (error) {
       return {
@@ -60,7 +53,7 @@ export const promptApi = new Elysia({ prefix: "/prompts" })
       };
     }
   })
-  .put("/:id", async ({ params, body }) => {
+  .put("/prompt/:id", async ({ params, body }) => {
     try {
       const profile = await PromptService.updateProfile(
         params.id,
@@ -77,7 +70,7 @@ export const promptApi = new Elysia({ prefix: "/prompts" })
       };
     }
   })
-  .delete("/:id", async ({ params }) => {
+  .delete("/prompt/:id", async ({ params }) => {
     try {
       const deleted = await PromptService.deleteProfile(params.id);
       return { success: true, deleted };
@@ -88,7 +81,7 @@ export const promptApi = new Elysia({ prefix: "/prompts" })
       };
     }
   })
-  .post("/:id/validate", async ({ params }) => {
+  .post("/prompt/:id/validate", async ({ params }) => {
     try {
       const profile = await PromptService.getProfileById(params.id);
       if (!profile) {

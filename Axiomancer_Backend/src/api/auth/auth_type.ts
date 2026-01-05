@@ -6,7 +6,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   username: string;
   password: string;
-  email?: string;
+  email: string;
   firstname?: string;
   lastname?: string;
   nickname?: string;
@@ -18,6 +18,7 @@ export interface AuthResponse {
     id: number;
     uuid: string;
     username: string;
+    email?: string;
     firstname?: string;
     lastname?: string;
     nickname?: string;
@@ -91,7 +92,10 @@ export interface ValidateTokenResponse {
     id: number;
     uuid: string;
     username: string;
+    email?: string;
     role: string;
+    nickname?: string | null;
+    picture_url: string;
   };
   error?: string;
 }

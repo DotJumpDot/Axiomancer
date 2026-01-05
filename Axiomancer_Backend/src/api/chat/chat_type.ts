@@ -41,3 +41,26 @@ export interface UpdateChatRequest {
   token_usage?: any | null;
   latency_ms?: number | null;
 }
+
+// Conversation types
+export interface Conversation {
+  id: string;
+  user_id: number | null;
+  title: string;
+  system_prompt_snapshot: string | null;
+  auto_routing_enabled: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateConversationRequest {
+  title: string;
+  system_prompt_snapshot?: string;
+  auto_routing_enabled?: boolean;
+}
+
+export interface UpdateConversationRequest {
+  title?: string;
+  system_prompt_snapshot?: string | null;
+  auto_routing_enabled?: boolean;
+}

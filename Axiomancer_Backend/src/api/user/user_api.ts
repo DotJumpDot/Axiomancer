@@ -3,14 +3,13 @@ import { UserService } from "./user_service";
 import type {
   CreateUserRequest,
   UpdateUserRequest,
-  LoginRequest,
   AuthResponse,
   UploadResponse,
 } from "./user_type";
 
-export const userApi = new Elysia({ prefix: "/api/users" })
+export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Get all users
-  .get("/", async () => {
+  .get("/users", async () => {
     try {
       const users = await UserService.getAllUsers();
       return users.map((user) => UserService.getPublicUser(user));
@@ -23,7 +22,7 @@ export const userApi = new Elysia({ prefix: "/api/users" })
   })
 
   // Get user by ID
-  .get("/:id", async ({ params: { id } }) => {
+  .get("/user/:id", async ({ params: { id } }) => {
     try {
       const userId = parseInt(id);
       if (isNaN(userId)) {
@@ -45,7 +44,7 @@ export const userApi = new Elysia({ prefix: "/api/users" })
   })
 
   // Get user by UUID
-  .get("/uuid/:uuid", async ({ params: { uuid } }) => {
+  .get("/user/uuid/:uuid", async ({ params: { uuid } }) => {
     try {
       const user = await UserService.getUserByUUID(uuid);
       if (!user) {
@@ -63,7 +62,7 @@ export const userApi = new Elysia({ prefix: "/api/users" })
 
   // Create user
   .post(
-    "/",
+    "/user/create",
     async ({ body }: { body: CreateUserRequest }) => {
       try {
         const user = await UserService.createUser(body);
@@ -74,8 +73,7 @@ export const userApi = new Elysia({ prefix: "/api/users" })
         };
       } catch (error) {
         return {
-          error:
-            error instanceof Error ? error.message : "Failed to create user",
+          error: error instanceof Error ? error.message : "Failed to create user",
           status: 400,
         };
       }
@@ -83,24 +81,21 @@ export const userApi = new Elysia({ prefix: "/api/users" })
     {
       body: t.Object({
         username: t.String({ minLength: 3 }),
-        password: t.String({ minLength: 6 }),
-        display_name: t.Optional(t.String()),
-        email: t.Optional(t.String()),
-        bio: t.Optional(t.String()),
+        password: t.String({ minLength: 4 }),
+        email: t.String(),
+        firstname: t.Optional(t.String()),
+        lastname: t.Optional(t.String()),
+        nickname: t.Optional(t.String()),
+        role: t.Optional(t.String()),
+        tel: t.Optional(t.String()),
       }),
     }
   )
 
   // Update user
   .put(
-    "/:id",
-    async ({
-      params: { id },
-      body,
-    }: {
-      params: { id: string };
-      body: UpdateUserRequest;
-    }) => {
+    "/user/:id",
+    async ({ params: { id }, body }: { params: { id: string }; body: UpdateUserRequest }) => {
       try {
         const userId = parseInt(id);
         if (isNaN(userId)) {
@@ -118,26 +113,26 @@ export const userApi = new Elysia({ prefix: "/api/users" })
         };
       } catch (error) {
         return {
-          error:
-            error instanceof Error ? error.message : "Failed to update user",
+          error: error instanceof Error ? error.message : "Failed to update user",
           status: 400,
         };
       }
     },
     {
       body: t.Object({
-        username: t.Optional(t.String({ minLength: 3 })),
-        password: t.Optional(t.String({ minLength: 6 })),
-        display_name: t.Optional(t.String()),
         email: t.Optional(t.String()),
-        bio: t.Optional(t.String()),
-        is_active: t.Optional(t.Boolean()),
+        firstname: t.Optional(t.Union([t.String(), t.Null()])),
+        lastname: t.Optional(t.Union([t.String(), t.Null()])),
+        nickname: t.Optional(t.Union([t.String(), t.Null()])),
+        role: t.Optional(t.String()),
+        tel: t.Optional(t.Union([t.String(), t.Null()])),
+        password: t.Optional(t.String({ minLength: 6 })),
       }),
     }
   )
 
   // Delete user
-  .delete("/:id", async ({ params: { id } }) => {
+  .delete("/user/:id", async ({ params: { id } }) => {
     try {
       const userId = parseInt(id);
       if (isNaN(userId)) {
@@ -158,39 +153,9 @@ export const userApi = new Elysia({ prefix: "/api/users" })
     }
   })
 
-  // Login
-  .post(
-    "/login",
-    async ({ body }: { body: LoginRequest }) => {
-      try {
-        const user = await UserService.authenticateUser(body);
-        if (!user) {
-          return { error: "Invalid credentials", status: 401 };
-        }
-
-        return {
-          success: true,
-          user: UserService.getPublicUser(user),
-          message: "Login successful",
-        };
-      } catch (error) {
-        return {
-          error: error instanceof Error ? error.message : "Login failed",
-          status: 500,
-        };
-      }
-    },
-    {
-      body: t.Object({
-        username: t.String(),
-        password: t.String(),
-      }),
-    }
-  )
-
   // Upload profile picture
   .post(
-    "/:id/upload-profile",
+    "/user/:id/upload-profile",
     async ({ params: { id }, body }) => {
       try {
         const userId = parseInt(id);
@@ -235,7 +200,7 @@ export const userApi = new Elysia({ prefix: "/api/users" })
   )
 
   // Get user profile picture URL
-  .get("/:id/profile-picture", async ({ params: { id } }) => {
+  .get("/user/:id/profile-picture", async ({ params: { id } }) => {
     try {
       const userId = parseInt(id);
       if (isNaN(userId)) {
@@ -252,10 +217,7 @@ export const userApi = new Elysia({ prefix: "/api/users" })
       };
     } catch (error) {
       return {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch profile picture",
+        error: error instanceof Error ? error.message : "Failed to fetch profile picture",
         status: 500,
       };
     }
