@@ -1,5 +1,6 @@
 export interface PromptProfile {
   id: string;
+  user_uuid: string | null;
   name: string;
   description: string | null;
   system_prompt: string;

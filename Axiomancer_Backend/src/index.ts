@@ -11,6 +11,7 @@ import { userApi } from "./api/user/user_api";
 import { authApi } from "./api/auth/auth_api";
 import { chatApi } from "./api/chat/chat_api";
 import { searchApi } from "./api/search/search_api";
+import { selectionApi } from "./api/selection/selection_api";
 import { AuthService } from "./api/auth/auth_service";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,51 +35,53 @@ const app = new Elysia()
   .use(swagger({ path: "/w" }))
   // Auth API (no authentication required - used to get tokens/API keys)
   .use(authApi)
-  // Protected APIs (require API key, JWT optional for anonymous chat)
-  .guard(
-    {
-      beforeHandle: async ({ request, set, path }) => {
-        try {
-          // Check API key from X-API-KEY header (always required)
-          const apiKey = request.headers.get("X-API-KEY");
-          if (!apiKey) {
-            set.status = 401;
-            return { error: "Missing X-API-KEY header" };
-          }
+  // Protected APIs (require JWT token OR API key)
+  .derive(async ({ request, set }) => {
+    try {
+      let auth = null;
 
-          const apiKeyValidation = await AuthService.validateApiKey(apiKey);
+      // Check JWT token from Authorization header (primary auth method)
+      const authHeader = request.headers.get("Authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        const tokenValidation = await AuthService.validateToken(token);
 
-          if (!apiKeyValidation.valid) {
-            set.status = 401;
-            return { error: "Invalid API key" };
-          }
-
-          // Check JWT token from Authorization header (optional for anonymous chat)
-          const authHeader = request.headers.get("Authorization");
-          let auth = null;
-
-          if (authHeader && authHeader.startsWith("Bearer ")) {
-            const token = authHeader.substring(7);
-            const tokenValidation = await AuthService.validateToken(token);
-
-            if (tokenValidation.valid) {
-              auth = {
-                tokenUser: tokenValidation.user,
-                apiKeyUser: apiKeyValidation.user,
-              };
-            }
-          }
-
-          // Add auth data to context (may be null for anonymous users)
+        if (tokenValidation.valid) {
+          auth = {
+            user: tokenValidation.user,
+            authMethod: "jwt",
+          };
           return { auth };
-        } catch (error) {
-          set.status = 401;
-          return { error: error instanceof Error ? error.message : "Authentication failed" };
         }
-      },
-    },
-    (app) => app.use(chatApi).use(aiApi).use(promptApi).use(userApi).use(searchApi)
-  )
+      }
+
+      // Fallback to API key from X-API-KEY header
+      const apiKey = request.headers.get("X-API-KEY");
+      if (apiKey) {
+        const apiKeyValidation = await AuthService.validateApiKey(apiKey);
+        if (apiKeyValidation.valid) {
+          auth = {
+            user: apiKeyValidation.user,
+            authMethod: "apikey",
+          };
+          return { auth };
+        }
+      }
+
+      // No valid authentication found
+      set.status = 401;
+      throw new Error("Authentication required: Provide JWT Bearer token or X-API-KEY header");
+    } catch (error) {
+      set.status = 401;
+      throw new Error(error instanceof Error ? error.message : "Authentication failed");
+    }
+  })
+  .use(chatApi)
+  .use(aiApi)
+  .use(promptApi)
+  .use(userApi)
+  .use(searchApi)
+  .use(selectionApi)
   .get("/", () => "Hello Elysia")
   .get("/test-db", async () => {
     try {

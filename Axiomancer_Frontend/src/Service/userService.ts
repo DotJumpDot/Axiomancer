@@ -17,34 +17,34 @@ const USER_ENDPOINTS = {
 };
 
 export const userService = {
-  async getAllUsers(): Promise<ApiResponse<User[]>> {
-    return apiClient.get(USER_ENDPOINTS.users);
+  async getAllUsers() {
+    return apiClient.get<User[]>("/api/users");
   },
 
-  async getUserById(id: number): Promise<ApiResponse<User>> {
-    return apiClient.get(`${USER_ENDPOINTS.users}/${id}`);
+  async getUserById(id: number) {
+    return apiClient.get<User>(`/api/users/${id}`);
   },
 
-  async getUserByUUID(uuid: string): Promise<ApiResponse<User>> {
-    return apiClient.get(`${USER_ENDPOINTS.users}/uuid/${uuid}`);
+  async getUserByUUID(uuid: string) {
+    return apiClient.get<User>(`/api/user/uuid/${uuid}`);
   },
 
-  async createUser(data: CreateUserRequest): Promise<ApiResponse<User>> {
-    return apiClient.post(USER_ENDPOINTS.createUser, data);
+  async createUser(data: CreateUserRequest) {
+    return apiClient.post<User>("/api/user/create", data);
   },
 
-  async updateUser(id: number, data: UpdateUserRequest): Promise<ApiResponse<User>> {
-    return apiClient.put(`${USER_ENDPOINTS.user}/${id}`, data);
+  async updateUser(id: number, data: UpdateUserRequest) {
+    return apiClient.put<User>(`/api/user/${id}`, data);
   },
 
-  async deleteUser(id: number): Promise<ApiResponse<boolean>> {
-    return apiClient.delete(`${USER_ENDPOINTS.user}/${id}`);
+  async deleteUser(id: number) {
+    return apiClient.delete<boolean>(`/api/user/${id}`);
   },
 
   async uploadProfilePicture(userId: number, file: File): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append("profile_picture", file);
-    return apiClient.upload(USER_ENDPOINTS.uploadPicture(userId), formData);
+    return apiClient.upload<UploadResponse>(`/api/user/${userId}/upload-profile`, formData);
   },
 
   // Get current user profile (uses auth API)

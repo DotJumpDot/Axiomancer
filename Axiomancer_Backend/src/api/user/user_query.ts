@@ -7,7 +7,7 @@ const SALT_ROUNDS = 10;
 
 export async function getUsers(): Promise<User[]> {
   const result = await sql`
-    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at
+    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
     FROM "user"
     ORDER BY created_at DESC
   `;
@@ -16,7 +16,7 @@ export async function getUsers(): Promise<User[]> {
 
 export async function getUserById(id: number): Promise<User | null> {
   const result = await sql`
-    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at
+    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
     FROM "user"
     WHERE id = ${id}
   `;
@@ -26,7 +26,7 @@ export async function getUserById(id: number): Promise<User | null> {
 
 export async function getUserByUsername(username: string): Promise<User | null> {
   const result = await sql`
-    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at
+    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
     FROM "user"
     WHERE username = ${username}
   `;
@@ -36,7 +36,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 
 export async function getUserByUUID(uuid: string): Promise<User | null> {
   const result = await sql`
-    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at
+    SELECT id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
     FROM "user"
     WHERE uuid = ${uuid}
   `;
@@ -49,13 +49,13 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
   const result = await sql`
-    INSERT INTO "user" (uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at)
+    INSERT INTO "user" (uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at)
     VALUES (${uuid}, ${data.username}, ${hashedPassword}, ${data.email}, ${
     data.firstname ?? null
   }, ${data.lastname ?? null}, ${data.nickname ?? null}, ${data.role ?? "user"}, ${
     data.tel ?? null
-  }, 'unidentified.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at
+  }, 'unidentified.jpg', ${data.openrouter_api_key ?? null}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
   `;
   return result[0] as unknown as User;
 }
@@ -93,13 +93,17 @@ export async function updateUser(id: number, data: UpdateUserRequest): Promise<U
     setParts.push("password = $" + (values.length + 1));
     values.push(hashedPassword);
   }
+  if (data.openrouter_api_key !== undefined) {
+    setParts.push("openrouter_api_key = $" + (values.length + 1));
+    values.push(data.openrouter_api_key);
+  }
 
   if (setParts.length === 0) return getUserById(id);
 
   setParts.push("updated_at = CURRENT_TIMESTAMP");
   const query = `UPDATE "user" SET ${setParts.join(", ")} WHERE id = $${
     values.length + 1
-  } RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at`;
+  } RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at`;
   values.push(id);
   const result = await sql.unsafe(query, values);
   if (result.length === 0) return null;
@@ -111,7 +115,7 @@ export async function updateUserPicture(id: number, pictureUrl: string): Promise
     UPDATE "user"
     SET picture_url = ${pictureUrl}, updated_at = CURRENT_TIMESTAMP
     WHERE id = ${id}
-    RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at
+    RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
   `;
   if (result.length === 0) return null;
   return result[0] as unknown as User;

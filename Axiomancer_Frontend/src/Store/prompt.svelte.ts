@@ -19,7 +19,9 @@ async function loadProfiles() {
 
     const response = await promptService.getAllProfiles();
     if (response.success && response.data) {
-      profiles = response.data;
+      // Filter to show only user-specific profiles (user_uuid is not null)
+      // and global profiles (user_uuid is null) for backwards compatibility
+      profiles = response.data.filter((p) => p.user_uuid !== null || !p.user_uuid);
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load profiles";
@@ -93,6 +95,7 @@ function selectProfile(profileId: string | null) {
     selectedProfile = null;
     return;
   }
+  // Find profile from loaded profiles (handles both user-specific and global)
   const profile = profiles.find((p) => p.id === profileId);
   if (profile) {
     selectedProfile = profile;

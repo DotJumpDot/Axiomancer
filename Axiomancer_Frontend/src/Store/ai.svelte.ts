@@ -53,6 +53,8 @@ async function loadEnabledModels() {
     const response = await aiService.getEnabledModels();
     if (response.success && response.data) {
       enabledModels = response.data;
+    } else {
+      enabledModels = []; // Ensure it's an array
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load enabled models";

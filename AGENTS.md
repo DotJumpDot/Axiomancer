@@ -74,11 +74,13 @@ The Axiomancer backend implements the following core entities:
 
 #### **User**
 
-| Purpose                       | Details                                                                                                              |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Authentication & Identity** | Stores user credentials, profile information, and account metadata                                                   |
-| **Fields**                    | id, uuid, username, password (hashed), firstname, lastname, nickname, role, tel, picture_url, created_at, updated_at |
-| **Relationships**             | One user can have many conversations                                                                                 |
+| Purpose                       | Details                                                                                                                                               |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Authentication & Identity** | Stores user credentials, profile information, and account metadata                                                                                    |
+| **OpenRouter Integration**    | Each user can store their own OpenRouter API key for personalized AI model access                                                                     |
+| **Fields**                    | id, uuid, username, password (hashed), firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at              |
+| **Relationships**             | One user can have many conversations                                                                                                                  |
+| **API Key Management**        | Users can add/update their OpenRouter API key via the sidebar UI (key icon button). Keys are stored encrypted and used for AI model routing per user. |
 
 #### **Conversation**
 

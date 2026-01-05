@@ -19,38 +19,15 @@ function initialize() {
       if (loginData.token) {
         apiClient.setAuthToken(loginData.token);
         isAuthenticated = true;
-
-        // Create a new API key for this session
-        createSessionApiKey();
       }
       if (loginData.user) {
-        // If we have user UUID, try to load user data
+        // Load user data from backend using JWT token
         loadUserData(loginData.user);
       }
     } catch (error) {
       console.error("Failed to load stored auth data:", error);
       logout();
     }
-  }
-}
-
-async function createSessionApiKey() {
-  try {
-    const createResponse = await authService.createApiKey({
-      name: "Session Key",
-      permissions: ["read", "write"],
-    });
-
-    if (createResponse.success && createResponse.api_key) {
-      const apiKey = createResponse.api_key.key;
-      currentApiKey = apiKey;
-      apiClient.setApiKey(apiKey);
-    } else {
-      console.error("Failed to create session API key");
-      // Don't logout here, just log the error
-    }
-  } catch (error) {
-    console.error("Failed to create session API key:", error);
   }
 }
 
@@ -66,10 +43,35 @@ async function loadUserData(userUuid: string) {
         role: response.data.role,
         nickname: response.data.nickname,
         picture_url: response.data.picture_url || "",
+        openrouter_api_key: response.data.openrouter_api_key || null,
+      };
+    } else {
+      console.error("Failed to load user data:", response.error);
+      // If user data loading fails, we should still be authenticated
+      // but we'll show a fallback user display
+      currentUser = {
+        id: 0,
+        uuid: userUuid,
+        username: "User",
+        email: "",
+        role: "user",
+        nickname: "User",
+        picture_url: "",
       };
     }
   } catch (error) {
     console.error("Failed to load user data:", error);
+    // If user data loading fails, we should still be authenticated
+    // but we'll show a fallback user display
+    currentUser = {
+      id: 0,
+      uuid: userUuid,
+      username: "User",
+      email: "",
+      role: "user",
+      nickname: "User",
+      picture_url: "",
+    };
   }
 }
 
@@ -79,38 +81,21 @@ async function login(credentials: LoginRequest) {
     error = null;
 
     const response = await authService.login(credentials);
-    if (response.success && response.user) {
-      currentUser = response.user;
+    if (response.success && response.data) {
+      currentUser = response.data.user!;
       isAuthenticated = true;
 
-      // Get or create API key for the user
-      try {
-        // Always create a new API key on login for security
-        const createResponse = await authService.createApiKey({
-          name: "Login Session Key",
-          permissions: ["read", "write"],
-        });
+      // Store login data with token and optional refresh_token
+      const loginData: any = {
+        user: currentUser.uuid,
+        token: response.data.token,
+      };
 
-        if (createResponse.success && createResponse.api_key) {
-          const apiKey = createResponse.api_key.key;
-          currentApiKey = apiKey;
-          apiClient.setApiKey(apiKey);
-
-          // Store only user UUID and token (not API key for security)
-          localStorage.setItem(
-            "AxmLogin",
-            JSON.stringify({
-              user: currentUser.uuid,
-              token: response.token,
-            })
-          );
-        } else {
-          throw new Error("Failed to create API key");
-        }
-      } catch (apiKeyError) {
-        console.error("Failed to setup API key:", apiKeyError);
-        // Continue with login even if API key setup fails
+      if (response.data.refresh_token) {
+        loginData.refresh_token = response.data.refresh_token;
       }
+
+      localStorage.setItem("AxmLogin", JSON.stringify(loginData));
 
       return { success: true };
     } else {
@@ -151,7 +136,7 @@ async function logout() {
   } finally {
     currentUser = null;
     currentApiKey = null;
-    apiClient.setApiKey(null); // Clear API key from client
+    apiClient.setAuthToken(null); // Clear JWT token from client
     isAuthenticated = false;
     error = null;
     localStorage.removeItem("AxmLogin");
@@ -164,14 +149,16 @@ async function refreshProfile() {
   try {
     const response = await userService.getCurrentProfile();
     if (response.success && response.data) {
+      const userData = response.data;
       currentUser = {
-        id: response.data.id,
-        uuid: response.data.uuid,
-        username: response.data.username,
-        nickname: response.data.nickname,
-        email: response.data.email,
-        role: response.data.role,
-        picture_url: response.data.picture_url,
+        id: userData.id,
+        uuid: userData.uuid,
+        username: userData.username,
+        nickname: userData.nickname,
+        email: userData.email,
+        role: userData.role,
+        picture_url: userData.picture_url,
+        openrouter_api_key: (userData as any).openrouter_api_key || "",
       };
     }
   } catch (e) {

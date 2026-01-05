@@ -6,3 +6,4 @@ export { default as chatService } from "./chatService";
 export { default as promptService } from "./promptService";
 export { default as searchService } from "./searchService";
 export { default as userService } from "./userService";
+export { selectionService } from "./selectionService";

@@ -1,0 +1,81 @@
+/* ChatHeader - Buttons and Controls */
+.toggle-btn {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background: var(--hover-bg, #2d2d2d);
+  color: var(--text-primary, #fff);
+}
+
+.toggle-btn.active {
+  background: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+  color: white;
+}
+
+.collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--input-bg, #2d2d2d);
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.collapse-btn:hover {
+  background: var(--hover-bg, #3d3d3d);
+  border-color: var(--border-color-hover, #4d4d4d);
+}
+
+.preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--secondary-bg, #4d4d4d);
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover {
+  background: var(--hover-bg, #5d5d5d);
+  border-color: var(--border-color-hover, #4d4d4d);
+}
+
+.api-key-btn {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.api-key-btn:hover {
+  background: var(--hover-bg, #2d2d2d);
+  color: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+}

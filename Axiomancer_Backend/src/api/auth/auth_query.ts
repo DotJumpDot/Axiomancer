@@ -1,10 +1,9 @@
 import { sql } from "../../database/db";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import type { ApiKey, Session, CreateApiKeyRequest } from "./auth_type";
+import type { ApiKey, CreateApiKeyRequest } from "./auth_type";
 
 const API_KEY_SALT_ROUNDS = 10;
-const SESSION_SALT_ROUNDS = 10;
 
 // API Key operations
 export async function createApiKey(
@@ -64,10 +63,7 @@ export async function updateApiKeyLastUsed(keyId: string): Promise<void> {
   `;
 }
 
-export async function deleteApiKey(
-  keyId: string,
-  userId: number
-): Promise<boolean> {
+export async function deleteApiKey(keyId: string, userId: number): Promise<boolean> {
   const result = await sql`
     DELETE FROM api_key
     WHERE id = ${keyId} AND user_id = ${userId}
@@ -103,78 +99,4 @@ export async function verifyApiKey(plainKey: string): Promise<ApiKey | null> {
   }
 
   return null;
-}
-
-// Session operations
-export async function createSession(
-  userId: number,
-  refreshToken: string
-): Promise<Session> {
-  const sessionId = crypto.randomUUID();
-  const refreshTokenHash = await bcrypt.hash(refreshToken, SESSION_SALT_ROUNDS);
-
-  // Set refresh token to expire in 30 days
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-  const result = await sql`
-    INSERT INTO user_session (id, user_id, refresh_token_hash, expires_at, created_at, updated_at)
-    VALUES (${sessionId}, ${userId}, ${refreshTokenHash}, ${expiresAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    RETURNING id, user_id, refresh_token_hash, expires_at, created_at, updated_at
-  `;
-
-  return result[0] as unknown as Session;
-}
-
-export async function getSessionById(
-  sessionId: string
-): Promise<Session | null> {
-  const result = await sql`
-    SELECT id, user_id, refresh_token_hash, expires_at, created_at, updated_at
-    FROM user_session
-    WHERE id = ${sessionId}
-    AND expires_at > CURRENT_TIMESTAMP
-  `;
-
-  if (result.length === 0) return null;
-  return result[0] as unknown as Session;
-}
-
-export async function verifyRefreshToken(
-  sessionId: string,
-  refreshToken: string
-): Promise<Session | null> {
-  const session = await getSessionById(sessionId);
-  if (!session) return null;
-
-  const isValid = await bcrypt.compare(
-    refreshToken,
-    session.refresh_token_hash
-  );
-  return isValid ? session : null;
-}
-
-export async function deleteSession(
-  sessionId: string,
-  userId: number
-): Promise<boolean> {
-  const result = await sql`
-    DELETE FROM user_session
-    WHERE id = ${sessionId} AND user_id = ${userId}
-  `;
-
-  return result.count > 0;
-}
-
-export async function deleteExpiredSessions(): Promise<void> {
-  await sql`
-    DELETE FROM user_session
-    WHERE expires_at <= CURRENT_TIMESTAMP
-  `;
-}
-
-export async function deleteAllUserSessions(userId: number): Promise<void> {
-  await sql`
-    DELETE FROM user_session
-    WHERE user_id = ${userId}
-  `;
 }

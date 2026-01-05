@@ -24,6 +24,7 @@ export interface AuthResponse {
     nickname?: string;
     role: string;
     picture_url: string;
+    openrouter_api_key: string | null;
   };
   token?: string;
   refresh_token?: string;
@@ -77,15 +78,6 @@ export interface ApiKeyResponse {
   error?: string;
 }
 
-export interface Session {
-  id: string;
-  user_id: number;
-  refresh_token_hash: string;
-  expires_at: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
 export interface ValidateTokenResponse {
   valid: boolean;
   user?: {
@@ -96,6 +88,7 @@ export interface ValidateTokenResponse {
     role: string;
     nickname?: string | null;
     picture_url: string;
+    openrouter_api_key: string | null;
   };
   error?: string;
 }

@@ -12,9 +12,10 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   .get("/users", async () => {
     try {
       const users = await UserService.getAllUsers();
-      return users.map((user) => UserService.getPublicUser(user));
+      return { success: true, data: users.map((user) => UserService.getPublicUser(user)) };
     } catch (error) {
       return {
+        success: false,
         error: error instanceof Error ? error.message : "Failed to fetch users",
         status: 500,
       };
@@ -26,17 +27,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
     try {
       const userId = parseInt(id);
       if (isNaN(userId)) {
-        return { error: "Invalid user ID", status: 400 };
+        return { success: false, error: "Invalid user ID", status: 400 };
       }
 
       const user = await UserService.getUserById(userId);
       if (!user) {
-        return { error: "User not found", status: 404 };
+        return { success: false, error: "User not found", status: 404 };
       }
 
-      return UserService.getPublicUser(user);
+      return { success: true, data: UserService.getPublicUser(user) };
     } catch (error) {
       return {
+        success: false,
         error: error instanceof Error ? error.message : "Failed to fetch user",
         status: 500,
       };
@@ -48,12 +50,13 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
     try {
       const user = await UserService.getUserByUUID(uuid);
       if (!user) {
-        return { error: "User not found", status: 404 };
+        return { success: false, error: "User not found", status: 404 };
       }
 
-      return UserService.getPublicUser(user);
+      return { success: true, data: UserService.getPublicUser(user) };
     } catch (error) {
       return {
+        success: false,
         error: error instanceof Error ? error.message : "Failed to fetch user",
         status: 500,
       };
@@ -127,6 +130,7 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
         role: t.Optional(t.String()),
         tel: t.Optional(t.Union([t.String(), t.Null()])),
         password: t.Optional(t.String({ minLength: 6 })),
+        openrouter_api_key: t.Optional(t.Union([t.String(), t.Null()])),
       }),
     }
   )

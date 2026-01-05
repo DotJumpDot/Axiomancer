@@ -55,7 +55,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
           status: 401,
         };
       }
-      return result;
+      return { success: true, data: result };
     },
     {
       body: t.Object({
@@ -76,7 +76,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
           status: 400,
         };
       }
-      return result;
+      return { success: true, data: result };
     },
     {
       body: t.Object({
@@ -101,7 +101,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
           status: 401,
         };
       }
-      return result;
+      return { success: true, data: result };
     },
     {
       body: t.Object({
@@ -126,7 +126,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
           status: 500,
         };
       }
-      return { success: true, message: "Logged out successfully" };
+      return { success: true, data: { message: "Logged out successfully" } };
     },
     {
       body: t.Optional(
@@ -143,7 +143,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
     if (!user) {
       return { valid: false, error: "Invalid token", status: 401 };
     }
-    return { valid: true, user };
+    return { success: true, data: { valid: true, user } };
   })
 
   // Validate API key
@@ -152,7 +152,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
     if (!validation) {
       return { valid: false, error: "Invalid API key", status: 401 };
     }
-    return validation;
+    return { success: true, data: validation };
   })
 
   // Create API key (requires authentication)
@@ -171,7 +171,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
           status: 500,
         };
       }
-      return result;
+      return { success: true, data: result };
     },
     {
       body: t.Object({
@@ -190,7 +190,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
     }
 
     const apiKeys = await AuthService.getUserApiKeys(user.id);
-    return { api_keys: apiKeys };
+    return { success: true, data: apiKeys };
   })
 
   // Delete API key (requires authentication)

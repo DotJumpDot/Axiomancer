@@ -12,6 +12,7 @@
     - [Prompt Profile](#prompt-profile)
     - [Chat](#chat)
     - [Search Log](#search-log)
+    - [User Selected Models](#user-selected-models)
   - [Entity Relationships](#entity-relationships)
   - [SQL Schema](#sql-schema)
     - [Create Tables](#create-tables)
@@ -32,21 +33,22 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### User
 
-| Column      | Type     | Nullable | Description                                            |
-| ----------- | -------- | -------- | ------------------------------------------------------ |
-| id          | int      | No       | Primary key, auto-incremented user ID                  |
-| uuid        | string   | No       | Unique user identifier                                 |
-| username    | str      | No       | Unique username for login                              |
-| password    | str      | No       | Hashed password for authentication                     |
-| email       | str      | No       | User's email address                                   |
-| firstname   | str      | Yes      | User's first name                                      |
-| lastname    | str      | Yes      | User's last name                                       |
-| nickname    | str      | Yes      | User's nickname/display name                           |
-| role        | str      | No       | User role (default: "user")                            |
-| tel         | str      | Yes      | Telephone number                                       |
-| picture_url | str      | No       | Profile picture filename (default: "unidentified.jpg") |
-| created_at  | datetime | No       | Record creation timestamp (UTC)                        |
-| updated_at  | datetime | Yes      | Record last update timestamp (UTC)                     |
+| Column             | Type     | Nullable | Description                                            |
+| ------------------ | -------- | -------- | ------------------------------------------------------ |
+| id                 | int      | No       | Primary key, auto-incremented user ID                  |
+| uuid               | string   | No       | Unique user identifier                                 |
+| username           | str      | No       | Unique username for login                              |
+| password           | str      | No       | Hashed password for authentication                     |
+| email              | str      | No       | User's email address                                   |
+| firstname          | str      | Yes      | User's first name                                      |
+| lastname           | str      | Yes      | User's last name                                       |
+| nickname           | str      | Yes      | User's nickname/display name                           |
+| role               | str      | No       | User role (default: "user")                            |
+| tel                | str      | Yes      | Telephone number                                       |
+| picture_url        | str      | No       | Profile picture filename (default: "unidentified.jpg") |
+| openrouter_api_key | text     | Yes      | User's personal OpenRouter API key                     |
+| created_at         | datetime | No       | Record creation timestamp (UTC)                        |
+| updated_at         | datetime | Yes      | Record last update timestamp (UTC)                     |
 
 ### Conversation
 
@@ -80,6 +82,7 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | Column        | Type     | Nullable | Description                  |
 | ------------- | -------- | -------- | ---------------------------- |
 | id            | uuid     | No       | Primary key, profile ID      |
+| user_uuid     | str      | Yes      | Foreign key to user.uuid     |
 | name          | str      | No       | Profile name                 |
 | description   | str      | Yes      | Profile description          |
 | system_prompt | text     | No       | System prompt text           |
@@ -116,16 +119,29 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | result_count | int      | No       | Number of results returned           |
 | created_at   | datetime | No       | Record creation timestamp            |
 
+### User Selected Models
+
+| Column       | Type     | Nullable | Description                                |
+| ------------ | -------- | -------- | ------------------------------------------ |
+| preset       | int      | No       | Auto-incrementing preset number (reusable) |
+| user_uuid    | str      | No       | Foreign key to user.uuid                   |
+| ai_model_ids | json     | No       | Array of AI model IDs                      |
+| searchable   | boolean  | No       | Whether this preset is searchable          |
+| created_at   | datetime | No       | Record creation timestamp                  |
+| updated_at   | datetime | No       | Record last update timestamp               |
+
 ---
 
 ## Entity Relationships
 
 ```
 user (1) ──── (many) conversation
+user (1) ──── (many) user_selected_models
 conversation (1) ──── (many) chat
 chat (many) ──── (1) ai_model
 chat (many) ──── (1) prompt_profile
 chat (1) ──── (many) search_log
+user_selected_models (many) ──── (many) ai_model
 ```
 
 ---
@@ -158,6 +174,7 @@ CREATE TABLE "user" (
     role TEXT NOT NULL DEFAULT 'user',
     tel TEXT,
     picture_url TEXT NOT NULL DEFAULT 'unidentified.jpg',
+    openrouter_api_key TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP
 );
@@ -191,11 +208,13 @@ CREATE TABLE ai_model (
 -- Prompt Profile table
 CREATE TABLE prompt_profile (
     id TEXT PRIMARY KEY,
+    user_uuid TEXT,
     name TEXT NOT NULL,
     description TEXT,
     system_prompt TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
 );
 
 -- Chat table
@@ -231,6 +250,17 @@ CREATE TABLE search_log (
     FOREIGN KEY (message_id) REFERENCES chat(id)
 );
 
+-- User Selected Models table
+CREATE TABLE user_selected_models (
+    preset INTEGER PRIMARY KEY,
+    user_uuid TEXT NOT NULL,
+    ai_model_ids JSONB NOT NULL,
+    searchable BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
+);
+
 -- Performance indexes
 CREATE INDEX idx_conversation_user_id ON conversation(user_id);
 CREATE INDEX idx_chat_conversation_id ON chat(conversation_id);
@@ -238,6 +268,7 @@ CREATE INDEX idx_chat_model_id ON chat(model_id);
 CREATE INDEX idx_chat_created_at ON chat(created_at);
 CREATE INDEX idx_search_log_message_id ON search_log(message_id);
 CREATE INDEX idx_user_username ON "user"(username);
+CREATE INDEX idx_user_selected_models_user_uuid ON user_selected_models(user_uuid);
 ```
 
 ## Sample Data
@@ -246,8 +277,8 @@ CREATE INDEX idx_user_username ON "user"(username);
 
 ```sql
 -- Insert sample user
-INSERT INTO "user" (uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, created_at)
-VALUES ('550e8400-e29b-41d4-a716-446655440000', 'admin', '1234', 'admin@example.com', 'John', 'Doe', 'Johnny', 'user', '+1234567890', 'john.jpg', CURRENT_TIMESTAMP);
+INSERT INTO "user" (uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at)
+VALUES ('550e8400-e29b-41d4-a716-446655440000', 'admin', '1234', 'admin@example.com', 'John', 'Doe', 'Johnny', 'user', '+1234567890', 'john.jpg', NULL, CURRENT_TIMESTAMP);
 
 -- Insert sample AI models
 INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at) VALUES
@@ -256,9 +287,9 @@ INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cos
 ('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 32768, 0.0014, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', TRUE, CURRENT_TIMESTAMP);
 
 -- Insert sample prompt profiles
-INSERT INTO prompt_profile (id, name, description, system_prompt, created_at) VALUES
-('7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'General Assistant', 'General purpose AI assistant', 'You are a helpful AI assistant.', CURRENT_TIMESTAMP),
-('7ba7b811-9dad-11d1-80b4-00c04fd430c8', 'Code Expert', 'Specialized in programming and coding', 'You are an expert programmer. Provide clear, efficient code solutions.', CURRENT_TIMESTAMP);
+INSERT INTO prompt_profile (id, user_uuid, name, description, system_prompt, created_at) VALUES
+('7ba7b810-9dad-11d1-80b4-00c04fd430c8', '550e8400-e29b-41d4-a716-446655440000', 'General Assistant', 'General purpose AI assistant', 'You are a helpful AI assistant.', CURRENT_TIMESTAMP),
+('7ba7b811-9dad-11d1-80b4-00c04fd430c8', '550e8400-e29b-41d4-a716-446655440000', 'Code Expert', 'Specialized in programming and coding', 'You are an expert programmer. Provide clear, efficient code solutions.', CURRENT_TIMESTAMP);
 
 -- Insert sample conversation
 INSERT INTO conversation (id, user_id, title, system_prompt_snapshot, auto_routing_enabled, created_at, updated_at)
@@ -268,6 +299,11 @@ VALUES ('8ba7b810-9dad-11d1-80b4-00c04fd430c8', 1, 'First Conversation', 'You ar
 INSERT INTO chat (id, conversation_id, role, content, model_id, prompt_profile_id, routing_mode, used_web_search, used_image_search, token_usage, latency_ms, created_at, updated_at) VALUES
 ('9ba7b810-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'user', 'Hello, how are you?', NULL, NULL, 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 0, "total": 4}', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('9ba7b811-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'assistant', 'I am doing well, thank you for asking! How can I help you today?', '6ba7b810-9dad-11d1-80b4-00c04fd430c8', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 15, "total": 19}', 1200, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Insert sample user selected models
+INSERT INTO user_selected_models (preset, user_uuid, ai_model_ids, searchable, created_at, updated_at) VALUES
+(1, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b810-9dad-11d1-80b4-00c04fd430c8", "6ba7b811-9dad-11d1-80b4-00c04fd430c8"]', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b812-9dad-11d1-80b4-00c04fd430c8"]', FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
 ---

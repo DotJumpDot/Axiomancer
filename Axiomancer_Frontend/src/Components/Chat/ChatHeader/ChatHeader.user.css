@@ -1,0 +1,84 @@
+/* ChatHeader - User Section */
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--input-bg, #2d2d2d);
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+}
+
+.user-section.loading {
+  opacity: 0.7;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--border-color, #3d3d3d);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.user-name {
+  font-size: 14px;
+  color: var(--text-primary, #fff);
+  font-weight: 500;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: var(--hover-bg, #3d3d3d);
+  color: var(--text-primary, #fff);
+}
+
+.login-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--primary-color, #6366f1);
+  border: 1px solid var(--primary-color, #6366f1);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.login-btn:hover {
+  background: var(--primary-color-hover, #5855eb);
+  border-color: var(--primary-color-hover, #5855eb);
+}

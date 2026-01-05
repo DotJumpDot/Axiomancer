@@ -7,6 +7,12 @@ export interface RequestConfig {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 class ApiClient {
   private baseUrl: string;
   private defaultHeaders: Record<string, string> = {
@@ -53,15 +59,28 @@ class ApiClient {
     return url.toString();
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP Error: ${response.status}`);
+  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    try {
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error || `HTTP Error: ${response.status}`,
+        };
+      }
+      return data as ApiResponse<T>;
+    } catch (error) {
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `HTTP Error: ${response.status}`,
+        };
+      }
+      throw error; // Re-throw if it's not a JSON parsing error
     }
-    return response.json();
   }
 
-  async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
+  async get<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
     const url = this.buildUrl(endpoint, config?.params);
     const response = await fetch(url, {
       method: "GET",
@@ -70,7 +89,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
     const url = this.buildUrl(endpoint, config?.params);
     const response = await fetch(url, {
       method: "POST",
@@ -80,7 +99,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
     const url = this.buildUrl(endpoint, config?.params);
     const response = await fetch(url, {
       method: "PUT",
@@ -90,7 +109,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
+  async delete<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
     const url = this.buildUrl(endpoint, config?.params);
     const response = await fetch(url, {
       method: "DELETE",
@@ -99,7 +118,11 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async upload<T>(endpoint: string, formData: FormData, config?: RequestConfig): Promise<T> {
+  async upload<T>(
+    endpoint: string,
+    formData: FormData,
+    config?: RequestConfig
+  ): Promise<ApiResponse<T>> {
     const url = this.buildUrl(endpoint, config?.params);
     const headers = { ...config?.headers };
     // Don't set Content-Type for FormData - browser will set it with boundary

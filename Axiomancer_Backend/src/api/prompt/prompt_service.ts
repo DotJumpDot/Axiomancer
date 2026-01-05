@@ -6,8 +6,8 @@ import type {
 } from "./prompt_type";
 
 export class PromptService {
-  static async getAllProfiles(): Promise<PromptProfile[]> {
-    return await promptQuery.getPromptProfiles();
+  static async getAllProfiles(userUuid?: string): Promise<PromptProfile[]> {
+    return await promptQuery.getPromptProfiles(userUuid);
   }
 
   static async getProfileById(id: string): Promise<PromptProfile | null> {
@@ -15,7 +15,8 @@ export class PromptService {
   }
 
   static async createProfile(
-    data: CreatePromptProfileRequest
+    data: CreatePromptProfileRequest,
+    userUuid?: string
   ): Promise<PromptProfile> {
     // Validate data
     if (!data.name || !data.system_prompt) {
@@ -28,7 +29,7 @@ export class PromptService {
       throw new Error("System prompt cannot be empty");
     }
 
-    return await promptQuery.createPromptProfile(data);
+    return await promptQuery.createPromptProfile(data, userUuid);
   }
 
   static async updateProfile(
@@ -56,8 +57,8 @@ export class PromptService {
   }
 
   // Additional utility methods
-  static async getProfileByName(name: string): Promise<PromptProfile | null> {
-    const profiles = await promptQuery.getPromptProfiles();
+  static async getProfileByName(name: string, userUuid?: string): Promise<PromptProfile | null> {
+    const profiles = await promptQuery.getPromptProfiles(userUuid);
     return profiles.find((profile) => profile.name === name) || null;
   }
 

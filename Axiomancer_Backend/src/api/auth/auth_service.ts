@@ -41,9 +41,6 @@ export class AuthService {
       const token = this.generateAccessToken(user);
       const refreshToken = this.generateRefreshToken(user);
 
-      // Create session
-      await authQuery.createSession(user.id, refreshToken);
-
       return {
         success: true,
         user: {
@@ -56,6 +53,7 @@ export class AuthService {
           nickname: user.nickname || undefined,
           role: user.role,
           picture_url: user.picture_url,
+          openrouter_api_key: user.openrouter_api_key,
         },
         token,
         refresh_token: refreshToken,
@@ -89,9 +87,6 @@ export class AuthService {
       const token = this.generateAccessToken(user);
       const refreshToken = this.generateRefreshToken(user);
 
-      // Create session
-      await authQuery.createSession(user.id, refreshToken);
-
       return {
         success: true,
         user: {
@@ -104,6 +99,7 @@ export class AuthService {
           nickname: user.nickname || undefined,
           role: user.role,
           picture_url: user.picture_url,
+          openrouter_api_key: user.openrouter_api_key,
         },
         token,
         refresh_token: refreshToken,
@@ -119,14 +115,8 @@ export class AuthService {
       // Verify refresh token
       const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as RefreshTokenPayload;
 
-      // Check if session exists and refresh token is valid
-      const session = await authQuery.verifyRefreshToken(decoded.tokenId, refreshToken);
-      if (!session) {
-        return { success: false, error: "Invalid refresh token" };
-      }
-
       // Get user
-      const user = await userQuery.getUserById(session.user_id);
+      const user = await userQuery.getUserById(decoded.userId);
       if (!user) {
         return { success: false, error: "User not found" };
       }
@@ -146,6 +136,7 @@ export class AuthService {
           nickname: user.nickname || undefined,
           role: user.role,
           picture_url: user.picture_url,
+          openrouter_api_key: user.openrouter_api_key,
         },
         token: newToken,
       };
@@ -160,15 +151,8 @@ export class AuthService {
     refreshToken?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      if (refreshToken) {
-        // Logout specific session
-        const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as RefreshTokenPayload;
-        await authQuery.deleteSession(decoded.tokenId, userId);
-      } else {
-        // Logout all sessions for user
-        await authQuery.deleteAllUserSessions(userId);
-      }
-
+      // Since we're not using sessions, logout is just a success response
+      // The client should remove tokens from localStorage
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
@@ -196,6 +180,7 @@ export class AuthService {
           role: user.role,
           nickname: user.nickname,
           picture_url: user.picture_url,
+          openrouter_api_key: user.openrouter_api_key,
         },
       };
     } catch (error) {
@@ -206,7 +191,7 @@ export class AuthService {
   static async validateApiKey(apiKey: string): Promise<ValidateApiKeyResponse> {
     try {
       // Allow default API key for anonymous access
-      const defaultApiKey = process.env.DEFAULT_API_KEY;
+      const defaultApiKey = process.env.X_API_KEY;
       if (defaultApiKey && apiKey === defaultApiKey) {
         return {
           valid: true,
@@ -312,6 +297,7 @@ export class AuthService {
   }
 
   static async cleanupExpiredSessions(): Promise<void> {
-    await authQuery.deleteExpiredSessions();
+    // Since we're not using sessions anymore, this is a no-op
+    // Previously this would clean up expired user_session records
   }
 }

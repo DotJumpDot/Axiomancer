@@ -22,69 +22,74 @@ const AUTH_ENDPOINTS = {
 };
 
 export const authService = {
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
+  async login(credentials: LoginRequest) {
     const response = await apiClient.post<AuthResponse>(AUTH_ENDPOINTS.login, credentials);
-    if (response.success && response.token) {
-      apiClient.setAuthToken(response.token);
-      localStorage.setItem("auth_token", response.token);
-      if (response.refresh_token) {
-        localStorage.setItem("refresh_token", response.refresh_token);
-      }
+    if (response.success && response.data?.token) {
+      apiClient.setAuthToken(response.data.token);
     }
     return response;
   },
 
-  async register(data: RegisterRequest): Promise<AuthResponse> {
+  async register(data: RegisterRequest) {
     return apiClient.post<AuthResponse>(AUTH_ENDPOINTS.register, data);
   },
 
-  async validateToken(): Promise<ValidateTokenResponse> {
+  async validateToken() {
     return apiClient.post<ValidateTokenResponse>(AUTH_ENDPOINTS.validateToken);
   },
 
-  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+  async refreshToken(refreshToken: string) {
     const response = await apiClient.post<AuthResponse>(AUTH_ENDPOINTS.refreshToken, {
       refresh_token: refreshToken,
     });
-    if (response.success && response.token) {
-      apiClient.setAuthToken(response.token);
-      localStorage.setItem("auth_token", response.token);
+    if (response.success && response.data?.token) {
+      apiClient.setAuthToken(response.data.token);
+      localStorage.setItem("auth_token", response.data.token);
     }
     return response;
   },
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post(AUTH_ENDPOINTS.logout);
+      const axmLogin = localStorage.getItem("AxmLogin");
+      if (axmLogin) {
+        const loginData = JSON.parse(axmLogin);
+        if (loginData.refresh_token) {
+          await apiClient.post(AUTH_ENDPOINTS.logout, { refresh_token: loginData.refresh_token });
+        } else {
+          await apiClient.post(AUTH_ENDPOINTS.logout);
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
     } finally {
       apiClient.setAuthToken(null);
-      apiClient.setApiKey(null);
+      localStorage.removeItem("AxmLogin");
       localStorage.removeItem("auth_token");
       localStorage.removeItem("refresh_token");
     }
   },
 
   // API Key management
-  async getApiKeys(): Promise<{ success: boolean; data: ApiKey[] }> {
-    return apiClient.get(AUTH_ENDPOINTS.apiKeys);
+  async getApiKeys() {
+    return apiClient.get<ApiKey[]>(AUTH_ENDPOINTS.apiKeys);
   },
 
-  async createApiKey(data: CreateApiKeyRequest): Promise<ApiKeyResponse> {
+  async createApiKey(data: CreateApiKeyRequest) {
     return apiClient.post<ApiKeyResponse>(AUTH_ENDPOINTS.apiKeys, data);
   },
 
-  async deleteApiKey(keyId: string): Promise<{ success: boolean }> {
+  async deleteApiKey(keyId: string) {
     return apiClient.delete(`${AUTH_ENDPOINTS.apiKeys}/${keyId}`);
   },
 
   // Get current user profile
-  async getCurrentUser(): Promise<ApiResponse<User>> {
-    return apiClient.get("/api/auth/me");
+  async getCurrentUser() {
+    return apiClient.get<User>("/api/auth/me");
   },
 
   // Initialize auth from stored token
   initializeAuth(): string | null {
-    // Try new AxmLogin format first
     const axmLogin = localStorage.getItem("AxmLogin");
     if (axmLogin) {
       try {
@@ -95,15 +100,10 @@ export const authService = {
         }
       } catch (error) {
         console.error("Failed to parse AxmLogin data:", error);
+        localStorage.removeItem("AxmLogin");
       }
     }
-
-    // Fallback to old format
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      apiClient.setAuthToken(token);
-    }
-    return token;
+    return null;
   },
 
   // Check if user is authenticated

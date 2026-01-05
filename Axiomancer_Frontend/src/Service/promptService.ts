@@ -4,35 +4,36 @@ import type {
   PromptProfile,
   CreatePromptProfileRequest,
   UpdatePromptProfileRequest,
-  ApiResponse,
 } from "../Types";
 
 const PROMPT_ENDPOINTS = {
   profiles: "/api/prompts",
+  create: "/api/prompt/create",
 };
 
 export const promptService = {
-  async getAllProfiles(): Promise<ApiResponse<PromptProfile[]>> {
-    return apiClient.get(PROMPT_ENDPOINTS.profiles);
+  async getAllProfiles() {
+    // Fetch all profiles (backend filters by user if authenticated)
+    return apiClient.get<PromptProfile[]>(PROMPT_ENDPOINTS.profiles);
   },
 
-  async getProfileById(id: string): Promise<ApiResponse<PromptProfile>> {
-    return apiClient.get(`${PROMPT_ENDPOINTS.profiles}/${id}`);
+  async getProfileById(id: string) {
+    return apiClient.get<PromptProfile>(`${PROMPT_ENDPOINTS.profiles}/${id}`);
   },
 
-  async createProfile(data: CreatePromptProfileRequest): Promise<ApiResponse<PromptProfile>> {
-    return apiClient.post(PROMPT_ENDPOINTS.profiles, data);
+  async createProfile(data: CreatePromptProfileRequest) {
+    // Backend automatically associates with user_uuid if authenticated
+    return apiClient.post<PromptProfile>(PROMPT_ENDPOINTS.create, data);
   },
 
-  async updateProfile(
-    id: string,
-    data: UpdatePromptProfileRequest
-  ): Promise<ApiResponse<PromptProfile>> {
-    return apiClient.put(`${PROMPT_ENDPOINTS.profiles}/${id}`, data);
+  async updateProfile(id: string, data: UpdatePromptProfileRequest) {
+    // Backend verifies user ownership before updating
+    return apiClient.put<PromptProfile>(`${PROMPT_ENDPOINTS.profiles}/${id}`, data);
   },
 
-  async deleteProfile(id: string): Promise<ApiResponse<boolean>> {
-    return apiClient.delete(`${PROMPT_ENDPOINTS.profiles}/${id}`);
+  async deleteProfile(id: string) {
+    // Backend verifies user ownership before deleting
+    return apiClient.delete<boolean>(`${PROMPT_ENDPOINTS.profiles}/${id}`);
   },
 
   // Default system prompts

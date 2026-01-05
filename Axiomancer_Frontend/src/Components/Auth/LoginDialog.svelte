@@ -37,9 +37,13 @@
     error = null;
 
     try {
-      await authStore.login(loginData);
-      (window as any).notification.success("Login Successful", "Welcome back to Axiomancer!");
-      open = false;
+      const result = await authStore.login(loginData);
+      if (result.success) {
+        (window as any).notification.success("Login Successful", "Welcome back to Axiomancer!");
+        open = false;
+      } else {
+        error = result.error || "Login failed";
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : "Login failed";
     } finally {
@@ -57,9 +61,13 @@
     error = null;
 
     try {
-      await authStore.register(registerData);
-      (window as any).notification.success("Registration Successful", "Welcome to Axiomancer! Your account has been created.");
-      open = false;
+      const result = await authStore.register(registerData);
+      if (result.success) {
+        (window as any).notification.success("Registration Successful", "Welcome to Axiomancer! Your account has been created.");
+        open = false;
+      } else {
+        error = result.error || "Registration failed";
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : "Registration failed";
     } finally {
@@ -83,8 +91,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if open}
-  <div class="dialog-backdrop" onclick={() => open = false} onkeydown={(e) => e.key === 'Escape' && (open = false)} role="button" tabindex="0" aria-label="Close login dialog">
-    <div class="dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">
+  <div class="dialog-backdrop" onmousedown={() => open = false} onkeydown={(e) => e.key === 'Escape' && (open = false)} role="button" tabindex="0" aria-label="Close login dialog">
+    <div class="dialog" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">
       <div class="dialog-header">
         <h2 id="dialog-title">{isLogin ? "Login" : "Register"}</h2>
         <button class="close-btn" onclick={() => open = false} aria-label="Close dialog">

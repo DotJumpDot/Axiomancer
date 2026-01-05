@@ -17,27 +17,36 @@ const SEARCH_ENDPOINTS = {
 
 export const searchService = {
   // DuckDuckGo web search
-  async searchWeb(request: SearchDuckDuckGoRequest): Promise<DuckDuckGoResponse> {
-    return apiClient.post(SEARCH_ENDPOINTS.duckduckgo, request);
+  async searchWeb(request: SearchDuckDuckGoRequest) {
+    const response = await apiClient.post<DuckDuckGoResponse>(SEARCH_ENDPOINTS.duckduckgo, request);
+    return response.success
+      ? response.data!
+      : { success: false, query: request.query, results: [], error: response.error };
   },
 
   // Pixabay image search
-  async searchImages(request: SearchPixabayRequest): Promise<PixabayResponse> {
-    return apiClient.post(SEARCH_ENDPOINTS.pixabay, request);
+  async searchImages(request: SearchPixabayRequest) {
+    const response = await apiClient.post<PixabayResponse>(SEARCH_ENDPOINTS.pixabay, request);
+    return response.success
+      ? response.data!
+      : { success: false, query: request.query, hits: [], error: response.error };
   },
 
   // Batch search (both web and images)
-  async batchSearch(request: BatchSearchRequest): Promise<BatchSearchResponse> {
-    return apiClient.post(SEARCH_ENDPOINTS.batch, request);
+  async batchSearch(request: BatchSearchRequest) {
+    const response = await apiClient.post<BatchSearchResponse>(SEARCH_ENDPOINTS.batch, request);
+    return response.success
+      ? response.data!
+      : { success: false, web: null, images: null, error: response.error };
   },
 
   // Quick web search with default limit
-  async quickWebSearch(query: string, limit: number = 5): Promise<DuckDuckGoResponse> {
+  async quickWebSearch(query: string, limit: number = 5) {
     return this.searchWeb({ query, limit });
   },
 
   // Quick image search with default limit
-  async quickImageSearch(query: string, limit: number = 10): Promise<PixabayResponse> {
+  async quickImageSearch(query: string, limit: number = 10) {
     return this.searchImages({ query, limit, imageType: "photo" });
   },
 

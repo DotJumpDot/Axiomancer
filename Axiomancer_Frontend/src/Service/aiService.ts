@@ -1,6 +1,6 @@
 // AI Model Service - handles AI model management
 import apiClient from "./apiClient";
-import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest, ApiResponse } from "../Types";
+import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "../Types";
 
 const AI_ENDPOINTS = {
   models: "/api/ai/models",
@@ -8,28 +8,28 @@ const AI_ENDPOINTS = {
 };
 
 export const aiService = {
-  async getAllModels(): Promise<ApiResponse<AiModel[]>> {
-    return apiClient.get(AI_ENDPOINTS.models);
+  async getAllModels() {
+    return apiClient.get<AiModel[]>(AI_ENDPOINTS.models);
   },
 
-  async getEnabledModels(): Promise<ApiResponse<AiModel[]>> {
-    return apiClient.get(AI_ENDPOINTS.enabledModels);
+  async getEnabledModels() {
+    return apiClient.get<AiModel[]>(AI_ENDPOINTS.enabledModels);
   },
 
-  async getModelById(id: string): Promise<ApiResponse<AiModel>> {
-    return apiClient.get(`${AI_ENDPOINTS.models}/${id}`);
+  async getModelById(id: string) {
+    return apiClient.get<AiModel>(`${AI_ENDPOINTS.models}/${id}`);
   },
 
-  async createModel(data: CreateAiModelRequest): Promise<ApiResponse<AiModel>> {
-    return apiClient.post(AI_ENDPOINTS.models, data);
+  async createModel(data: CreateAiModelRequest) {
+    return apiClient.post<AiModel>(AI_ENDPOINTS.models, data);
   },
 
-  async updateModel(id: string, data: UpdateAiModelRequest): Promise<ApiResponse<AiModel>> {
-    return apiClient.put(`${AI_ENDPOINTS.models}/${id}`, data);
+  async updateModel(id: string, data: UpdateAiModelRequest) {
+    return apiClient.put<AiModel>(`${AI_ENDPOINTS.models}/${id}`, data);
   },
 
-  async deleteModel(id: string): Promise<ApiResponse<boolean>> {
-    return apiClient.delete(`${AI_ENDPOINTS.models}/${id}`);
+  async deleteModel(id: string) {
+    return apiClient.delete<boolean>(`${AI_ENDPOINTS.models}/${id}`);
   },
 
   // Helper to find model by key

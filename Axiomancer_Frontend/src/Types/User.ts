@@ -10,6 +10,7 @@ export interface User {
   role: string;
   tel: string | null;
   picture_url: string;
+  openrouter_api_key: string | null;
   created_at: Date;
   updated_at: Date | null;
 }
@@ -23,6 +24,7 @@ export interface CreateUserRequest {
   nickname?: string;
   role?: string;
   tel?: string;
+  openrouter_api_key?: string;
 }
 
 export interface UpdateUserRequest {
@@ -33,6 +35,7 @@ export interface UpdateUserRequest {
   role?: string;
   tel?: string | null;
   password?: string;
+  openrouter_api_key?: string | null;
 }
 
 export interface UploadResponse {
