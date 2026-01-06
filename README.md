@@ -13,7 +13,7 @@
 
 **An intelligent AI chat platform with multi-model auto-routing**
 
-[Features](#features) • [Architecture](#architecture) • [Getting Started](#getting-started) • [Documentation](#documentation)
+[Features](#-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Documentation](#-documentation)
 
 </div>
 
@@ -62,7 +62,7 @@ Automatically routes conversations to optimal AI models based on:
 
 ---
 
-## 🏗️ Architecture
+## 🔐 Architecture
 
 ### **Technology Stack**
 
