@@ -1,4 +1,4 @@
-# � Axiomancer
+# 🧭 Axiomancer
 
 <div align="center">
 
@@ -13,7 +13,7 @@
 
 **An intelligent AI chat platform with multi-model auto-routing**
 
-[Features](#-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Documentation](#-documentation)
+[Features](#features) • [Architecture](#architecture) • [Getting Started](#getting-started) • [Documentation](#documentation)
 
 </div>
 

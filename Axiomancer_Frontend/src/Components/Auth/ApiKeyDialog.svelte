@@ -1,7 +1,20 @@
 <script lang="ts">
   import { userService } from "@/Service";
   import { authStore } from "@/Store";
-  
+  import { fade, scale } from "svelte/transition";
+
+  // Custom transition combining fade and scale
+  function dialogTransition(node: Element, options: { duration?: number; start?: number } = {}) {
+    const { duration = 100, start = 0.9 } = options;
+    
+    return {
+      duration,
+      css: (t: number, u: number) => `
+        opacity: ${t};
+        transform: scale(${start + (1 - start) * t});
+      `
+    };
+  }  
   let isOpen = $state(false);
   let apiKey = $state("");
   let isLoading = $state(false);
@@ -57,7 +70,7 @@
     role="dialog"
     aria-modal="true"
   >
-    <div class="api-key-dialog">
+    <div class="api-key-dialog" transition:dialogTransition={{ duration: 100, start: 0.9 }}>
       <h2>OpenRouter API Key</h2>
       <p class="description">
         Enter your personal OpenRouter API key to use AI models. 
@@ -76,11 +89,12 @@
       {/if}
 
       <div class="dialog-actions">
-        <button onclick={close} class="btn-secondary">Cancel</button>
+        <button onclick={close} class="btn-secondary" style="background-color: red;">Cancel</button>
         <button 
           onclick={saveApiKey} 
           class="btn-primary"
           disabled={isLoading}
+          style="background-color: green;"
         >
           {isLoading ? "Saving..." : "Save"}
         </button>

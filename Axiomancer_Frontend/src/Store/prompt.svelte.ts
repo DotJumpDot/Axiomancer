@@ -1,5 +1,6 @@
 // Prompt Store - Svelte 5 runes for prompt profile state
 import { promptService } from "@/Service";
+import { authStore } from "./auth.svelte";
 import type {
   PromptProfile,
   CreatePromptProfileRequest,
@@ -17,14 +18,37 @@ async function loadProfiles() {
     isLoading = true;
     error = null;
 
-    const response = await promptService.getAllProfiles();
+    // If user is authenticated, get their specific profiles + global profiles
+    // If not authenticated, get all profiles (which includes global ones)
+    const currentUser = authStore.currentUser;
+    let response;
+
+    if (currentUser?.uuid) {
+      // Authenticated user: get their profiles + global profiles
+      response = await promptService.getProfilesByUserUuid(currentUser.uuid);
+    }
+
     if (response.success && response.data) {
-      // Filter to show only user-specific profiles (user_uuid is not null)
-      // and global profiles (user_uuid is null) for backwards compatibility
-      profiles = response.data.filter((p) => p.user_uuid !== null || !p.user_uuid);
+      profiles = response.data;
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load profiles";
+  } finally {
+    isLoading = false;
+  }
+}
+
+async function loadProfilesByUserUuid(userUuid: string) {
+  try {
+    isLoading = true;
+    error = null;
+
+    const response = await promptService.getProfilesByUserUuid(userUuid);
+    if (response.success && response.data) {
+      profiles = response.data;
+    }
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to load profiles for user";
   } finally {
     isLoading = false;
   }
@@ -42,6 +66,24 @@ async function createProfile(data: CreatePromptProfileRequest) {
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to create profile";
+    return null;
+  } finally {
+    isLoading = false;
+  }
+}
+
+async function createProfileByUserUuid(userUuid: string, data: CreatePromptProfileRequest) {
+  try {
+    isLoading = true;
+    error = null;
+
+    const response = await promptService.createProfileByUserUuid(userUuid, data);
+    if (response.success && response.data) {
+      profiles = [...profiles, response.data];
+      return response.data;
+    }
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to create profile for user";
     return null;
   } finally {
     isLoading = false;
@@ -122,7 +164,9 @@ export const promptStore = {
   },
 
   loadProfiles,
+  loadProfilesByUserUuid,
   createProfile,
+  createProfileByUserUuid,
   updateProfile,
   deleteProfile,
   selectProfile,

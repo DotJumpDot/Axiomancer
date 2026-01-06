@@ -8,13 +8,20 @@ import type {
 
 const PROMPT_ENDPOINTS = {
   profiles: "/api/prompts",
+  profilesByUser: "/api/prompts/user",
   create: "/api/prompt/create",
+  createByUserUuid: "/api/prompts/user",
 };
 
 export const promptService = {
   async getAllProfiles() {
-    // Fetch all profiles (backend filters by user if authenticated)
+    // Fetch all profiles in the system
     return apiClient.get<PromptProfile[]>(PROMPT_ENDPOINTS.profiles);
+  },
+
+  async getProfilesByUserUuid(userUuid: string) {
+    // Fetch profiles for a specific user
+    return apiClient.get<PromptProfile[]>(`${PROMPT_ENDPOINTS.profilesByUser}/${userUuid}`);
   },
 
   async getProfileById(id: string) {
@@ -24,6 +31,11 @@ export const promptService = {
   async createProfile(data: CreatePromptProfileRequest) {
     // Backend automatically associates with user_uuid if authenticated
     return apiClient.post<PromptProfile>(PROMPT_ENDPOINTS.create, data);
+  },
+
+  async createProfileByUserUuid(userUuid: string, data: CreatePromptProfileRequest) {
+    // Create profile for a specific user
+    return apiClient.post<PromptProfile>(`${PROMPT_ENDPOINTS.createByUserUuid}/${userUuid}`, data);
   },
 
   async updateProfile(id: string, data: UpdatePromptProfileRequest) {

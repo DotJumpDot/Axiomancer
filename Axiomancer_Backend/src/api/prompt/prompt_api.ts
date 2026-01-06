@@ -3,11 +3,20 @@ import { PromptService } from "./prompt_service";
 import type { CreatePromptProfileRequest, UpdatePromptProfileRequest } from "./prompt_type";
 
 export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
-  .get("/prompts", async (context: any) => {
-    const { auth } = context;
+  .get("/prompts", async () => {
     try {
-      const userUuid = auth?.tokenUser?.uuid;
-      const profiles = await PromptService.getAllProfiles(userUuid);
+      const profiles = await PromptService.getAllPromptProfiles();
+      return { success: true, data: profiles };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  })
+  .get("/prompts/user/:user_uuid", async ({ params }) => {
+    try {
+      const profiles = await PromptService.getAllProfiles(params.user_uuid);
       return { success: true, data: profiles };
     } catch (error) {
       return {
@@ -33,7 +42,7 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
   .get("/prompt/by-name/:name", async ({ params, ...context }: any) => {
     const { auth } = context;
     try {
-      const userUuid = auth?.tokenUser?.uuid;
+      const userUuid = auth?.user?.uuid;
       const profile = await PromptService.getProfileByName(
         decodeURIComponent(params.name),
         userUuid
@@ -52,7 +61,7 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
   .post("/prompt/create", async ({ body, ...context }: any) => {
     const { auth } = context;
     try {
-      const userUuid = auth?.tokenUser?.uuid;
+      const userUuid = auth?.user?.uuid;
       const profile = await PromptService.createProfile(
         body as CreatePromptProfileRequest,
         userUuid
@@ -65,10 +74,24 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
+  .post("/prompts/user/:user_uuid", async ({ params, body }) => {
+    try {
+      const profile = await PromptService.createProfile(
+        body as CreatePromptProfileRequest,
+        params.user_uuid
+      );
+      return { success: true, data: profile };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  })
   .put("/prompt/:id", async ({ params, body, ...context }: any) => {
     const { auth } = context;
     try {
-      const userUuid = auth?.tokenUser?.uuid;
+      const userUuid = auth?.user?.uuid;
       const existing = await PromptService.getProfileById(params.id);
 
       // Check if user owns this profile (unless they're fetching global profile)
@@ -94,7 +117,7 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
   .delete("/prompt/:id", async ({ params, ...context }: any) => {
     const { auth } = context;
     try {
-      const userUuid = auth?.tokenUser?.uuid;
+      const userUuid = auth?.user?.uuid;
       const existing = await PromptService.getProfileById(params.id);
 
       // Check if user owns this profile (unless they're deleting global profile)

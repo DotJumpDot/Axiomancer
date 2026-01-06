@@ -79,4 +79,8 @@ export class PromptService {
       errors,
     };
   }
+
+  static async getAllPromptProfiles(): Promise<PromptProfile[]> {
+    return await promptQuery.getAllPromptProfiles();
+  }
 }

@@ -86,3 +86,12 @@ export async function deletePromptProfile(id: string): Promise<boolean> {
   `;
   return result.count > 0;
 }
+
+export async function getAllPromptProfiles(): Promise<PromptProfile[]> {
+  const result = await sql`
+    SELECT id, user_uuid, name, description, system_prompt, created_at, updated_at
+    FROM prompt_profile
+    ORDER BY created_at DESC
+  `;
+  return result as unknown as PromptProfile[];
+}

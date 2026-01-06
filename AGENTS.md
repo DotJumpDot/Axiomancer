@@ -37,26 +37,12 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
 - **Restart dev server** after dependency changes
 - **Never run database migrations blindly** — review schema changes first
 
-**Start Backend Dev Server:**
-
-```bash
-cd Axiomancer_Backend
-bun run dev
-```
-
 ### Frontend (Svelte)
 
 - **Do _not_ run dev** during development
 - **Do _not_ run `npm run build`** inside agent sessions — this disables HMR
 - **Restart dev server** after dependency changes
 - **Update languages Folder** after you change any text in the frontend or add new text
-
-**Start Frontend Dev Server:**
-
-```bash
-cd Axiomancer_Frontend
-npm run dev
-```
 
 ### Database
 
@@ -325,8 +311,3 @@ Follow these naming patterns:
 - TypeScript Compiler (type checking)
 
 ---
-
-Following these practices ensures fast, dependable agent-assisted development. When in doubt:
-
-- **Backend**: Restart `bun dev`
-- **Frontend**: Restart `npm run dev`

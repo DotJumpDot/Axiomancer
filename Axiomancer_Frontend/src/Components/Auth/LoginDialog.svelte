@@ -2,7 +2,28 @@
   import { authStore } from "@/Store";
   import type { LoginRequest, RegisterRequest } from "@/Types";
 
-  let { open = $bindable(false) }: { open: boolean } = $props();
+  // Custom transition combining fade and scale
+  function dialogTransition(node: Element, options: { duration?: number; start?: number } = {}) {
+    const { duration = 100, start = 0.8 } = options;
+    
+    return {
+      duration,
+      css: (t: number, u: number) => `
+        opacity: ${t};
+        transform: scale(${start + (1 - start) * t});
+      `
+    };
+  }
+
+  let isOpen = $state(false);
+
+  export function open() {
+    isOpen = true;
+  }
+
+  function close() {
+    isOpen = false;
+  }
 
   let isLogin = $state(true);
   let isLoading = $state(false);
@@ -40,7 +61,7 @@
       const result = await authStore.login(loginData);
       if (result.success) {
         (window as any).notification.success("Login Successful", "Welcome back to Axiomancer!");
-        open = false;
+        close();
       } else {
         error = result.error || "Login failed";
       }
@@ -64,7 +85,7 @@
       const result = await authStore.register(registerData);
       if (result.success) {
         (window as any).notification.success("Registration Successful", "Welcome to Axiomancer! Your account has been created.");
-        open = false;
+        close();
       } else {
         error = result.error || "Registration failed";
       }
@@ -83,19 +104,19 @@
         handleRegister();
       }
     } else if (event.key === "Escape") {
-      open = false;
+      close();
     }
   }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if open}
-  <div class="dialog-backdrop" onmousedown={() => open = false} onkeydown={(e) => e.key === 'Escape' && (open = false)} role="button" tabindex="0" aria-label="Close login dialog">
-    <div class="dialog" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">
+{#if isOpen}
+  <div class="dialog-backdrop" onmousedown={close} onkeydown={(e) => e.key === 'Escape' && close()} role="button" tabindex="0" aria-label="Close login dialog">
+    <div class="dialog" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" transition:dialogTransition={{ duration: 100, start: 0.8 }}>
       <div class="dialog-header">
         <h2 id="dialog-title">{isLogin ? "Login" : "Register"}</h2>
-        <button class="close-btn" onclick={() => open = false} aria-label="Close dialog">
+        <button class="close-btn" onclick={close} aria-label="Close dialog">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -254,6 +275,7 @@
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    transform-origin: center;
   }
 
   .dialog-header {

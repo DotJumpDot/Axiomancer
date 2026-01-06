@@ -12,11 +12,11 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     const { auth } = context;
     try {
       // Only authenticated users can list conversations
-      if (!auth?.tokenUser) {
+      if (!auth?.user) {
         return { conversations: [] };
       }
 
-      const conversations = await ChatService.getAllConversations(auth.tokenUser.id);
+      const conversations = await ChatService.getAllConversations(auth.user.id);
       return { conversations };
     } catch (error) {
       return new Response(
@@ -34,7 +34,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
       const { body, auth } = context;
       try {
         // Only authenticated users can create persistent conversations
-        if (!auth?.tokenUser) {
+        if (!auth?.user) {
           return new Response(
             JSON.stringify({ error: "Authentication required to create conversations" }),
             { status: 401, headers: { "Content-Type": "application/json" } }
@@ -43,7 +43,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
 
         const conversation = await ChatService.createConversation(
           body as CreateConversationRequest,
-          auth.tokenUser.id
+          auth.user.id
         );
         return { conversation };
       } catch (error) {
@@ -195,14 +195,14 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
       const { params, body, auth } = context;
       try {
         // For anonymous users, we don't save to database, just proxy to AI
-        if (!auth?.tokenUser) {
+        if (!auth?.user) {
           // Handle anonymous chat - direct AI call without database storage
           const aiResponse = await ChatService.sendAnonymousMessage(body);
           return aiResponse;
         }
 
         // Authenticated user - use full chat service with conversation storage
-        const result = await ChatService.sendMessage(params.id, body.message, auth.tokenUser.id);
+        const result = await ChatService.sendMessage(params.id, body.message, auth.user.id);
         return result;
       } catch (error) {
         return new Response(
