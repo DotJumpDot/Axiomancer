@@ -1,7 +1,7 @@
 // Auth Store - Svelte 5 runes for authentication state
-import { authService, userService } from "../Service";
-import { apiClient } from "../Service";
-import type { AuthUser, User, LoginRequest, RegisterRequest } from "../Types";
+import { authService, userService } from "@/Service";
+import { apiClient } from "@/Service";
+import type { AuthUser, User, LoginRequest, RegisterRequest } from "@/Types";
 
 // Reactive state using Svelte 5 runes
 let isAuthenticated = $state(false);

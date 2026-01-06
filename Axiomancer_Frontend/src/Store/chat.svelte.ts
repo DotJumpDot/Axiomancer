@@ -1,12 +1,12 @@
 // Chat Store - Svelte 5 runes for chat and conversation state
-import { chatService, searchService } from "../Service";
+import { chatService, searchService } from "@/Service";
 import type {
   Chat,
   Conversation,
   ChatMessage,
   SendMessageOptions,
   OpenRouterMessage,
-} from "../Types";
+} from "@/Types";
 import authStore from "./auth.svelte";
 
 // Reactive state using Svelte 5 runes

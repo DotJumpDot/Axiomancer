@@ -1,6 +1,6 @@
 // Selection Store - Svelte 5 runes for user selected models state
-import { selectionService } from "../Service";
-import type { UserSelectedModels } from "../Types";
+import { selectionService } from "@/Service";
+import type { UserSelectedModels } from "@/Types";
 
 // Reactive state using Svelte 5 runes
 let selection = $state<UserSelectedModels | null>(null);

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Chat } from "../../Types";
-  import { markdownToHtml, formatRole, formatLatency, formatTokens, copyToClipboard } from "../../Function";
-  import { settingsStore } from "../../Store";
+  import type { Chat } from "@/Types";
+  import { markdownToHtml, formatRole, formatLatency, formatTokens, copyToClipboard } from "@/Function";
+  import { settingsStore } from "@/Store";
 
   let { message }: { message: Chat } = $props();
 

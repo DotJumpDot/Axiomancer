@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { userService } from "../../Service";
-  import { authStore } from "../../Store";
+  import { userService } from "@/Service";
+  import { authStore } from "@/Store";
   
   let isOpen = $state(false);
   let apiKey = $state("");
@@ -50,6 +50,7 @@
 </script>
 
 {#if isOpen}
+  <!-- svelte-ignore a11y_interactive_supports_focus -->
   <div
     class="api-key-overlay"
     onmousedown={handleMouseDown}
@@ -159,7 +160,7 @@
   .btn-primary {
     padding: 10px 20px;
     border-radius: 4px;
-    border: none;
+    border: 1px solid var(--border-color);
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s;
@@ -186,5 +187,15 @@
   .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .btn-secondary:hover,
+  .btn-primary:hover {
+    transform: scale(1.05);
+  }
+
+  .btn-secondary:active,
+  .btn-primary:active {
+    transform: scale(0.95);
   }
 </style>

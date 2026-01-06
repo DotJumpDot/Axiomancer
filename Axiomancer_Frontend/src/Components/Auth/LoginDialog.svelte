@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { authStore } from "../../Store";
-  import type { LoginRequest, RegisterRequest } from "../../Types";
+  import { authStore } from "@/Store";
+  import type { LoginRequest, RegisterRequest } from "@/Types";
 
   let { open = $bindable(false) }: { open: boolean } = $props();
 

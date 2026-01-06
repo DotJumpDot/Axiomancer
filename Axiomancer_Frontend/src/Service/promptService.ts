@@ -4,7 +4,7 @@ import type {
   PromptProfile,
   CreatePromptProfileRequest,
   UpdatePromptProfileRequest,
-} from "../Types";
+} from "@/Types";
 
 const PROMPT_ENDPOINTS = {
   profiles: "/api/prompts",

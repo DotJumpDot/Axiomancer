@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { aiStore, chatStore, promptStore, settingsStore, authStore } from "../../../Store";
-  import { userService } from "../../../Service";
-  import { formatModelName, formatProviderName, formatContextLength } from "../../../Function";
-  import LoginDialog from "../../Auth/LoginDialog.svelte";
-  import { ApiKeyDialog } from "../../Auth";
-  import type { User, AiModel } from "../../../Types";
+  import { aiStore, chatStore, promptStore, settingsStore, authStore } from "@/Store";
+  import { userService } from "@/Service";
+  import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
+  import LoginDialog from "@/Components/Auth/LoginDialog.svelte";
+  import { ApiKeyDialog } from "@/Components/Auth";
+  import type { User, AiModel } from "@/Types";
 
   let showModelDropdown = $state(false);
   let showPromptDropdown = $state(false);

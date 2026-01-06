@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chatStore, aiStore, settingsStore } from "../../Store";
+  import { chatStore, aiStore, settingsStore } from "@/Store";
 
   let textareaRef: HTMLTextAreaElement | undefined = $state();
   let inputValue = $state("");

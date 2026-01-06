@@ -1,6 +1,6 @@
 // AI Model Service - handles AI model management
 import apiClient from "./apiClient";
-import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "../Types";
+import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "@/Types";
 
 const AI_ENDPOINTS = {
   models: "/api/ai/models",

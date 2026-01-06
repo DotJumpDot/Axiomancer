@@ -1,6 +1,6 @@
 // Selection Service - handles user selected models management
 import apiClient from "./apiClient";
-import type { UserSelectedModels, CreateSelectionRequest, UpdateSelectionRequest } from "../Types";
+import type { UserSelectedModels, CreateSelectionRequest, UpdateSelectionRequest } from "@/Types";
 
 const SELECTION_ENDPOINTS = {
   selection: "/api/selection",

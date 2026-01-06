@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { chatStore, settingsStore, authStore } from "../../Store";
-  import type { Conversation } from "../../Types";
-  import { formatRelativeTime, truncate } from "../../Function";
+  import { chatStore, settingsStore, authStore } from "@/Store";
+  import type { Conversation } from "@/Types";
+  import { formatRelativeTime, truncate } from "@/Function";
 
   let { onSelectConversation }: { onSelectConversation?: (id: string) => void } = $props();
 

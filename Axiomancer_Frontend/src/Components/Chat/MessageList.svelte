@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { chatStore } from "../../Store";
+  import { chatStore } from "@/Store";
   import ChatMessage from "./ChatMessage.svelte";
-  import { scrollToBottom } from "../../Function";
+  import { scrollToBottom } from "@/Function";
   import { onMount } from "svelte";
 
   let messagesContainer: HTMLDivElement | undefined = $state();

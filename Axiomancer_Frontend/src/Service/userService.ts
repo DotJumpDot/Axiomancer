@@ -6,7 +6,7 @@ import type {
   UpdateUserRequest,
   UploadResponse,
   ApiResponse,
-} from "../Types";
+} from "@/Types";
 
 const USER_ENDPOINTS = {
   users: "/api/users",

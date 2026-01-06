@@ -8,7 +8,7 @@ import type {
   CreateConversationRequest,
   UpdateConversationRequest,
   OpenRouterMessage,
-} from "../Types";
+} from "@/Types";
 
 const CHAT_ENDPOINTS = {
   conversations: "/api/conversations",

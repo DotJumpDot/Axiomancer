@@ -1,6 +1,6 @@
 // AI Store - Svelte 5 runes for AI model state
-import { aiService } from "../Service";
-import type { AiModel } from "../Types";
+import { aiService } from "@/Service";
+import type { AiModel } from "@/Types";
 
 // Reactive state using Svelte 5 runes
 let models = $state<AiModel[]>([]);

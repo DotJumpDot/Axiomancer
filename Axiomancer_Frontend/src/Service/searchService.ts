@@ -7,7 +7,7 @@ import type {
   SearchPixabayRequest,
   BatchSearchRequest,
   BatchSearchResponse,
-} from "../Types";
+} from "@/Types";
 
 const SEARCH_ENDPOINTS = {
   duckduckgo: "/api/search/duckduckgo",

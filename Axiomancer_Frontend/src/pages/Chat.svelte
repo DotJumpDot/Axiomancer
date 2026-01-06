@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Sidebar, ChatHeader, MessageList, ChatInput } from "../Components";
-  import { authStore, chatStore, aiStore, promptStore, settingsStore } from "../Store";
+  import { Sidebar, ChatHeader, MessageList, ChatInput } from "@/Components";
+  import { authStore, chatStore, aiStore, promptStore, settingsStore } from "@/Store";
 
   // Initialize stores on mount
   onMount(() => {

@@ -1,10 +1,10 @@
 // Prompt Store - Svelte 5 runes for prompt profile state
-import { promptService } from "../Service";
+import { promptService } from "@/Service";
 import type {
   PromptProfile,
   CreatePromptProfileRequest,
   UpdatePromptProfileRequest,
-} from "../Types";
+} from "@/Types";
 
 // Reactive state using Svelte 5 runes
 let profiles = $state<PromptProfile[]>([]);

@@ -10,7 +10,7 @@ import type {
   ApiKey,
   User,
   ApiResponse,
-} from "../Types";
+} from "@/Types";
 
 const AUTH_ENDPOINTS = {
   login: "/api/auth/login",
