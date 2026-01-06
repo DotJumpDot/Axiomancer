@@ -384,33 +384,6 @@
   </div>
 
   <div class="header-right">
-    <!-- Search Toggles -->
-    <button
-      class="toggle-btn"
-      class:active={chatStore.webSearchEnabled}
-      onclick={() => chatStore.setWebSearchEnabled(!chatStore.webSearchEnabled)}
-      title="Web Search"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="2" y1="12" x2="22" y2="12"></line>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-      </svg>
-    </button>
-
-    <button
-      class="toggle-btn"
-      class:active={chatStore.imageSearchEnabled}
-      onclick={() => chatStore.setImageSearchEnabled(!chatStore.imageSearchEnabled)}
-      title="Image Search"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-        <polyline points="21 15 16 10 5 21"></polyline>
-      </svg>
-    </button>
-
     <!-- API Key Button -->
     {#if authStore.isAuthenticated}
       <button class="api-key-btn" onclick={openApiKeyDialog} title="Manage OpenRouter API Key">

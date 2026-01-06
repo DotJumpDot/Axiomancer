@@ -113,14 +113,41 @@
         <kbd>Ctrl+Enter</kbd> to send
       {/if}
     </span>
-    {#if chatStore.webSearchEnabled}
-      <span class="hint active">
+    <label class="toggle-switch" title="Web Search" style="display: inline-flex; align-items: center; gap: 12px; width: auto;">
+      <input type="checkbox" bind:checked={chatStore.webSearchEnabled} />
+      <span class="slider" style="flex-shrink: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      </span>
+      <span class="hint" class:active={chatStore.webSearchEnabled} style="white-space: nowrap;">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
         </svg>
-        Web search enabled
+        Web search {chatStore.webSearchEnabled ? "enabled" : "disabled"}
       </span>
-    {/if}
+    </label>
+
+    <label class="toggle-switch" title="Image Search" style="display: inline-flex; align-items: center; gap: 12px; width: auto; margin-left: 0 px;">
+      <input type="checkbox" bind:checked={chatStore.imageSearchEnabled} />
+      <span class="slider" style="flex-shrink: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+      </span>
+      <span class="hint" class:active={chatStore.imageSearchEnabled} style="white-space: nowrap;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        Image search {chatStore.imageSearchEnabled ? "enabled" : "disabled"}
+      </span>
+    </label>
   </div>
 </div>
 
@@ -210,6 +237,69 @@
     cursor: pointer;
   }
 
+  .toggle-switch {
+    position: relative;
+    width: 60px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Reduced gap between switch and text */
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: relative;
+    width: 60px;
+    height: 23px; /* Reduced height */
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 23px; /* Match reduced height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 19px; /* Reduced circle height */
+    width: 19px; /* Reduced circle width */
+    left: 2px; /* Adjusted for reduced size */
+    bottom: 2px; /* Adjusted for reduced size */
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+
+  .toggle-switch input:checked + .slider {
+    background-color: var(--hint-color, #6366f1);
+  }
+
+  .toggle-switch input:checked + .slider:before {
+    transform: translateX(37px); /* Adjusted for reduced size */
+  }
+
+  .hint {
+    margin-left: 0; /* Removed extra margin */
+    color: var(--text-secondary, #666); /* Default color */
+  }
+
+  .hint.active {
+    color: var(--hint-color, #4dc8f8); /* Light blue when active */
+  }
+
+  .toggle-switch input:checked + .slider + .hint {
+    color: var(--hint-color, #4dc8f8); /* Ensure hint changes to light blue when switch is enabled */
+  }
+
   .spinner {
     animation: spin 1s linear infinite;
   }
@@ -225,9 +315,10 @@
 
   .input-hints {
     display: flex;
-    gap: 16px;
+    gap: 8px;
     margin-top: 8px;
     padding: 0 4px;
+    align-items: center;
   }
 
   .hint {
@@ -236,6 +327,7 @@
     gap: 4px;
     font-size: 11px;
     color: var(--text-secondary, #666);
+    user-select: none;
   }
 
   .hint.active {
@@ -248,5 +340,13 @@
     border-radius: 4px;
     font-family: inherit;
     font-size: 10px;
+  }
+
+  .slider svg {
+    stroke: grey; /* Default stroke color */
+  }
+
+  .toggle-switch input:checked + .slider svg {
+    stroke: rgb(99, 99, 99); /* Stroke color when active */
   }
 </style>
