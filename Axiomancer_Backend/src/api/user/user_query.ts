@@ -54,7 +54,9 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
     data.firstname ?? null
   }, ${data.lastname ?? null}, ${data.nickname ?? null}, ${data.role ?? "user"}, ${
     data.tel ?? null
-  }, 'unidentified.jpg', ${data.openrouter_api_key ?? null}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  }, 'userUnidentified.png', ${
+    data.openrouter_api_key ?? null
+  }, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
   `;
   return result[0] as unknown as User;

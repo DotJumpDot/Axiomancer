@@ -425,7 +425,7 @@
       {#if authStore.currentUser}
         <div class="user-section">
           <img 
-            src={authStore.currentUser.picture_url || "/Picture/Profile/userUnidentified.png"} 
+            src={`/Picture/Profile/${authStore.currentUser.picture_url || "userUnidentified.png"}`} 
             alt="User avatar" 
             class="user-avatar"
           />
@@ -441,7 +441,7 @@
       {:else if storedUser}
         <div class="user-section">
           <img 
-            src={storedUser.picture_url || "/Picture/Profile/userUnidentified.png"} 
+            src={`/Picture/Profile/${storedUser.picture_url || "userUnidentified.png"}`} 
             alt="User avatar" 
             class="user-avatar"
           />

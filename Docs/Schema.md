@@ -33,22 +33,22 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### User
 
-| Column             | Type     | Nullable | Description                                            |
-| ------------------ | -------- | -------- | ------------------------------------------------------ |
-| id                 | int      | No       | Primary key, auto-incremented user ID                  |
-| uuid               | string   | No       | Unique user identifier                                 |
-| username           | str      | No       | Unique username for login                              |
-| password           | str      | No       | Hashed password for authentication                     |
-| email              | str      | No       | User's email address                                   |
-| firstname          | str      | Yes      | User's first name                                      |
-| lastname           | str      | Yes      | User's last name                                       |
-| nickname           | str      | Yes      | User's nickname/display name                           |
-| role               | str      | No       | User role (default: "user")                            |
-| tel                | str      | Yes      | Telephone number                                       |
-| picture_url        | str      | No       | Profile picture filename (default: "unidentified.jpg") |
-| openrouter_api_key | text     | Yes      | User's personal OpenRouter API key                     |
-| created_at         | datetime | No       | Record creation timestamp (UTC)                        |
-| updated_at         | datetime | Yes      | Record last update timestamp (UTC)                     |
+| Column             | Type     | Nullable | Description                                                |
+| ------------------ | -------- | -------- | ---------------------------------------------------------- |
+| id                 | int      | No       | Primary key, auto-incremented user ID                      |
+| uuid               | string   | No       | Unique user identifier                                     |
+| username           | str      | No       | Unique username for login                                  |
+| password           | str      | No       | Hashed password for authentication                         |
+| email              | str      | No       | User's email address                                       |
+| firstname          | str      | Yes      | User's first name                                          |
+| lastname           | str      | Yes      | User's last name                                           |
+| nickname           | str      | Yes      | User's nickname/display name                               |
+| role               | str      | No       | User role (default: "user")                                |
+| tel                | str      | Yes      | Telephone number                                           |
+| picture_url        | str      | No       | Profile picture filename (default: "userUnidentified.png") |
+| openrouter_api_key | text     | Yes      | User's personal OpenRouter API key                         |
+| created_at         | datetime | No       | Record creation timestamp (UTC)                            |
+| updated_at         | datetime | Yes      | Record last update timestamp (UTC)                         |
 
 ### Conversation
 
@@ -173,7 +173,7 @@ CREATE TABLE "user" (
     nickname TEXT,
     role TEXT NOT NULL DEFAULT 'user',
     tel TEXT,
-    picture_url TEXT NOT NULL DEFAULT 'unidentified.jpg',
+    picture_url TEXT NOT NULL DEFAULT 'userUnidentified.png',
     openrouter_api_key TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP
