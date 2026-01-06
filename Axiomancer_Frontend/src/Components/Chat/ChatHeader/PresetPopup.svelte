@@ -20,8 +20,11 @@
   let showPromptSystemPrompt = $state<string | null>(null);
   let showOnlySelected = $state(false);
   let showOnlyFree = $state(false);
-  let sortByPrice = $state<'none' | 'low-to-high' | 'high-to-low'>('none');
+  let showOnlyPricing = $state(false);
+  let sortBy = $state<'none' | 'price-low-to-high' | 'price-high-to-low' | 'name-a-z' | 'name-z-a' | 'provider-a-z' | 'provider-z-a'>('none');
+  let selectedCapability = $state<'none' | 'fast' | 'reasoning' | 'coding' | 'vision'>('none');
   let searchQuery = $state('');
+  let hoveredCapability = $state<string | null>(null);
 
   function toggleModel(modelId: string) {
     if (selectedModels.includes(modelId)) {
@@ -44,13 +47,21 @@
     if (onClose) onClose();
   }
 
-  function applyPreset() {
+  function savePreset() {
+    console.log('PresetPopup savePreset - selectedPrompt:', selectedPrompt);
+  }
+
+    function applyPreset() {
     console.log('PresetPopup applyPreset - selectedPrompt:', selectedPrompt);
     dispatch('apply', {
       models: selectedModels,
       prompt: selectedPrompt
     });
     closePopup();
+  }
+  
+  function saveNewPreset() {
+    console.log('PresetPopup savePreset - selectedPrompt:', selectedPrompt);
   }
 
   let filteredModels = $derived.by(() => {
@@ -67,10 +78,26 @@
       models = models.filter(model => model.id.endsWith(':free'));
     }
 
-    if (sortByPrice === 'low-to-high') {
+    if (showOnlyPricing) {
+      models = models.filter(model => !model.id.endsWith(':free'))
+    }
+
+    if (selectedCapability !== 'none') {
+      models = models.filter(model => model.capabilities[selectedCapability]);
+    }
+
+    if (sortBy === 'price-low-to-high') {
       models = models.sort((a, b) => a.cost_per_1k_token - b.cost_per_1k_token);
-    } else if (sortByPrice === 'high-to-low') {
+    } else if (sortBy === 'price-high-to-low') {
       models = models.sort((a, b) => b.cost_per_1k_token - a.cost_per_1k_token);
+    } else if (sortBy === 'name-a-z') {
+      models = models.sort((a, b) => a.display_name.localeCompare(b.display_name));
+    } else if (sortBy === 'name-z-a') {
+      models = models.sort((a, b) => b.display_name.localeCompare(a.display_name));
+    } else if (sortBy === 'provider-a-z') {
+      models = models.sort((a, b) => a.provider.localeCompare(b.provider));
+    } else if (sortBy === 'provider-z-a') {
+      models = models.sort((a, b) => b.provider.localeCompare(a.provider));
     }
 
     return models;
@@ -130,10 +157,27 @@
                   <input type="checkbox" bind:checked={showOnlyFree} />
                   <span>Free only</span>
                 </label>
-                <select class="sort-select" bind:value={sortByPrice}>
+                <label class="filter-toggle">
+                  <input type="checkbox" bind:checked={showOnlyPricing} />
+                  <span>Pricing only</span>
+                </label>
+                
+                <select class="sort-select" bind:value={selectedCapability}>
+                  <option value="none">All</option>
+                  <option value="fast">Fast</option>
+                  <option value="reasoning">Reasoning</option>
+                  <option value="coding">Coding</option>
+                  <option value="vision">Vision</option>
+                </select>
+
+                <select class="sort-select" bind:value={sortBy}>
                   <option value="none">Sort by...</option>
-                  <option value="low-to-high">Price: Low to High</option>
-                  <option value="high-to-low">Price: High to Low</option>
+                  <option value="name-a-z">Model Name: A-Z</option>
+                  <option value="name-z-a">Model Name: Z-A</option>
+                  <option value="provider-a-z">Provider: A-Z</option>
+                  <option value="provider-z-a">Provider: Z-A</option>
+                  <option value="price-low-to-high">Price: Low to High</option>
+                  <option value="price-high-to-low">Price: High to Low</option>
                 </select>
               </div>
             </div>
@@ -150,34 +194,84 @@
             </div>
             <div class="model-list">
               {#each filteredModels as model (model.id)}
-                <label class="model-checkbox-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedModels.includes(model.id)}
-                    onchange={() => toggleModel(model.id)}
-                  />
-                  <div class="model-info">
-                    <div class="model-header">
-                      <span class="item-provider">{formatProviderName(model.provider)}</span>
-                      {#if model.id.endsWith(':free')}
-                        <span class="capability-badge free">Free</span>
-                      {/if}
-                      <span class="item-price">${model.cost_per_1k_token.toFixed(4)}/1K</span>
+                <div 
+                  class="model-grid {selectedModels.includes(model.id) ? 'selected' : ''}" 
+                  onclick={() => toggleModel(model.id)}
+                >
+                  <!-- Grid 1: Provider and Model Display Name -->
+                  <div class="grid-itemLeft">
+                    <div class="item-left">
+                      <!-- <span class="item-provider">{formatProviderName(model.provider)}</span> -->
+                      <span class="item-name"style="padding: 20px;">{formatModelName(model.display_name)}</span>
                     </div>
-                    <div class="model-details">
-                      <span class="item-name">{formatModelName(model.model_key)}</span>
-                      <span class="item-context">{formatContextLength(model.context_length)}</span>
-                    </div>
-                    <div class="model-badges">
+                  </div>
+
+                  <!-- Grid 2: Capabilities -->
+                  <div class="grid-item capabilities">
+                    <div class="capability-icon fast" class:active={model.capabilities.fast} title="Fast processing and quick responses">
                       {#if model.capabilities.fast}
-                        <span class="capability-badge fast">Fast</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+                        </svg>
+                      {:else}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6">
+                          <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+                        </svg>
                       {/if}
+                    </div>
+                    <div class="capability-icon reasoning" class:active={model.capabilities.reasoning} title="Advanced reasoning and problem-solving">
                       {#if model.capabilities.reasoning}
-                        <span class="capability-badge reasoning">Reasoning</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                          <path d="M12 17h.01"></path>
+                        </svg>
+                      {:else}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                          <path d="M12 17h.01"></path>
+                        </svg>
+                      {/if}
+                    </div>
+                    <div class="capability-icon coding" class:active={model.capabilities.coding} title="Code generation and programming assistance">
+                      {#if model.capabilities.coding}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="16,18 22,12 16,6"></polyline>
+                          <polyline points="8,6 2,12 8,18"></polyline>
+                        </svg>
+                      {:else}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6">
+                          <polyline points="16,18 22,12 16,6"></polyline>
+                          <polyline points="8,6 2,12 8,18"></polyline>
+                        </svg>
+                      {/if}
+                    </div>
+                    <div class="capability-icon vision" class:active={model.capabilities.vision} title="Image understanding and visual analysis">
+                      {#if model.capabilities.vision}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      {:else}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
                       {/if}
                     </div>
                   </div>
-                </label>
+
+                  <!-- Grid 3: Context Length -->
+                  <div class="grid-item">
+                    <span class="item-context">{formatContextLength(model.context_length)}</span>
+                  </div>
+
+                  <!-- Grid 4: Price -->
+                  <div class="grid-item">
+                    <span class="item-price">${model.cost_per_1k_token.toFixed(5)}/1K</span>
+                  </div>
+                </div>
               {/each}
               {#if filteredModels.length === 0}
                 <div class="no-results">No models found</div>
@@ -248,9 +342,11 @@
           </div>
         {/if}
       </div>
-
-      <div class="preset-popup-footer">
+      
+      <div class="preset-popup-footer"> 
+        <button class="new-preset-btn" onclick={saveNewPreset}>New Preset</button>
         <button class="cancel-btn" onclick={closePopup}>Cancel</button>
+        <button class="save-btn" onclick={savePreset}>Save Preset</button>
         <button class="apply-btn" onclick={applyPreset}>Apply Preset</button>
       </div>
     </div>

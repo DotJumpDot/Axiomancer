@@ -126,6 +126,7 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | preset       | int      | No       | Auto-incrementing preset number (reusable) |
 | user_uuid    | str      | No       | Foreign key to user.uuid                   |
 | ai_model_ids | json     | No       | Array of AI model IDs                      |
+| prompt_id    | uuid     | Yes      | Foreign key to prompt_profile.id           |
 | searchable   | boolean  | No       | Whether this preset is searchable          |
 | created_at   | datetime | No       | Record creation timestamp                  |
 | updated_at   | datetime | No       | Record last update timestamp               |
@@ -137,11 +138,13 @@ This document describes the complete database schema for the Axiomancer AI chat 
 ```
 user (1) ──── (many) conversation
 user (1) ──── (many) user_selected_models
+user (1) ──── (many) prompt_profile
 conversation (1) ──── (many) chat
 chat (many) ──── (1) ai_model
 chat (many) ──── (1) prompt_profile
 chat (1) ──── (many) search_log
 user_selected_models (many) ──── (many) ai_model
+user_selected_models (many) ──── (1) prompt_profile
 ```
 
 ---
@@ -255,10 +258,12 @@ CREATE TABLE user_selected_models (
     preset INTEGER PRIMARY KEY,
     user_uuid TEXT NOT NULL,
     ai_model_ids JSONB NOT NULL,
+    prompt_id TEXT,
     searchable BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
+    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid),
+    FOREIGN KEY (prompt_id) REFERENCES prompt_profile(id)
 );
 
 -- Performance indexes
@@ -301,9 +306,9 @@ INSERT INTO chat (id, conversation_id, role, content, model_id, prompt_profile_i
 ('9ba7b811-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'assistant', 'I am doing well, thank you for asking! How can I help you today?', '6ba7b810-9dad-11d1-80b4-00c04fd430c8', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 15, "total": 19}', 1200, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample user selected models
-INSERT INTO user_selected_models (preset, user_uuid, ai_model_ids, searchable, created_at, updated_at) VALUES
-(1, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b810-9dad-11d1-80b4-00c04fd430c8", "6ba7b811-9dad-11d1-80b4-00c04fd430c8"]', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b812-9dad-11d1-80b4-00c04fd430c8"]', FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO user_selected_models (preset, user_uuid, ai_model_ids, prompt_id, searchable, created_at, updated_at) VALUES
+(1, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b810-9dad-11d1-80b4-00c04fd430c8", "6ba7b811-9dad-11d1-80b4-00c04fd430c8"]', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b812-9dad-11d1-80b4-00c04fd430c8"]', NULL, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
 ---
@@ -326,3 +331,4 @@ When deploying to production:
 2. Add proper UUID generation in application code
 3. Implement database migrations for schema changes
 4. Add database constraints and triggers as needed
+5. For the `prompt_id` addition to `user_selected_models`: Run `ALTER TABLE user_selected_models ADD COLUMN prompt_id TEXT REFERENCES prompt_profile(id);`

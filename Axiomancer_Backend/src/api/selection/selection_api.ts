@@ -88,6 +88,7 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
       body: t.Object({
         user_uuid: t.String(),
         ai_model_ids: t.Array(t.String()),
+        prompt_id: t.Optional(t.String()),
         searchable: t.Optional(t.Boolean()),
       }),
     }
@@ -132,6 +133,7 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
     {
       body: t.Object({
         ai_model_ids: t.Optional(t.Array(t.String())),
+        prompt_id: t.Optional(t.String()),
         searchable: t.Optional(t.Boolean()),
       }),
     }
@@ -157,6 +159,7 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
       body: t.Object({
         user_uuid: t.String(),
         ai_model_ids: t.Array(t.String()),
+        prompt_id: t.Optional(t.String()),
         searchable: t.Optional(t.Boolean()),
       }),
     }
