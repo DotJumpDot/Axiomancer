@@ -5,25 +5,19 @@
   import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
   import LoginDialog from "@/Components/Auth/LoginDialog.svelte";
   import { ApiKeyDialog } from "@/Components/Auth";
+  import PresetPopup from "./PresetPopup.svelte";
   import type { User, AiModel } from "@/Types";
 
   let showModelDropdown = $state(false);
   let showPromptDropdown = $state(false);
   let showSingleModelDropdown = $state(false);
-  let showLoginDialog = $state(false);
   let showPresetPopup = $state(false);
   let showSystemPrompt = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
   let searchQuery = $state('');
-  let selectedPresetModels = $state<string[]>([]);
-  let selectedPresetPrompt = $state<string | null>(null);
-  let currentPresetTab = $state<'models' | 'prompt'>('models');
-  let showPromptSystemPrompt = $state<string | null>(null);
-  let showOnlySelected = $state(false);
-  let showOnlyFree = $state(false);
-  let sortByPrice = $state<'none' | 'low-to-high' | 'high-to-low'>('none');
 
+  let loginDialog: any;
   let apiKeyDialog: any;
 
   onMount(async () => {
@@ -81,43 +75,18 @@
 
   function closePresetPopup() {
     showPresetPopup = false;
-    showSystemPrompt = false; // Close system prompt when closing popup
-    showPromptSystemPrompt = null; // Close individual prompt system prompts
-  }
-
-  function togglePresetModel(modelId: string) {
-    if (selectedPresetModels.includes(modelId)) {
-      selectedPresetModels = selectedPresetModels.filter(id => id !== modelId);
-    } else {
-      selectedPresetModels = [...selectedPresetModels, modelId];
-    }
-  }
-
-  function selectPresetPrompt(profileId: string | null) {
-    selectedPresetPrompt = profileId;
-  }
-
-  function applyPreset() {
-    // Apply selected models and prompt to the preset
-    // This would typically save to backend or apply to current session
-    console.log('Applying preset:', { models: selectedPresetModels, prompt: selectedPresetPrompt });
-    closePresetPopup();
-  }
-
-  function switchPresetTab(tab: 'models' | 'prompt') {
-    currentPresetTab = tab;
-    showSystemPrompt = false; // Close system prompt when switching tabs
-    showPromptSystemPrompt = null; // Close individual prompt system prompts
+    showSystemPrompt = false;
   }
 
   function toggleSystemPrompt() {
     showSystemPrompt = !showSystemPrompt;
-    showPromptDropdown = false; // Close dropdown when opening system prompt
-    showPromptSystemPrompt = null; // Close individual prompts when opening main one
+    showPromptDropdown = false;
   }
 
-  function togglePromptSystemPrompt(promptId: string | null) {
-    showPromptSystemPrompt = showPromptSystemPrompt === promptId ? null : promptId;
+  function handlePresetApply(event: any) {
+    const { models, prompt } = event.detail;
+    console.log('Applying preset:', { models, prompt });
+    closePresetPopup();
   }
 
   let filteredModels = $derived(aiStore.enabledModels.filter(model =>
@@ -126,34 +95,8 @@
     model.model_key.toLowerCase().includes(searchQuery.toLowerCase())
   ));
 
-  let presetSearchQuery = $state('');
-  let filteredPresetModels = $derived.by(() => {
-    let models = aiStore.enabledModels.filter(model =>
-      model.display_name.toLowerCase().includes(presetSearchQuery.toLowerCase()) ||
-      model.provider.toLowerCase().includes(presetSearchQuery.toLowerCase()) ||
-      model.model_key.toLowerCase().includes(presetSearchQuery.toLowerCase())
-    );
-
-    // Apply filters
-    if (showOnlySelected) {
-      models = models.filter(model => selectedPresetModels.includes(model.id));
-    }
-    if (showOnlyFree) {
-      models = models.filter(model => model.id.endsWith(':free'));
-    }
-
-    // Apply sorting
-    if (sortByPrice === 'low-to-high') {
-      models = models.sort((a, b) => a.cost_per_1k_token - b.cost_per_1k_token);
-    } else if (sortByPrice === 'high-to-low') {
-      models = models.sort((a, b) => b.cost_per_1k_token - a.cost_per_1k_token);
-    }
-
-    return models;
-  });
-
   function handleLogin() {
-    showLoginDialog = true;
+    loginDialog?.open();
   }
 
   function handleLogout() {
@@ -386,11 +329,23 @@
   <div class="header-right">
     <!-- API Key Button -->
     {#if authStore.isAuthenticated}
-      <button class="api-key-btn" onclick={openApiKeyDialog} title="Manage OpenRouter API Key">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-        </svg>
-      </button>
+      <div class="api-key-container">
+        <button 
+          class="api-key-btn" 
+          class:needs-api-key={!authStore.currentUser?.openrouter_api_key}
+          onclick={openApiKeyDialog} 
+          title={authStore.currentUser?.openrouter_api_key ? "Manage OpenRouter API Key" : ""}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+          </svg>
+        </button>
+        {#if !authStore.currentUser?.openrouter_api_key}
+          <div class="api-key-tooltip">
+            Add OpenRouter API Key (Required)
+          </div>
+        {/if}
+      </div>
     {/if}
 
     <!-- User Section -->
@@ -436,205 +391,26 @@
       </button>
     {/if}
   </div>
-
-  <!-- Preset Popup -->
-  {#if showPresetPopup}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="preset-popup-backdrop" onmousedown={() => closePresetPopup()}>
-      <div class="preset-popup" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()}>
-        <div class="preset-popup-header">
-          <h3>Configure Preset</h3>
-          <!-- svelte-ignore a11y_consider_explicit_label -->
-          <button class="close-btn" onclick={closePresetPopup}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-
-        <div class="preset-popup-content">
-          <!-- Tab Buttons -->
-          <div class="preset-tabs">
-            <button 
-              class="tab-btn" 
-              class:active={currentPresetTab === 'models'} 
-              onclick={() => switchPresetTab('models')}
-            >
-              Models
-            </button>
-            <button 
-              class="tab-btn" 
-              class:active={currentPresetTab === 'prompt'} 
-              onclick={() => switchPresetTab('prompt')}
-            >
-              Prompt
-            </button>
-          </div>
-
-          <!-- Tab Content -->
-          {#if currentPresetTab === 'models'}
-            <!-- Model Selection Panel -->
-            <div class="preset-panel">
-              <div class="preset-panel-header">
-                <div class="header-left">
-                  <h4>Select Models</h4>
-                  <span class="model-count">{selectedPresetModels.length} selected</span>
-                </div>
-                <div class="header-filters">
-                  <label class="filter-toggle">
-                    <input type="checkbox" bind:checked={showOnlySelected} />
-                    <span>Selected only</span>
-                  </label>
-                  <label class="filter-toggle">
-                    <input type="checkbox" bind:checked={showOnlyFree} />
-                    <span>Free only</span>
-                  </label>
-                  <select class="sort-select" bind:value={sortByPrice}>
-                    <option value="none">Sort by...</option>
-                    <option value="low-to-high">Price: Low to High</option>
-                    <option value="high-to-low">Price: High to Low</option>
-                  </select>
-                </div>
-              </div>
-              <div class="preset-search">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search models..."
-                  bind:value={presetSearchQuery}
-                />
-              </div>
-              <div class="model-list">
-                {#each filteredPresetModels as model (model.id)}
-                  <label class="model-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedPresetModels.includes(model.id)}
-                      onchange={() => togglePresetModel(model.id)}
-                    />
-                    <div class="model-info">
-                      <div class="model-header">
-                        <span class="item-provider">{formatProviderName(model.provider)}</span>
-                        {#if model.id.endsWith(':free')}
-                          <span class="capability-badge free">Free</span>
-                        {/if}
-                        <span class="item-price">${model.cost_per_1k_token.toFixed(4)}/1K</span>
-                      </div>
-                      <div class="model-details">
-                        <span class="item-name">{formatModelName(model.model_key)}</span>
-                        <span class="item-context">{formatContextLength(model.context_length)}</span>
-                      </div>
-                      <div class="model-badges">
-                        {#if model.capabilities.fast}
-                          <span class="capability-badge fast">Fast</span>
-                        {/if}
-                        {#if model.capabilities.reasoning}
-                          <span class="capability-badge reasoning">Reasoning</span>
-                        {/if}
-                      </div>
-                    </div>
-                  </label>
-                {/each}
-                {#if filteredPresetModels.length === 0}
-                  <div class="no-results">No models found</div>
-                {/if}
-              </div>
-            </div>
-          {:else}
-            <!-- Prompt Selection Panel -->
-            <div class="preset-panel">
-              <div class="preset-panel-header">
-                <h4>Select Prompt</h4>
-                <span class="prompt-status">{selectedPresetPrompt === null ? 'Default' : 'Custom'}</span>
-              </div>
-              <div class="prompt-list">
-                <label class="prompt-radio-item">
-                  <input
-                    type="radio"
-                    name="preset-prompt"
-                    checked={selectedPresetPrompt === null}
-                    onchange={() => selectPresetPrompt(null)}
-                  />
-                  <div class="prompt-info">
-                    <span class="item-name">Default</span>
-                    <span class="item-desc">Standard helpful assistant</span>
-                  </div>
-                  <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(null)} title="Show System Prompt">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </button>
-                </label>
-                {#if showPromptSystemPrompt === 'default'}
-                  <div class="individual-system-prompt">
-                    <div class="system-prompt-content">
-                      <pre>You are a helpful assistant.</pre>
-                    </div>
-                  </div>
-                {/if}
-                {#each promptStore.profiles as profile (profile.id)}
-                  <label class="prompt-radio-item">
-                    <input
-                      type="radio"
-                      name="preset-prompt"
-                      checked={selectedPresetPrompt === profile.id}
-                      onchange={() => selectPresetPrompt(profile.id)}
-                    />
-                    <div class="prompt-info">
-                      <span class="item-name">{profile.name}</span>
-                      {#if profile.description}
-                        <span class="item-desc">{profile.description}</span>
-                      {/if}
-                    </div>
-                    <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title="Show System Prompt">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </button>
-                  </label>
-                  {#if showPromptSystemPrompt === profile.id}
-                    <div class="individual-system-prompt">
-                      <div class="system-prompt-content">
-                        <pre>{profile.system_prompt}</pre>
-                      </div>
-                    </div>
-                  {/if}
-                {/each}
-              </div>
-            </div>
-          {/if}
-        </div>
-
-        <div class="preset-popup-footer">
-          <button class="cancel-btn" onclick={closePresetPopup}>Cancel</button>
-          <button class="apply-btn" onclick={applyPreset}>Apply Preset</button>
-        </div>
-      </div>
-    </div>
-  {/if}
 </header>
+  
+  <!-- Preset Popup Component -->
+  <PresetPopup
+    isOpen={showPresetPopup}
+    onClose={closePresetPopup}
+    on:apply={handlePresetApply}
+  />
+  <!-- Login Dialog -->
+  <LoginDialog bind:this={loginDialog} />
+  <!-- Apikey Dialog -->
+  <ApiKeyDialog bind:this={apiKeyDialog} />
 
-<!-- Login Dialog -->
-{#if showLoginDialog}
-  <LoginDialog bind:open={showLoginDialog} />
-{/if}
-
-<ApiKeyDialog bind:this={apiKeyDialog} />
-
-<style>
-  /* Import split CSS files */
-  @import './ChatHeader.base.css';
-  @import './ChatHeader.dropdown.css';
-  @import './ChatHeader.buttons.css';
-  @import './ChatHeader.user.css';
-  @import './ChatHeader.mode.css';
-  @import './ChatHeader.popup.css';
-  @import './ChatHeader.placeholders.css';
-</style>
-
-<ApiKeyDialog bind:this={apiKeyDialog} />
+  <style>
+    /* Import split CSS files */
+    @import './ChatHeader.base.css';
+    @import './ChatHeader.dropdown.css';
+    @import './ChatHeader.buttons.css';
+    @import './ChatHeader.user.css';
+    @import './ChatHeader.mode.css';
+    @import './ChatHeader.popup.css';
+    @import './ChatHeader.placeholders.css';
+  </style>
