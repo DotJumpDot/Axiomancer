@@ -6,7 +6,9 @@ import postgres from "postgres";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config({ path: join(__dirname, "../../../.env") });
+// Load environment variables from monorepo root .env file
+const MONOREPO_ROOT = join(__dirname, "../../..");
+dotenv.config({ path: join(MONOREPO_ROOT, ".env") });
 
 const { DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT } = process.env;
 

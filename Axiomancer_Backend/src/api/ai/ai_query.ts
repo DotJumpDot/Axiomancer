@@ -1,9 +1,5 @@
-import { sql } from "../../database/db";
-import type {
-  AiModel,
-  CreateAiModelRequest,
-  UpdateAiModelRequest,
-} from "./ai_type";
+import { sql } from "@/database/db";
+import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "./ai_type";
 
 export async function getAiModels(): Promise<AiModel[]> {
   const result = await sql`
@@ -24,9 +20,7 @@ export async function getAiModelById(id: string): Promise<AiModel | null> {
   return result[0] as unknown as AiModel;
 }
 
-export async function createAiModel(
-  data: CreateAiModelRequest
-): Promise<AiModel> {
+export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel> {
   const id = crypto.randomUUID();
   const result = await sql`
     INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at)

@@ -1,5 +1,5 @@
 import { ChatQuery } from "./chat_query";
-import { openRouterClient } from "../ai/ai_openrouter";
+import { openRouterClient } from "@/api/ai/ai_openrouter";
 import type {
   Chat,
   CreateChatRequest,

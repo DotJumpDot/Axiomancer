@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import * as authQuery from "./auth_query";
-import * as userQuery from "../user/user_query";
+import * as userQuery from "@/api/user/user_query";
 import type {
   LoginRequest,
   RegisterRequest,
@@ -14,7 +14,7 @@ import type {
   ValidateApiKeyResponse,
   ApiKey,
 } from "./auth_type";
-import type { User } from "../user/user_type";
+import type { User } from "@/api/user/user_type";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
 const JWT_REFRESH_SECRET =

@@ -1,4 +1,4 @@
-import { sql } from "../../database/db";
+import { sql } from "@/database/db";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import type { User, CreateUserRequest, UpdateUserRequest } from "./user_type";

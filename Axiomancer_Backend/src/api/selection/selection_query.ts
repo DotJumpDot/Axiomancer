@@ -1,4 +1,4 @@
-import { sql } from "../../database/db";
+import { sql } from "@/database/db";
 import type {
   UserSelectedModels,
   CreateSelectionRequest,
