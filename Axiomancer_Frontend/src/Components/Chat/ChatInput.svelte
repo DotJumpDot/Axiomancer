@@ -126,7 +126,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
         </svg>
-        Web search {chatStore.webSearchEnabled ? "enabled" : "disabled"}
+        Web search enabled
       </span>
     </label>
 
@@ -145,7 +145,7 @@
           <circle cx="8.5" cy="8.5" r="1.5"></circle>
           <polyline points="21 15 16 10 5 21"></polyline>
         </svg>
-        Image search {chatStore.imageSearchEnabled ? "enabled" : "disabled"}
+        Image search enabled
       </span>
     </label>
   </div>

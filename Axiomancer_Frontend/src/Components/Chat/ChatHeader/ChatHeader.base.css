@@ -46,6 +46,11 @@
   border-color: transparent;
 }
 
+.dropdown-trigger.single {
+  background: linear-gradient(135deg, #f15742, #ff9100);
+  border-color: transparent;
+}
+
 .dropdown-trigger.secondary {
   background: transparent;
   border-color: var(--border-color, #3d3d3d);

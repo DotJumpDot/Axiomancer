@@ -19,21 +19,22 @@
 }
 
 .preset-btn {
+  background: linear-gradient(135deg, #2efc38, #5cf6ee);
+  border-color: transparent;
   display: flex;
   align-items: center;
+  color: #363636;
   gap: 6px;
   padding: 8px 12px;
-  background: var(--secondary-bg, #4d4d4d);
   border: 1px solid var(--border-color, #3d3d3d);
   border-radius: 8px;
-  color: var(--text-primary, #fff);
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .preset-btn:hover {
-  background: var(--hover-bg, #5d5d5d);
+  background: linear-gradient(135deg, #24c92c, #16b6ae);
   border-color: var(--border-color-hover, #4d4d4d);
 }
 

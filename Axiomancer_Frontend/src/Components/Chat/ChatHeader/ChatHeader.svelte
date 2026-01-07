@@ -2,20 +2,20 @@
   import { onMount } from "svelte";
   import { aiStore, chatStore, promptStore, settingsStore, authStore } from "@/Store";
   import { userService } from "@/Service";
-  import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
+  import { formatModelName, formatProviderName } from "@/Function";
   import LoginDialog from "@/Components/Auth/LoginDialog.svelte";
   import { ApiKeyDialog } from "@/Components/Auth";
   import PresetPopup from "./PresetPopup.svelte";
+  import ModelSelector from "./ModelSelector.svelte";
   import type { User, AiModel } from "@/Types";
 
   let showModelDropdown = $state(false);
   let showPromptDropdown = $state(false);
-  let showSingleModelDropdown = $state(false);
   let showPresetPopup = $state(false);
   let showSystemPrompt = $state(false);
+  let showModelSelector = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
-  let searchQuery = $state('');
 
   let loginDialog: any;
   let apiKeyDialog: any;
@@ -39,11 +39,6 @@
       }
     }
   });
-
-  function selectModel(modelId: string) {
-    aiStore.selectModel(modelId);
-    showSingleModelDropdown = false;
-  }
 
   function selectPrompt(profileId: string | null) {
     promptStore.selectProfile(profileId);
@@ -86,17 +81,16 @@
     showPromptDropdown = false;
   }
 
+  function handleModelSelect(event: any) {
+    aiStore.selectModel(event.detail);
+    showModelSelector = false;
+  }
+
   function handlePresetApply(event: any) {
     const { models, prompt } = event.detail;
     console.log('Applying preset:', { models, prompt });
     closePresetPopup();
   }
-
-  let filteredModels = $derived(aiStore.enabledModels.filter(model =>
-    model.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    model.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    model.model_key.toLowerCase().includes(searchQuery.toLowerCase())
-  ));
 
   function handleLogin() {
     loginDialog?.open();
@@ -132,6 +126,7 @@
           class="dropdown-trigger"
           onclick={() => (showModelDropdown = !showModelDropdown)}
           class:auto={currentMode === 'auto'}
+          class:single={currentMode === 'single'}
         >
           {#if currentMode === 'auto'}
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -192,7 +187,7 @@
       <div class="dropdown model-selector">
         <button
           class="dropdown-trigger"
-          onclick={() => (showSingleModelDropdown = !showSingleModelDropdown)}
+          onclick={() => (showModelSelector = true)}
         >
           {#if aiStore.selectedModel}
             <span class="model-provider">{formatProviderName(aiStore.selectedModel.provider)}</span>
@@ -204,43 +199,6 @@
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-
-        {#if showSingleModelDropdown}
-          <div class="dropdown-menu searchable">
-            <div class="search-input">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-              </svg>
-              <input
-                type="text"
-                placeholder="Search models..."
-                bind:value={searchQuery}
-              />
-            </div>
-            <div class="dropdown-divider"></div>
-            {#each filteredModels as model (model.id)}
-              <button
-                class="dropdown-item"
-                class:selected={aiStore.selectedModel?.id === model.id}
-                onclick={() => selectModel(model.id)}
-              >
-                <span class="item-provider">{formatProviderName(model.provider)}</span>
-                <span class="item-name">{formatModelName(model.model_key)}</span>
-                <span class="item-context">{formatContextLength(model.context_length)}</span>
-                {#if model.capabilities.fast}
-                  <span class="capability-badge fast">Fast</span>
-                {/if}
-                {#if model.capabilities.reasoning}
-                  <span class="capability-badge reasoning">Reasoning</span>
-                {/if}
-              </button>
-            {/each}
-            {#if filteredModels.length === 0}
-              <div class="no-results">No models found</div>
-            {/if}
-          </div>
-        {/if}
       </div>
     {/if}
 
@@ -248,7 +206,7 @@
     {#if authStore.isAuthenticated && currentMode === 'single'}
       <div class="dropdown prompt-selector">
         <button
-          class="dropdown-trigger secondary"
+          class="dropdown-trigger"
           onclick={() => (showPromptDropdown = !showPromptDropdown)}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -411,6 +369,12 @@
     isOpen={showPresetPopup}
     onClose={closePresetPopup}
     on:apply={handlePresetApply}
+  />
+  <!-- Model Selector Modal -->
+  <ModelSelector
+    isOpen={showModelSelector}
+    onClose={() => showModelSelector = false}
+    on:select={handleModelSelect}
   />
   <!-- Login Dialog -->
   <LoginDialog bind:this={loginDialog} />
