@@ -166,6 +166,15 @@ async function refreshProfile() {
   }
 }
 
+function updateCurrentUser(updates: Partial<AuthUser>) {
+  if (currentUser) {
+    currentUser = {
+      ...currentUser,
+      ...updates,
+    };
+  }
+}
+
 // Export store object with getters for reactive access
 export const authStore = {
   get isAuthenticated() {
@@ -189,6 +198,7 @@ export const authStore = {
   register,
   logout,
   refreshProfile,
+  updateCurrentUser,
 };
 
 export default authStore;

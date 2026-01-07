@@ -48,8 +48,10 @@
       });
 
       if (response.success) {
-        // Update current user in store
-        await authStore.refreshProfile();
+        // Update current user in store directly for immediate reactivity
+        authStore.updateCurrentUser({
+          openrouter_api_key: apiKey || null
+        });
         close();
       } else {
         error = response.error || "Failed to save API key";

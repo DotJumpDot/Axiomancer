@@ -53,7 +53,14 @@
     await loadUserPresets(true);
   });
 
-  // Also load presets when popup opens and user becomes available
+  // Clear API key error when API key becomes available
+  $effect(() => {
+    if (authStore.currentUser?.openrouter_api_key && errorMessage?.includes("API key")) {
+      errorMessage = null;
+    }
+  });
+
+  // Load presets when popup opens and user is authenticated
   $effect(() => {
     if (isOpen && authStore.currentUser?.uuid && userPresets.length === 0) {
       loadUserPresets(true);
