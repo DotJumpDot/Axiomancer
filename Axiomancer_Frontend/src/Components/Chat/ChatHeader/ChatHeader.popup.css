@@ -298,6 +298,25 @@
   font-weight: 600;
 }
 
+.add-prompt-btn {
+  background: #00ffc8;
+  border: none;
+  color: #000000;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.add-prompt-btn:hover {
+  background: #01b18b;
+}
+
 .model-count {
   font-size: 12px;
   padding: 4px 12px;
@@ -438,6 +457,93 @@
   border-color: var(--border-color-hover, #4d4d4d);
 }
 
+.edit-prompt-btn,
+.delete-prompt-btn {
+  padding: 4px;
+  background: transparent;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 4px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-prompt-btn:hover {
+  background: var(--hover-bg, #3d3d3d);
+  color: #00ffc8;
+  border-color: #00ffc8;
+}
+
+.delete-prompt-btn:hover {
+  background: var(--danger-color, #e53e3e);
+  color: white;
+  border-color: var(--danger-color, #e53e3e);
+}
+
+.edit-prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.edit-input {
+  background: var(--bg-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 4px;
+  color: var(--text-primary, #fff);
+  padding: 6px 8px;
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+}
+
+.edit-input:focus {
+  border-color: var(--accent-color, #007acc);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.save-edit-btn,
+.cancel-edit-btn {
+  padding: 10px 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+}
+
+.save-edit-btn {
+  background: #00ffc8;
+  color: #000;
+}
+
+.save-edit-btn:hover {
+  background: #01b18b;
+}
+
+.cancel-edit-btn {
+  background: var(--danger-color, #e53e3e);
+  color: white;
+}
+
+.cancel-edit-btn:hover {
+  background: #8b2626;
+}
+
 .prompt-info .item-name {
   color: var(--text-primary, #fff);
   font-weight: 500;
@@ -539,6 +645,64 @@
   background: var(--input-bg, #2d2d2d);
   border: 1px solid var(--border-color, #3d3d3d);
   border-radius: 6px;
+}
+
+.individual-system-prompt .system-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.individual-system-prompt .system-prompt-header h5 {
+  margin: 0;
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.edit-system-prompt-btn {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 4px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.edit-system-prompt-btn:hover {
+  background: var(--hover-bg, #3d3d3d);
+  color: #00ffc8;
+  border-color: #00ffc8;
+}
+
+.edit-system-prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-textarea {
+  background: var(--bg-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 4px;
+  color: var(--text-primary, #fff);
+  padding: 8px;
+  font-size: 12px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  outline: none;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.edit-textarea:focus {
+  border-color: var(--accent-color, #007acc);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
 .individual-system-prompt .system-prompt-content {

@@ -9,6 +9,7 @@ import type {
 const PROMPT_ENDPOINTS = {
   profiles: "/api/prompts",
   profilesByUser: "/api/prompts/user",
+  profile: "/api/prompt",
   create: "/api/prompt/create",
   createByUserUuid: "/api/prompts/user",
 };
@@ -25,7 +26,7 @@ export const promptService = {
   },
 
   async getProfileById(id: string) {
-    return apiClient.get<PromptProfile>(`${PROMPT_ENDPOINTS.profiles}/${id}`);
+    return apiClient.get<PromptProfile>(`${PROMPT_ENDPOINTS.profile}/${id}`);
   },
 
   async createProfile(data: CreatePromptProfileRequest) {
@@ -40,12 +41,12 @@ export const promptService = {
 
   async updateProfile(id: string, data: UpdatePromptProfileRequest) {
     // Backend verifies user ownership before updating
-    return apiClient.put<PromptProfile>(`${PROMPT_ENDPOINTS.profiles}/${id}`, data);
+    return apiClient.put<PromptProfile>(`${PROMPT_ENDPOINTS.profile}/${id}`, data);
   },
 
   async deleteProfile(id: string) {
     // Backend verifies user ownership before deleting
-    return apiClient.delete<boolean>(`${PROMPT_ENDPOINTS.profiles}/${id}`);
+    return apiClient.delete<boolean>(`${PROMPT_ENDPOINTS.profile}/${id}`);
   },
 
   // Default system prompts

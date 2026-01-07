@@ -7,9 +7,11 @@
   import type { AiModel, UserSelectedModels } from "@/Types";
 
   // Focus input action
-  function focusInput(node: HTMLInputElement) {
+  function focusInput(node: HTMLInputElement | HTMLTextAreaElement) {
     node.focus();
-    node.select();
+    if (node instanceof HTMLInputElement) {
+      node.select();
+    }
   }
 
   let { 
@@ -33,6 +35,13 @@
   let selectedCapability: 'none' | 'fast' | 'reasoning' | 'coding' | 'vision' = $state('none');
   let searchQuery = $state('');
   let hoveredCapability = $state<string | null>(null);
+  
+  // Prompt editing state
+  let editingPromptId = $state<string | null>(null);
+  let editingPromptName = $state('');
+  let editingPromptDescription = $state('');
+  let editingSystemPrompt = $state<string | null>(null);
+  let editingSystemPromptValue = $state('');
   
   // Preset management
   let userPresets = $state<UserSelectedModels[]>([]);
@@ -296,6 +305,153 @@
         errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to delete preset. Please try again.");
         return; // Don't proceed if there was a real error
       }
+    }
+    
+    await loadUserPresets(false);
+    selectPreset(null);
+    setTimeout(() => {
+      successMessage = null;
+    }, 3000);
+    showDeleteConfirmation = 'normal';
+  }
+
+  // Prompt management functions
+  function getNextAvailablePromptName(): string {
+    const existingNames = promptStore.profiles.map(p => p.name);
+    let counter = 1;
+    while (existingNames.includes(`New Prompt ${counter}`)) {
+      counter++;
+    }
+    return `New Prompt ${counter}`;
+  }
+
+  async function createNewPrompt() {
+    if (!authStore.currentUser?.uuid) {
+      errorMessage = "⚠️ Please log in to create prompts";
+      return;
+    }
+
+    errorMessage = null;
+    successMessage = null;
+
+    try {
+      const newPrompt = await promptStore.createProfile({
+        name: getNextAvailablePromptName(),
+        description: "Description for explain prompt title",
+        system_prompt: "You are an expert programmer. Provide clear, efficient code solutions.",
+      });
+      
+      if (newPrompt) {
+        successMessage = "✓ Prompt created successfully!";
+        setTimeout(() => {
+          successMessage = null;
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Failed to create prompt:", error);
+      errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to create prompt.");
+    }
+  }
+
+  function startEditPromptInfo(promptId: string) {
+    const profile = promptStore.profiles.find(p => p.id === promptId);
+    if (profile) {
+      editingPromptId = promptId;
+      editingPromptName = profile.name;
+      editingPromptDescription = profile.description || '';
+    }
+  }
+
+  function cancelEditPromptInfo() {
+    editingPromptId = null;
+    editingPromptName = '';
+    editingPromptDescription = '';
+  }
+
+  async function saveEditPromptInfo() {
+    if (!editingPromptId || !editingPromptName.trim()) {
+      cancelEditPromptInfo();
+      return;
+    }
+
+    errorMessage = null;
+    successMessage = null;
+
+    try {
+      await promptStore.updateProfile(editingPromptId, {
+        name: editingPromptName.trim(),
+        description: editingPromptDescription.trim() || undefined,
+      });
+      successMessage = "✓ Prompt updated";
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to update prompt:", error);
+      errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to update prompt.");
+    } finally {
+      cancelEditPromptInfo();
+    }
+  }
+
+  function startEditSystemPrompt(promptId: string) {
+    const profile = promptStore.profiles.find(p => p.id === promptId);
+    if (profile) {
+      editingSystemPrompt = promptId;
+      editingSystemPromptValue = profile.system_prompt;
+    }
+  }
+
+  function cancelEditSystemPrompt() {
+    editingSystemPrompt = null;
+    editingSystemPromptValue = '';
+  }
+
+  async function saveEditSystemPrompt() {
+    if (!editingSystemPrompt || !editingSystemPromptValue.trim()) {
+      cancelEditSystemPrompt();
+      return;
+    }
+
+    errorMessage = null;
+    successMessage = null;
+
+    try {
+      await promptStore.updateProfile(editingSystemPrompt, {
+        system_prompt: editingSystemPromptValue.trim(),
+      });
+      successMessage = "✓ System prompt updated";
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to update system prompt:", error);
+      errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to update system prompt.");
+    } finally {
+      cancelEditSystemPrompt();
+    }
+  }
+
+  async function deletePrompt(promptId: string) {
+    if (!confirm('Are you sure you want to delete this prompt?')) {
+      return;
+    }
+
+    errorMessage = null;
+    successMessage = null;
+
+    try {
+      await promptStore.deleteProfile(promptId);
+      if (selectedPrompt === promptId) {
+        selectedPrompt = null;
+      }
+      successMessage = "✓ Prompt deleted";
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to delete prompt:", error);
+      errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to delete prompt.");
     }
     
     showDeleteConfirmation = 'normal';
@@ -594,7 +750,13 @@
           <div class="preset-panel">
             <div class="preset-panel-header">
               <h4>Select Prompt</h4>
-              <span class="prompt-status">{selectedPrompt === null ? 'Default' : 'Custom'}</span>
+              <button class="add-prompt-btn" onclick={createNewPrompt} title="Add New Prompt">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Prompt
+              </button>
             </div>
             <div class="prompt-list">
               <label class="prompt-radio-item">
@@ -608,7 +770,7 @@
                   <span class="item-name">Default</span>
                   <span class="item-desc">Standard helpful assistant</span>
                 </div>
-                <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(null)} title="Show System Prompt">
+                <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt('default')} title="Show System Prompt">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
@@ -630,22 +792,105 @@
                     value={profile.id}
                   />
                   <div class="prompt-info">
-                    <span class="item-name">{profile.name}</span>
-                    {#if profile.description}
-                      <span class="item-desc">{profile.description}</span>
+                    {#if editingPromptId === profile.id}
+                      <div class="edit-prompt-form">
+                        <input
+                          type="text"
+                          class="edit-input"
+                          bind:value={editingPromptName}
+                          placeholder="Prompt name"
+                          use:focusInput
+                        />
+                        <input
+                          type="text"
+                          class="edit-input"
+                          bind:value={editingPromptDescription}
+                          placeholder="Description"
+                        />
+                        <div class="edit-actions">
+                          <!-- svelte-ignore a11y_consider_explicit_label -->
+                          <button class="save-edit-btn" onclick={saveEditPromptInfo}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          </button>
+                          <!-- svelte-ignore a11y_consider_explicit_label -->
+                          <button class="cancel-edit-btn" onclick={cancelEditPromptInfo}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    {:else}
+                      <span class="item-name">{profile.name}</span>
+                      {#if profile.description}
+                        <span class="item-desc">{profile.description}</span>
+                      {/if}
                     {/if}
                   </div>
-                  <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title="Show System Prompt">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </button>
+                  {#if editingPromptId !== profile.id}
+                    <button class="edit-prompt-btn" onclick={(e) => { e.preventDefault(); startEditPromptInfo(profile.id); }} title="Edit Name & Description">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                    <button class="delete-prompt-btn" onclick={(e) => { e.preventDefault(); deletePrompt(profile.id); }} title="Delete Prompt">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                    <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title="Show System Prompt">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                  {/if}
                 </label>
                 {#if showPromptSystemPrompt === profile.id}
                   <div class="individual-system-prompt">
-                    <div class="system-prompt-content">
-                      <pre>{profile.system_prompt}</pre>
-                    </div>
+                    {#if editingSystemPrompt === profile.id}
+                      <div class="edit-system-prompt-form">
+                        <textarea
+                          class="edit-textarea"
+                          bind:value={editingSystemPromptValue}
+                          rows="6"
+                          use:focusInput
+                        ></textarea>
+                        <div class="edit-actions">
+                          <button class="save-edit-btn" onclick={saveEditSystemPrompt}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Save
+                          </button>
+                          <button class="cancel-edit-btn" onclick={cancelEditSystemPrompt}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    {:else}
+                      <div class="system-prompt-header">
+                        <h5>System Prompt</h5>
+                        <button class="edit-system-prompt-btn" onclick={() => startEditSystemPrompt(profile.id)} title="Edit System Prompt">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                          Edit
+                        </button>
+                      </div>
+                      <div class="system-prompt-content">
+                        <pre>{profile.system_prompt}</pre>
+                      </div>
+                    {/if}
                   </div>
                 {/if}
               {/each}
