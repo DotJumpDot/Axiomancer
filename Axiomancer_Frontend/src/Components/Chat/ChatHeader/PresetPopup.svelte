@@ -42,10 +42,20 @@
   let renameValue = $state('');
   let errorMessage = $state<string | null>(null);
   let successMessage = $state<string | null>(null);
+  let showDeleteConfirmation = $state<'normal' | 'confirm'>('normal');
 
   function getPresetDisplayName(preset: UserSelectedModels | null | undefined) {
     if (!preset) return null;
     return preset.preset_name || preset.name || `Preset ${preset.preset}`;
+  }
+
+  function getNextAvailablePresetName(): string {
+    const existingNames = userPresets.map(p => p.preset_name).filter(Boolean);
+    let counter = 1;
+    while (existingNames.includes(`Preset ${counter}`)) {
+      counter++;
+    }
+    return `Preset ${counter}`;
   }
 
   // Load user presets on mount
@@ -163,6 +173,7 @@
         // Create new preset
         const newPreset = await selectionService.createPreset({
           user_uuid: authStore.currentUser.uuid,
+          preset_name: getNextAvailablePresetName(),
           ai_model_ids: selectedModels,
           prompt_id: selectedPrompt || undefined,
           openrouter_api_key: authStore.currentUser.openrouter_api_key,
@@ -265,6 +276,36 @@
     }, 3000);
   }
 
+
+
+  async function confirmDeletePreset() {
+    if (selectedPresetId === null) return;
+    
+    errorMessage = null;
+    successMessage = null;
+
+    try {
+      await selectionService.deleteSelection(selectedPresetId);
+      successMessage = "✓ Preset deleted successfully!";
+    } catch (error) {
+      if (error.message && error.message.includes("Selection not found")) {
+        // Already deleted, treat as success
+        successMessage = "✓ Preset deleted successfully!";
+      } else {
+        console.error("Failed to delete preset:", error);
+        errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to delete preset. Please try again.");
+        return; // Don't proceed if there was a real error
+      }
+    }
+    
+    showDeleteConfirmation = 'normal';
+    await loadUserPresets(false);
+    selectPreset(null);
+    setTimeout(() => {
+      successMessage = null;
+    }, 3000);
+  }
+
   let filteredModels = $derived.by(() => {
     let models = aiStore.enabledModels.filter(model =>
       model.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -337,14 +378,30 @@
           {/if}
           <div class="header-controls">
             {#if selectedPresetId !== null}
-              <button class="delete-preset-btn" onclick={deletePreset} title="Delete Preset">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                  <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-              </button>
+              {#if showDeleteConfirmation === 'confirm'}
+                <div class="delete-buttons">
+                  <button class="delete-preset-btn cancel" onclick={() => showDeleteConfirmation = 'normal'} title="Cancel Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                  <button class="delete-preset-btn confirm" onclick={confirmDeletePreset} title="Confirm Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              {:else}
+                <button class="delete-preset-btn normal" onclick={() => showDeleteConfirmation = 'confirm'} title="Delete Preset">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+              {/if}
             {/if}
             <button class="new-preset-btn" onclick={createNewPreset} title="Create New Preset">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:black">
@@ -608,4 +665,10 @@
 
 <style>
   @import './ChatHeader.popup.css';
+
+  .delete-buttons {
+    display: flex;
+    gap: 5px;
+    flex-direction: row-reverse;
+  }
 </style>
