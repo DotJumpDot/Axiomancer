@@ -22,6 +22,119 @@ const UPLOAD_DIR = path.join(
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
+// ============ Encryption Configuration ============
+const ENCRYPTION_ALGORITHM = "aes-256-gcm";
+const IV_LENGTH = 16;
+const SALT_LENGTH = 64;
+const TAG_LENGTH = 16;
+const KEY_LENGTH = 32;
+const ITERATIONS = 100000;
+
+// Get encryption salt from environment
+const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT || "default-salt-change-in-production";
+
+/**
+ * Derives an encryption key from the salt using PBKDF2
+ */
+function deriveKey(salt: string): Buffer {
+  return crypto.pbkdf2Sync(salt, ENCRYPTION_SALT, ITERATIONS, KEY_LENGTH, "sha256");
+}
+
+/**
+ * Encrypts API key with AES-256-GCM
+ * @param apiKey - The API key to encrypt
+ * @returns Encrypted data in format: iv:authTag:encryptedData (base64)
+ */
+export function encryptApiKey(apiKey: string): string {
+  if (!apiKey) {
+    throw new Error("API key cannot be empty");
+  }
+
+  // Generate random IV
+  const iv = crypto.randomBytes(IV_LENGTH);
+
+  // Derive key from salt
+  const key = deriveKey(ENCRYPTION_SALT);
+
+  // Create cipher
+  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
+
+  // Encrypt
+  let encrypted = cipher.update(apiKey, "utf8", "base64");
+  encrypted += cipher.final("base64");
+
+  // Get auth tag
+  const authTag = cipher.getAuthTag();
+
+  // Return format: iv:authTag:encryptedData (all base64)
+  return `${iv.toString("base64")}:${authTag.toString("base64")}:${encrypted}`;
+}
+
+/**
+ * Decrypts API key
+ * @param encryptedData - Encrypted data in format: iv:authTag:encryptedData (base64)
+ * @returns Decrypted API key
+ */
+export function decryptApiKey(encryptedData: string): string {
+  if (!encryptedData) {
+    throw new Error("Encrypted data cannot be empty");
+  }
+
+  try {
+    // Check if data is already in plain text (for backward compatibility)
+    // Encrypted format has exactly 3 parts separated by ':'
+    const parts = encryptedData.split(":");
+    if (parts.length !== 3) {
+      // Assume it's plain text (unencrypted legacy key)
+      // If it looks like a valid API key, return it as-is
+      if (encryptedData.startsWith("sk-") || encryptedData.length > 20) {
+        console.warn("Warning: Found unencrypted API key. It will be encrypted on next update.");
+        return encryptedData;
+      }
+      throw new Error("Invalid encrypted data format");
+    }
+
+    const [ivBase64, authTagBase64, encrypted] = parts;
+    const iv = Buffer.from(ivBase64, "base64");
+    const authTag = Buffer.from(authTagBase64, "base64");
+
+    // Derive key from salt
+    const key = deriveKey(ENCRYPTION_SALT);
+
+    // Create decipher
+    const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    // Decrypt
+    let decrypted = decipher.update(encrypted, "base64", "utf8");
+    decrypted += decipher.final("utf8");
+
+    return decrypted;
+  } catch (error) {
+    // If decryption fails, check if it's a plain text key
+    if (encryptedData.startsWith("sk-") || encryptedData.length > 20) {
+      console.warn(
+        "Warning: Decryption failed, treating as plain text. Key will be encrypted on next update."
+      );
+      return encryptedData;
+    }
+    throw new Error(
+      "Failed to decrypt API key: " + (error instanceof Error ? error.message : "Unknown error")
+    );
+  }
+}
+
+/**
+ * Hashes an API key for storage (one-way)
+ * @param apiKey - The API key to hash
+ * @returns Hashed API key
+ */
+export function hashApiKey(apiKey: string): string {
+  return crypto.createHmac("sha256", ENCRYPTION_SALT).update(apiKey).digest("hex");
+}
+
+// ============ User Service Class ============
+
 export class UserService {
   static async getAllUsers(): Promise<User[]> {
     return await userQuery.getUsers();
@@ -75,6 +188,11 @@ export class UserService {
     }
     if (data.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       throw new Error("Invalid email format");
+    }
+
+    // Encrypt OpenRouter API key if provided
+    if (data.openrouter_api_key) {
+      data.openrouter_api_key = encryptApiKey(data.openrouter_api_key);
     }
 
     return await userQuery.updateUser(id, data);
@@ -153,22 +271,33 @@ export class UserService {
 
   static getPublicUser(user: User): Omit<User, "password"> {
     const { password, ...publicUser } = user;
+
+    // Decrypt API key if it exists
+    if (publicUser.openrouter_api_key) {
+      try {
+        publicUser.openrouter_api_key = decryptApiKey(publicUser.openrouter_api_key);
+      } catch (error) {
+        console.error("Failed to decrypt API key for user:", user.username, error);
+        // Keep the key as-is if decryption fails (might be already plain text)
+        // Don't set to null - let the caller handle it
+      }
+    }
+
     return publicUser;
   }
 
   static async validateUser(user: User): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
+    // Basic validation logic
     if (!user.username || user.username.length < 3) {
-      errors.push("Username must be at least 3 characters");
+      errors.push("Username must be at least 3 characters long");
     }
-    if (!user.uuid) {
-      errors.push("UUID is required");
+    if (!user.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
+      errors.push("Valid email is required");
     }
+    // Add more validations as needed
 
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
+    return { valid: errors.length === 0, errors };
   }
 }

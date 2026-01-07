@@ -1,8 +1,16 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import { aiStore, promptStore } from "@/Store";
+  import { authStore } from "@/Store";
+  import { selectionService } from "@/Service";
   import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
-  import type { AiModel } from "@/Types";
+  import type { AiModel, UserSelectedModels } from "@/Types";
+
+  // Focus input action
+  function focusInput(node: HTMLInputElement) {
+    node.focus();
+    node.select();
+  }
 
   let { 
     isOpen = false, 
@@ -22,9 +30,75 @@
   let showOnlyFree = $state(false);
   let showOnlyPricing = $state(false);
   let sortBy = $state<'none' | 'price-low-to-high' | 'price-high-to-low' | 'name-a-z' | 'name-z-a' | 'provider-a-z' | 'provider-z-a'>('none');
-  let selectedCapability = $state<'none' | 'fast' | 'reasoning' | 'coding' | 'vision'>('none');
+  let selectedCapability: 'none' | 'fast' | 'reasoning' | 'coding' | 'vision' = $state('none');
   let searchQuery = $state('');
   let hoveredCapability = $state<string | null>(null);
+  
+  // Preset management
+  let userPresets = $state<UserSelectedModels[]>([]);
+  let selectedPresetId = $state<number | null>(null);
+  let isLoadingPresets = $state(false);
+  let isRenaming = $state(false);
+  let renameValue = $state('');
+  let errorMessage = $state<string | null>(null);
+  let successMessage = $state<string | null>(null);
+
+  function getPresetDisplayName(preset: UserSelectedModels | null | undefined) {
+    if (!preset) return null;
+    return preset.preset_name || preset.name || `Preset ${preset.preset}`;
+  }
+
+  // Load user presets on mount
+  onMount(async () => {
+    await loadUserPresets(true);
+  });
+
+  // Also load presets when popup opens and user becomes available
+  $effect(() => {
+    if (isOpen && authStore.currentUser?.uuid && userPresets.length === 0) {
+      loadUserPresets(true);
+    }
+  });
+
+  async function loadUserPresets(autoSelectFirst = true) {
+    if (!authStore.currentUser?.uuid) return;
+
+    const previousSelectedId = selectedPresetId;
+    isLoadingPresets = true;
+    try {
+      const presets = await selectionService.getPresetsByUserUUID(authStore.currentUser.uuid);
+      userPresets = presets;
+
+      // Preserve current selection if it still exists, otherwise default to first preset
+      let presetToSelect: UserSelectedModels | null = null;
+      if (previousSelectedId !== null) {
+        presetToSelect = presets.find((p) => p.preset === previousSelectedId) || null;
+      }
+      if (!presetToSelect && presets.length > 0 && autoSelectFirst) {
+        presetToSelect = presets[0];
+      }
+      if (presetToSelect) {
+        selectPreset(presetToSelect);
+      }
+    } catch (error) {
+      console.error("Failed to load presets:", error);
+    } finally {
+      isLoadingPresets = false;
+    }
+  }
+
+  function selectPreset(preset: UserSelectedModels | null) {
+    if (preset) {
+      selectedPresetId = preset.preset;
+      selectedModels = [...preset.ai_model_ids];
+      selectedPrompt = preset.prompt_id || null;
+    } else {
+      // New preset
+      selectedPresetId = null;
+      selectedModels = [];
+      selectedPrompt = null;
+    }
+  }
 
   function toggleModel(modelId: string) {
     if (selectedModels.includes(modelId)) {
@@ -47,12 +121,62 @@
     if (onClose) onClose();
   }
 
-  function savePreset() {
-    console.log('PresetPopup savePreset - selectedPrompt:', selectedPrompt);
+  async function savePreset() {
+    errorMessage = null;
+    successMessage = null;
+
+    if (!authStore.currentUser?.uuid) {
+      errorMessage = "⚠️ User not authenticated. Please log in to save presets.";
+      console.error("User not authenticated");
+      return;
+    }
+
+    if (!authStore.currentUser?.openrouter_api_key) {
+      errorMessage = "⚠️ OpenRouter API key is missing. Please add your API key in the sidebar (key icon 🔑) before saving presets.";
+      console.error("Missing API key");
+      return;
+    }
+
+    if (selectedModels.length === 0) {
+      errorMessage = "⚠️ Please select at least one model to save the preset.";
+      return;
+    }
+
+    try {
+      if (selectedPresetId !== null) {
+        // Update existing preset
+        await selectionService.updatePreset(selectedPresetId, {
+          ai_model_ids: selectedModels,
+          prompt_id: selectedPrompt || undefined,
+          openrouter_api_key: authStore.currentUser.openrouter_api_key,
+        });
+        successMessage = "✓ Preset updated successfully!";
+        await loadUserPresets(true);
+      } else {
+        // Create new preset
+        const newPreset = await selectionService.createPreset({
+          user_uuid: authStore.currentUser.uuid,
+          ai_model_ids: selectedModels,
+          prompt_id: selectedPrompt || undefined,
+          openrouter_api_key: authStore.currentUser.openrouter_api_key,
+        });
+        successMessage = "✓ Preset created successfully!";
+        await loadUserPresets(false);
+        selectedPresetId = newPreset.preset; // Select the newly created preset
+        selectPreset(newPreset); // Update UI state
+      }
+      
+      // Clear messages after 3 seconds
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to save preset:", error);
+      errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to save preset. Please try again.");
+    }
   }
 
-    function applyPreset() {
-    console.log('PresetPopup applyPreset - selectedPrompt:', selectedPrompt);
+  function applyPreset() {
     dispatch('apply', {
       models: selectedModels,
       prompt: selectedPrompt
@@ -60,8 +184,78 @@
     closePopup();
   }
   
-  function saveNewPreset() {
-    console.log('PresetPopup savePreset - selectedPrompt:', selectedPrompt);
+  function createNewPreset() {
+    selectPreset(null);
+  }
+
+  function startRename() {
+    if (selectedPresetId === null) return;
+    const currentPreset = userPresets.find(p => p.preset === selectedPresetId);
+    isRenaming = true;
+    renameValue = getPresetDisplayName(currentPreset) || `Preset ${selectedPresetId}`;
+  }
+
+  function cancelRename() {
+    isRenaming = false;
+    renameValue = '';
+  }
+
+  async function confirmRename() {
+    if (selectedPresetId === null || !renameValue.trim()) {
+      cancelRename();
+      return;
+    }
+
+    errorMessage = null;
+    successMessage = null;
+
+    try {
+      await selectionService.updatePreset(selectedPresetId, {
+        preset_name: renameValue.trim(),
+      });
+      await loadUserPresets(true);
+      successMessage = "✓ Preset name updated";
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to rename preset:", error);
+      errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to rename preset.");
+    } finally {
+      isRenaming = false;
+      renameValue = '';
+    }
+  }
+
+  async function deletePreset() {
+    if (selectedPresetId === null) return;
+    
+    errorMessage = null;
+    successMessage = null;
+
+    if (!confirm(`Are you sure you want to delete Preset ${selectedPresetId}?`)) {
+      return;
+    }
+
+    try {
+      await selectionService.deleteSelection(selectedPresetId);
+      successMessage = "✓ Preset deleted successfully!";
+    } catch (error) {
+      if (error.message && error.message.includes("Selection not found")) {
+        // Already deleted, treat as success
+        successMessage = "✓ Preset deleted successfully!";
+      } else {
+        console.error("Failed to delete preset:", error);
+        errorMessage = "❌ " + (error instanceof Error ? error.message : "Failed to delete preset. Please try again.");
+        return; // Don't proceed if there was a real error
+      }
+    }
+    
+    await loadUserPresets(false);
+    selectPreset(null);
+    setTimeout(() => {
+      successMessage = null;
+    }, 3000);
   }
 
   let filteredModels = $derived.by(() => {
@@ -110,14 +304,67 @@
   <div class="preset-popup-backdrop" onmousedown={closePopup}>
     <div class="preset-popup" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()}>
       <div class="preset-popup-header">
-        <h3>Configure Preset</h3>
-        <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="close-btn" onclick={closePopup}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        <div>
+          {#if isRenaming}
+            <input
+              type="text"
+              class="preset-name-input"
+              bind:value={renameValue}
+              onkeydown={(e) => {
+                if (e.key === 'Enter') confirmRename();
+                if (e.key === 'Escape') cancelRename();
+              }}
+              use:focusInput
+            />
+          {:else}
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+            <h3 
+              class="preset-title" 
+              onclick={selectedPresetId !== null ? startRename : undefined}
+              style={selectedPresetId !== null ? "cursor: pointer; text-decoration: underline;" : ""}
+            >
+              {selectedPresetId !== null 
+                ? (getPresetDisplayName(userPresets.find(p => p.preset === selectedPresetId)) || `Preset ${selectedPresetId}`) 
+                : 'Configure Preset'}
+            </h3>
+          {/if}
+          <div class="header-controls">
+            {#if selectedPresetId !== null}
+              <button class="delete-preset-btn" onclick={deletePreset} title="Delete Preset">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            {/if}
+            <button class="new-preset-btn" onclick={createNewPreset} title="Create New Preset">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:black">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <select class="preset-selector" bind:value={selectedPresetId} onchange={(e) => {
+              const presetId = parseInt(e.currentTarget.value);
+              const preset = userPresets.find(p => p.preset === presetId);
+              selectPreset(preset || null);
+            }}>
+              <option value={null}>New Preset</option>
+              {#each userPresets as preset (preset.preset)}
+                <option value={preset.preset}>
+                  {getPresetDisplayName(preset) || `Preset ${preset.preset}`} ({preset.ai_model_ids.length} models)
+                </option>
+              {/each}
+            </select>
+          </div>
+        </div>
+        {#if errorMessage}
+          <div class="message error-message">{errorMessage}</div>
+        {/if}
+        {#if successMessage}
+          <div class="message success-message">{successMessage}</div>
+        {/if}
       </div>
 
       <div class="preset-popup-content">
@@ -344,7 +591,6 @@
       </div>
       
       <div class="preset-popup-footer"> 
-        <button class="new-preset-btn" onclick={saveNewPreset}>New Preset</button>
         <button class="cancel-btn" onclick={closePopup}>Cancel</button>
         <button class="save-btn" onclick={savePreset}>Save Preset</button>
         <button class="apply-btn" onclick={applyPreset}>Apply Preset</button>

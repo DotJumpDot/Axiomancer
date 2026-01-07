@@ -25,10 +25,17 @@
 
 .preset-popup-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0;
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color, #2d2d2d);
+}
+
+.preset-popup-header > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .preset-popup-header h3 {
@@ -36,6 +43,121 @@
   color: var(--text-primary, #fff);
   font-size: 18px;
   font-weight: 600;
+}
+
+.preset-title {
+  margin: 0;
+  color: var(--text-primary, #fff);
+  font-size: 18px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.preset-title:hover {
+  opacity: 0.8;
+}
+
+.preset-name-input {
+  background: var(--bg-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #2d2d2d);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  font-size: 18px;
+  font-weight: 600;
+  padding: 4px 8px;
+  width: 200px;
+  outline: none;
+}
+
+.preset-name-input:focus {
+  border-color: var(--accent-color, #007acc);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.preset-popup-header .header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preset-popup-header .new-preset-btn {
+  background: #00ffc8;
+  border: none;
+  color: #000000;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.preset-popup-header .new-preset-btn:hover {
+  background: #01b18b;
+}
+
+.preset-popup-header .delete-preset-btn {
+  background: #ff4444;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.preset-popup-header .delete-preset-btn:hover {
+  background: #cc0000;
+}
+
+.preset-popup-header .message {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.preset-popup-header .error-message {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid #ff4444;
+  color: #ff6666;
+}
+
+.preset-popup-header .success-message {
+  background: rgba(0, 255, 200, 0.1);
+  border: 1px solid #00ffc8;
+  color: #00ffc8;
+}
+
+.preset-popup-header .preset-selector {
+  background: var(--bg-secondary, #2d2d2d);
+  border: 1px solid var(--border-color, #3d3d3d);
+  color: var(--text-primary, #fff);
+  padding: 8px 32px 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 200px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.preset-popup-header .preset-selector:hover {
+  border-color: var(--primary-color, #6366f1);
+}
+
+.preset-popup-header .preset-selector:focus {
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 .preset-popup-header .close-btn {

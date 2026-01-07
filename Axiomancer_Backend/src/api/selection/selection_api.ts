@@ -1,9 +1,28 @@
 import { Elysia, t } from "elysia";
 import { SelectionService } from "./selection_service";
-import type { CreateSelectionRequest, UpdateSelectionRequest } from "./selection_type";
+import type {
+  CreateSelectionRequest,
+  UpdateSelectionRequest,
+  CreatePresetWithModelsRequest,
+} from "./selection_type";
 
 export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
-  // Get selection by user UUID
+  // Get all presets for a user
+  .get("/presets/user/:user_uuid", async ({ params: { user_uuid } }) => {
+    try {
+      const presets = await SelectionService.getSelectionsByUserUUID(user_uuid);
+      return { presets };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: error instanceof Error ? error.message : "Failed to get presets",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  })
+
+  // Get selection by user UUID (backwards compatibility - returns first preset)
   .get("/selection/user/:user_uuid", async ({ params: { user_uuid } }) => {
     try {
       const selection = await SelectionService.getSelectionByUserUUID(user_uuid);
@@ -89,7 +108,36 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
         user_uuid: t.String(),
         ai_model_ids: t.Array(t.String()),
         prompt_id: t.Optional(t.String()),
+        preset_name: t.Optional(t.String()),
         searchable: t.Optional(t.Boolean()),
+      }),
+    }
+  )
+
+  // Create preset with model validation
+  .post(
+    "/preset",
+    async ({ body }: { body: CreatePresetWithModelsRequest }) => {
+      try {
+        const preset = await SelectionService.createPresetWithModels(body);
+        return { preset, status: 201 };
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            error: error instanceof Error ? error.message : "Failed to create preset",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    },
+    {
+      body: t.Object({
+        user_uuid: t.String(),
+        ai_model_ids: t.Array(t.String()),
+        prompt_id: t.Optional(t.String()),
+        preset_name: t.Optional(t.String()),
+        searchable: t.Optional(t.Boolean()),
+        openrouter_api_key: t.String(),
       }),
     }
   )
@@ -134,7 +182,55 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
       body: t.Object({
         ai_model_ids: t.Optional(t.Array(t.String())),
         prompt_id: t.Optional(t.String()),
+        preset_name: t.Optional(t.String()),
         searchable: t.Optional(t.Boolean()),
+      }),
+    }
+  )
+
+  // Update preset with model validation
+  .put(
+    "/preset/:preset",
+    async ({
+      params: { preset },
+      body,
+    }: {
+      params: { preset: string };
+      body: UpdateSelectionRequest & { openrouter_api_key?: string };
+    }) => {
+      try {
+        const presetId = parseInt(preset);
+        if (isNaN(presetId)) {
+          return new Response(JSON.stringify({ error: "Invalid preset ID" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const preset_result = await SelectionService.updatePresetWithModels(presetId, body);
+        if (!preset_result) {
+          return new Response(JSON.stringify({ error: "Preset not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return { preset: preset_result };
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            error: error instanceof Error ? error.message : "Failed to update preset",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    },
+    {
+      body: t.Object({
+        ai_model_ids: t.Optional(t.Array(t.String())),
+        prompt_id: t.Optional(t.String()),
+        preset_name: t.Optional(t.String()),
+        searchable: t.Optional(t.Boolean()),
+        openrouter_api_key: t.Optional(t.String()),
       }),
     }
   )
@@ -160,6 +256,7 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
         user_uuid: t.String(),
         ai_model_ids: t.Array(t.String()),
         prompt_id: t.Optional(t.String()),
+        preset_name: t.Optional(t.String()),
         searchable: t.Optional(t.Boolean()),
       }),
     }

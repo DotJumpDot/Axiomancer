@@ -125,7 +125,7 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | ------------ | -------- | -------- | ------------------------------------------ |
 | preset       | int      | No       | Auto-incrementing preset number (reusable) |
 | user_uuid    | str      | No       | Foreign key to user.uuid                   |
-| ai_model_ids | json     | No       | Array of AI model IDs                      |
+| ai_model_ids | text[]   | No       | Array of AI model IDs                      |
 | prompt_id    | uuid     | Yes      | Foreign key to prompt_profile.id           |
 | searchable   | boolean  | No       | Whether this preset is searchable          |
 | created_at   | datetime | No       | Record creation timestamp                  |
@@ -201,7 +201,7 @@ CREATE TABLE ai_model (
     model_key TEXT NOT NULL,
     display_name TEXT NOT NULL,
     context_length INTEGER NOT NULL,
-    cost_per_1k_token DECIMAL(10,4) NOT NULL,
+    cost_per_1k_token DECIMAL(14,10) NOT NULL,
     capabilities JSONB NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -255,9 +255,10 @@ CREATE TABLE search_log (
 
 -- User Selected Models table
 CREATE TABLE user_selected_models (
-    preset INTEGER PRIMARY KEY,
+    preset SERIAL PRIMARY KEY,
     user_uuid TEXT NOT NULL,
-    ai_model_ids JSONB NOT NULL,
+    preset_name TEXT,
+    ai_model_ids TEXT[] NOT NULL,
     prompt_id TEXT,
     searchable BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -287,9 +288,9 @@ VALUES ('550e8400-e29b-41d4-a716-446655440000', 'admin', '1234', 'admin@example.
 
 -- Insert sample AI models
 INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at) VALUES
-('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'mistral-7b', 'Mistral 7B', 4096, 0.0001, '{"reasoning": true, "coding": true, "vision": false, "fast": true}', TRUE, CURRENT_TIMESTAMP),
-('6ba7b811-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'gpt-4', 'GPT-4', 8192, 0.0300, '{"reasoning": true, "coding": true, "vision": true, "fast": false}', TRUE, CURRENT_TIMESTAMP),
-('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 32768, 0.0014, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', TRUE, CURRENT_TIMESTAMP);
+('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'mistral-7b', 'Mistral 7B', 4096, 0.000100, '{"reasoning": true, "coding": true, "vision": false, "fast": true}', TRUE, CURRENT_TIMESTAMP),
+('6ba7b811-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'gpt-4', 'GPT-4', 8192, 0.030000, '{"reasoning": true, "coding": true, "vision": true, "fast": false}', TRUE, CURRENT_TIMESTAMP),
+('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 32768, 0.001400, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', TRUE, CURRENT_TIMESTAMP);
 
 -- Insert sample prompt profiles
 INSERT INTO prompt_profile (id, user_uuid, name, description, system_prompt, created_at) VALUES
@@ -307,8 +308,8 @@ INSERT INTO chat (id, conversation_id, role, content, model_id, prompt_profile_i
 
 -- Insert sample user selected models
 INSERT INTO user_selected_models (preset, user_uuid, ai_model_ids, prompt_id, searchable, created_at, updated_at) VALUES
-(1, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b810-9dad-11d1-80b4-00c04fd430c8", "6ba7b811-9dad-11d1-80b4-00c04fd430c8"]', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, '550e8400-e29b-41d4-a716-446655440000', '["6ba7b812-9dad-11d1-80b4-00c04fd430c8"]', NULL, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, '550e8400-e29b-41d4-a716-446655440000', ARRAY['6ba7b810-9dad-11d1-80b4-00c04fd430c8', '6ba7b811-9dad-11d1-80b4-00c04fd430c8'], '7ba7b810-9dad-11d1-80b4-00c04fd430c8', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, '550e8400-e29b-41d4-a716-446655440000', ARRAY['6ba7b812-9dad-11d1-80b4-00c04fd430c8'], NULL, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
 ---
@@ -316,6 +317,7 @@ INSERT INTO user_selected_models (preset, user_uuid, ai_model_ids, prompt_id, se
 ## Data Types Notes
 
 - **UUID**: Stored as TEXT in SQLite for simplicity
+- **Arrays**: Stored as native PostgreSQL arrays (e.g., text[])
 - **JSON**: Stored as TEXT and parsed in application code
 - **Boolean**: Stored as INTEGER (0/1) in SQLite
 - **Decimal**: Stored as DECIMAL for cost calculations

@@ -68,7 +68,16 @@ class ApiClient {
           error: data.error || `HTTP Error: ${response.status}`,
         };
       }
-      return data as ApiResponse<T>;
+      // If backend already returns { success, data, error }, pass through
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        Object.prototype.hasOwnProperty.call(data, "success")
+      ) {
+        return data as ApiResponse<T>;
+      }
+      // Otherwise, wrap raw payload in ApiResponse format
+      return { success: true, data: data as T };
     } catch (error) {
       if (!response.ok) {
         return {

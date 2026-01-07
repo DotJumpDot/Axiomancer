@@ -1,24 +1,32 @@
-// Selection Store - Svelte 5 runes for user selected models state
+// Selection Store - Svelte 5 runes for user selected models (presets) state
 import { selectionService } from "@/Service";
-import type { UserSelectedModels } from "@/Types";
+import type { UserSelectedModels, CreatePresetRequest, UpdatePresetRequest } from "@/Types";
 
 // Reactive state using Svelte 5 runes
 let selection = $state<UserSelectedModels | null>(null);
 let selections = $state<UserSelectedModels[]>([]);
+let presets = $state<UserSelectedModels[]>([]); // User's presets
 let isLoading = $state(false);
 let error = $state<string | null>(null);
+
+async function loadPresetsByUserUUID(userUuid: string) {
+  try {
+    isLoading = true;
+    error = null;
+    presets = await selectionService.getPresetsByUserUUID(userUuid);
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to load presets";
+    presets = [];
+  } finally {
+    isLoading = false;
+  }
+}
 
 async function loadSelectionByUserUUID(userUuid: string) {
   try {
     isLoading = true;
     error = null;
-
-    const response = await selectionService.getSelectionByUserUUID(userUuid);
-    if (response.success && response.data) {
-      selection = response.data;
-    } else {
-      selection = null;
-    }
+    selection = await selectionService.getSelectionByUserUUID(userUuid);
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load selection";
     selection = null;
@@ -31,13 +39,7 @@ async function loadSelectionByPreset(preset: number) {
   try {
     isLoading = true;
     error = null;
-
-    const response = await selectionService.getSelectionByPreset(preset);
-    if (response.success && response.data) {
-      selection = response.data;
-    } else {
-      selection = null;
-    }
+    selection = await selectionService.getSelectionByPreset(preset);
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load selection";
     selection = null;
@@ -50,33 +52,26 @@ async function loadAllSelections() {
   try {
     isLoading = true;
     error = null;
-
-    const response = await selectionService.getAllSelections();
-    if (response.success && response.data) {
-      selections = response.data;
-    }
+    selections = await selectionService.getAllSelections();
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load selections";
+    selections = [];
   } finally {
     isLoading = false;
   }
 }
 
-async function createSelection(userUuid: string, aiModelIds: string[], searchable = true) {
+async function createSelection(userUuid: string, aiModelIds: string[], promptId?: string, searchable = true) {
   try {
     isLoading = true;
     error = null;
-
-    const response = await selectionService.createSelection({
+    selection = await selectionService.createSelection({
       user_uuid: userUuid,
       ai_model_ids: aiModelIds,
+      prompt_id: promptId,
       searchable,
     });
-
-    if (response.success && response.data) {
-      selection = response.data;
-      return response.data;
-    }
+    return selection;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to create selection";
     throw e;
@@ -85,20 +80,34 @@ async function createSelection(userUuid: string, aiModelIds: string[], searchabl
   }
 }
 
-async function updateSelection(preset: number, aiModelIds?: string[], searchable?: boolean) {
+async function createPreset(data: CreatePresetRequest) {
   try {
     isLoading = true;
     error = null;
+    const preset = await selectionService.createPreset(data);
+    // Reload presets after creating
+    if (data.user_uuid) {
+      await loadPresetsByUserUUID(data.user_uuid);
+    }
+    return preset;
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to create preset";
+    throw e;
+  } finally {
+    isLoading = false;
+  }
+}
 
-    const response = await selectionService.updateSelection(preset, {
+async function updateSelection(preset: number, aiModelIds?: string[], promptId?: string, searchable?: boolean) {
+  try {
+    isLoading = true;
+    error = null;
+    selection = await selectionService.updateSelection(preset, {
       ai_model_ids: aiModelIds,
+      prompt_id: promptId,
       searchable,
     });
-
-    if (response.success && response.data) {
-      selection = response.data;
-      return response.data;
-    }
+    return selection;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to update selection";
     throw e;
@@ -107,21 +116,35 @@ async function updateSelection(preset: number, aiModelIds?: string[], searchable
   }
 }
 
-async function upsertSelection(userUuid: string, aiModelIds: string[], searchable = true) {
+async function updatePreset(preset: number, data: UpdatePresetRequest, userUuid?: string) {
   try {
     isLoading = true;
     error = null;
+    const updatedPreset = await selectionService.updatePreset(preset, data);
+    // Reload presets after updating
+    if (userUuid) {
+      await loadPresetsByUserUUID(userUuid);
+    }
+    return updatedPreset;
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to update preset";
+    throw e;
+  } finally {
+    isLoading = false;
+  }
+}
 
-    const response = await selectionService.upsertSelection({
+async function upsertSelection(userUuid: string, aiModelIds: string[], promptId?: string, searchable = true) {
+  try {
+    isLoading = true;
+    error = null;
+    selection = await selectionService.upsertSelection({
       user_uuid: userUuid,
       ai_model_ids: aiModelIds,
+      prompt_id: promptId,
       searchable,
     });
-
-    if (response.success && response.data) {
-      selection = response.data;
-      return response.data;
-    }
+    return selection;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to upsert selection";
     throw e;
@@ -134,12 +157,9 @@ async function deleteSelection(preset: number) {
   try {
     isLoading = true;
     error = null;
-
-    const response = await selectionService.deleteSelection(preset);
-    if (response.success) {
-      selection = null;
-      return true;
-    }
+    await selectionService.deleteSelection(preset);
+    selection = null;
+    return true;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to delete selection";
     throw e;
@@ -152,12 +172,9 @@ async function deleteSelectionByUserUUID(userUuid: string) {
   try {
     isLoading = true;
     error = null;
-
-    const response = await selectionService.deleteSelectionByUserUUID(userUuid);
-    if (response.success) {
-      selection = null;
-      return true;
-    }
+    await selectionService.deleteSelectionByUserUUID(userUuid);
+    selection = null;
+    return true;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to delete selection";
     throw e;
@@ -173,6 +190,7 @@ function clearError() {
 function resetSelection() {
   selection = null;
   selections = [];
+  presets = [];
   error = null;
 }
 
@@ -185,6 +203,9 @@ export const selectionStore = {
   get selections() {
     return selections;
   },
+  get presets() {
+    return presets;
+  },
   get isLoading() {
     return isLoading;
   },
@@ -193,11 +214,14 @@ export const selectionStore = {
   },
 
   // Methods
+  loadPresetsByUserUUID,
   loadSelectionByUserUUID,
   loadSelectionByPreset,
   loadAllSelections,
   createSelection,
+  createPreset,
   updateSelection,
+  updatePreset,
   upsertSelection,
   deleteSelection,
   deleteSelectionByUserUUID,

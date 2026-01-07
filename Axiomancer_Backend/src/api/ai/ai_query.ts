@@ -20,6 +20,18 @@ export async function getAiModelById(id: string): Promise<AiModel | null> {
   return result[0] as unknown as AiModel;
 }
 
+export async function getAiModelByModelKey(model_key: string): Promise<AiModel | null> {
+  const result = await sql`
+    SELECT id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
+    FROM ai_model
+    WHERE model_key = ${model_key}
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+  if (result.length === 0) return null;
+  return result[0] as unknown as AiModel;
+}
+
 export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel> {
   const id = crypto.randomUUID();
   const result = await sql`
