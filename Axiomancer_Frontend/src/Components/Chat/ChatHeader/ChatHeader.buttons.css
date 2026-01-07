@@ -25,7 +25,7 @@
   align-items: center;
   color: #363636;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 8px 20px;
   border: 1px solid var(--border-color, #3d3d3d);
   border-radius: 8px;
   cursor: pointer;
