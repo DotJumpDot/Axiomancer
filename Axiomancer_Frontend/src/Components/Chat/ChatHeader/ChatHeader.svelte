@@ -20,8 +20,8 @@
   let loginDialog: any;
   let apiKeyDialog: any;
 
-  // Derived state for API key status
-  let hasApiKey = $derived(!!authStore.currentUser?.openrouter_api_key);
+  // Derived state for API key status - defaults to true until we know otherwise
+  let hasApiKey = $derived(authStore.currentUser ? !!authStore.currentUser.openrouter_api_key : true);
 
   onMount(async () => {
     const axmLogin = localStorage.getItem("AxmLogin");
