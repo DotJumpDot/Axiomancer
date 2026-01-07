@@ -424,6 +424,5 @@
     @import './ChatHeader.buttons.css';
     @import './ChatHeader.user.css';
     @import './ChatHeader.mode.css';
-    @import './ChatHeader.popup.css';
     @import './ChatHeader.placeholders.css';
   </style>

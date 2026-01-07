@@ -456,7 +456,7 @@
                   <div class="grid-itemLeft">
                     <div class="item-left">
                       <!-- <span class="item-provider">{formatProviderName(model.provider)}</span> -->
-                      <span class="item-name"style="padding: 20px;">{formatModelName(model.display_name)}</span>
+                      <span class="item-name" style="padding: 20px;">{formatModelName(model.display_name)}</span>
                     </div>
                   </div>
 

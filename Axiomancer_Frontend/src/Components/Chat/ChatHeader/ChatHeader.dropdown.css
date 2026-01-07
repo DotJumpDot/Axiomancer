@@ -21,10 +21,6 @@
   background: var(--active-bg, #4d4d4d);
 }
 
-.auto-option {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-}
-
 .item-provider {
   font-size: 11px;
   color: var(--text-secondary, #888);
@@ -64,13 +60,6 @@
 .capability-badge.reasoning {
   background: rgba(99, 102, 241, 0.2);
   color: #6366f1;
-}
-
-.capability-badge.free {
-  background: rgba(255, 165, 0, 0.2);
-  color: #ff8c00;
-  border: 1px solid #ff8c00;
-  font-weight: 600;
 }
 
 .check {

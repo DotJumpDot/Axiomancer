@@ -86,41 +86,6 @@
   border: 1px solid var(--border-color, #3d3d3d);
 }
 
-.prompt-text-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: transparent;
-  border: none;
-  color: var(--text-primary, #fff);
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 6px 0 0 6px;
-  transition: background 0.2s;
-}
-
-.prompt-text-btn:hover {
-  background: var(--hover-bg, #3d3d3d);
-}
-
-.prompt-arrow-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 8px;
-  background: transparent;
-  border: none;
-  color: var(--text-primary, #fff);
-  cursor: pointer;
-  border-radius: 0 6px 6px 0;
-  transition: background 0.2s;
-}
-
-.prompt-arrow-btn:hover {
-  background: var(--hover-bg, #3d3d3d);
-}
-
 /* System Prompt Display */
 .system-prompt-display {
   position: absolute;

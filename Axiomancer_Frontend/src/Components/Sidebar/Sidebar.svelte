@@ -64,20 +64,40 @@
       <div class="empty">No conversations yet</div>
     {:else}
       {#each chatStore.conversations as conversation (conversation.id)}
-        <button
+        <div
           class="conversation-item"
           class:active={chatStore.currentConversation?.id === conversation.id}
           onclick={() => handleSelect(conversation)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleSelect(conversation);
+            }
+          }}
+          role="button"
+          tabindex="0"
+          aria-label={`Select conversation: ${conversation.title}`}
         >
           <span class="conversation-title">{truncate(conversation.title, 30)}</span>
           <span class="conversation-date">{formatRelativeTime(conversation.updated_at)}</span>
-          <div class="delete-btn" onclick={(e) => handleDelete(e, conversation.id)}>
+          <button 
+            class="delete-btn" 
+            onclick={(e) => handleDelete(e, conversation.id)}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleDelete(e, conversation.id);
+              }
+            }}
+            aria-label="Delete conversation"
+            title="Delete conversation"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
-          </div>
-        </button>
+          </button>
+        </div>
       {/each}
     {/if}
   </div>
