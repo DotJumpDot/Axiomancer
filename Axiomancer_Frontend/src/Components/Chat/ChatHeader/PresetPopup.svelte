@@ -767,7 +767,7 @@
                   value={null}
                 />
                 <div class="prompt-info">
-                  <span class="item-name">Default</span>
+                  <span class="item-name">Default</span><br>
                   <span class="item-desc">Standard helpful assistant</span>
                 </div>
                 <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt('default')} title="Show System Prompt">
@@ -825,24 +825,25 @@
                       </div>
                     {:else}
                       <span class="item-name">{profile.name}</span>
+                      <button class="edit-prompt-btn" style="margin-left: 10px;" onclick={(e) => { e.preventDefault(); startEditPromptInfo(profile.id); }} title="Edit Name & Description">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                      </button>
+                      <button class="delete-prompt-btn" style="margin-left: 2px;" onclick={(e) => { e.preventDefault(); deletePrompt(profile.id); }} title="Delete Prompt">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
                       {#if profile.description}
+                      <br>
                         <span class="item-desc">{profile.description}</span>
                       {/if}
                     {/if}
                   </div>
                   {#if editingPromptId !== profile.id}
-                    <button class="edit-prompt-btn" onclick={(e) => { e.preventDefault(); startEditPromptInfo(profile.id); }} title="Edit Name & Description">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                    <button class="delete-prompt-btn" onclick={(e) => { e.preventDefault(); deletePrompt(profile.id); }} title="Delete Prompt">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                    </button>
                     <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title="Show System Prompt">
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"></polyline>
