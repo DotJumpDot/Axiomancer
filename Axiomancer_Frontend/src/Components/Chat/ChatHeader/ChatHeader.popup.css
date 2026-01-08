@@ -156,41 +156,6 @@
   background: #cc0000;
 }
 
-.preset-popup-header .delete-preset-btn.confirming {
-  background: transparent;
-  border: 2px solid #ff4444;
-  color: #ff4444;
-}
-
-.preset-popup-header .delete-preset-btn.confirming:hover {
-  background: rgba(255, 68, 68, 0.1);
-}
-
-.preset-popup-header .delete-preset-btn.confirming .outline-icon {
-  stroke: #ff4444;
-  stroke-width: 3;
-}
-
-.preset-popup-header .confirm-delete-btn {
-  background: transparent;
-  border: 2px solid #ff4444;
-  color: #ff4444;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  margin-right: 8px;
-}
-
-.preset-popup-header .confirm-delete-btn:hover {
-  background: rgba(255, 68, 68, 0.1);
-}
-
 .preset-popup-header .message {
   width: 100%;
   padding: 8px 12px;

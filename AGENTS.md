@@ -56,7 +56,7 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
   - Run `git status` to check current changes
   - For each modified file, run `git diff <file>` to analyze changes and generate a meaningful commit message
   - Run `git add .` to stage all changes
-  - Run `git commit -m "feat/fix/clean: [brief description]\n- [bullet points of changes]"`
+  - Run `git commit -m "feat/fix/clean/improve: [brief description]\n- [bullet points of changes]"`
   - Run `git push` to push the changes
 
 ---

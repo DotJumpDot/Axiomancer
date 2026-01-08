@@ -71,11 +71,6 @@
   border-color: transparent;
 }
 
-.dropdown-trigger.secondary {
-  background: transparent;
-  border-color: var(--border-color, #3d3d3d);
-}
-
 .model-provider {
   font-size: 12px;
   color: #2e2e2e;
@@ -102,13 +97,6 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 100;
   overflow: hidden;
-}
-
-/* Split Prompt Selector */
-.prompt-selector .dropdown-trigger.secondary {
-  padding: 0;
-  background: transparent;
-  border: 1px solid var(--border-color, #3d3d3d);
 }
 
 /* System Prompt Display */
