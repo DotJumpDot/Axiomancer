@@ -137,3 +137,22 @@
     transform: translateX(-50%) translateY(-1px);
   }
 }
+
+.prompt-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #c4c4c4, #464646);
+  border-color: transparent;
+  border-radius: 8px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.prompt-edit-btn:hover {
+  background: linear-gradient(135deg, #d8d8d8, #2e2e2e);
+  border-color: transparent;
+}

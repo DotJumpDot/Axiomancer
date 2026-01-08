@@ -7,6 +7,7 @@
   import { ApiKeyDialog } from "@/Components/Auth";
   import PresetPopup from "./PresetPopup.svelte";
   import ModelSelector from "./ModelSelector.svelte";
+  import PromptEdit from "./PromptEdit.svelte";
   import type { User, AiModel } from "@/Types";
 
   let showModelDropdown = $state(false);
@@ -14,6 +15,7 @@
   let showPresetPopup = $state(false);
   let showSystemPrompt = $state(false);
   let showModelSelector = $state(false);
+  let showPromptEditor = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
 
@@ -90,6 +92,21 @@
     const { models, prompt } = event.detail;
     console.log('Applying preset:', { models, prompt });
     closePresetPopup();
+  }
+
+  function openPromptEditor() {
+    showPromptEditor = true;
+    showPromptDropdown = false;
+    showSystemPrompt = false;
+  }
+
+  function closePromptEditor() {
+    showPromptEditor = false;
+  }
+
+  function handlePromptSelect(event: CustomEvent<{ promptId: string | null }>) {
+    selectPrompt(event.detail.promptId);
+    closePromptEditor();
   }
 
   function handleLogin() {
@@ -265,6 +282,16 @@
       </div>
     {/if}
 
+    {#if authStore.isAuthenticated && currentMode === 'single'}
+      <button class="prompt-edit-btn" onclick={openPromptEditor} title="Manage prompts">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        Manage Prompts
+      </button>
+    {/if}
+
     <!-- Preset Button (only show in auto mode) -->
     {#if authStore.isAuthenticated && currentMode === 'auto'}
       <button class="preset-btn" onclick={openPresetPopup}>
@@ -369,6 +396,11 @@
     isOpen={showPresetPopup}
     onClose={closePresetPopup}
     on:apply={handlePresetApply}
+  />
+  <PromptEdit
+    isOpen={showPromptEditor}
+    onClose={closePromptEditor}
+    on:select={handlePromptSelect}
   />
   <!-- Model Selector Modal -->
   <ModelSelector
