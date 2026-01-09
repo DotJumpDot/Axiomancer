@@ -175,6 +175,38 @@ function updateCurrentUser(updates: Partial<AuthUser>) {
   }
 }
 
+//* Save model and prompt selections to AxmLogin
+function saveSelections(modelKey: string | null, promptId: string | null) {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      loginData.latest_select_model = modelKey;
+      loginData.latest_select_prompt = promptId;
+      localStorage.setItem("AxmLogin", JSON.stringify(loginData));
+    } catch (error) {
+      console.error("Failed to save selections to AxmLogin:", error);
+    }
+  }
+}
+
+//* Get model and prompt selections from AxmLogin
+function getSelections(): { modelKey: string | null; promptId: string | null } {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      return {
+        modelKey: loginData.latest_select_model || null,
+        promptId: loginData.latest_select_prompt || null,
+      };
+    } catch (error) {
+      console.error("Failed to get selections from AxmLogin:", error);
+    }
+  }
+  return { modelKey: null, promptId: null };
+}
+
 // Export store object with getters for reactive access
 export const authStore = {
   get isAuthenticated() {
@@ -199,6 +231,8 @@ export const authStore = {
   logout,
   refreshProfile,
   updateCurrentUser,
+  saveSelections,
+  getSelections,
 };
 
 export default authStore;

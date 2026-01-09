@@ -21,10 +21,32 @@ let error = $state<string | null>(null);
 let webSearchEnabled = $state(false);
 let imageSearchEnabled = $state(false);
 let currentPromptProfileId = $state<string | null>(null);
+let currentModelKey = $state<string | null>(null);
 
 // Streaming state
 let streamingContent = $state("");
 let isStreaming = $state(false);
+
+//* Initialize from AxmLogin for single mode
+function initializeSingleMode() {
+  if (typeof window !== "undefined") {
+    // Clean up old localStorage keys if they exist
+    localStorage.removeItem("latest_select_model");
+    localStorage.removeItem("latest_select_prompt");
+
+    // Load from AxmLogin
+    const selections = authStore.getSelections();
+    currentModelKey = selections.modelKey;
+    currentPromptProfileId = selections.promptId;
+  }
+}
+
+//* Save single mode selections to AxmLogin
+function saveSingleModeSelections() {
+  if (typeof window !== "undefined") {
+    authStore.saveSelections(currentModelKey, currentPromptProfileId);
+  }
+}
 
 async function loadConversations() {
   try {
@@ -110,16 +132,37 @@ async function deleteConversation(id: string) {
   }
 }
 
+async function updateConversation(id: string, updates: any) {
+  try {
+    const response = await chatService.updateConversation(id, updates);
+    if (response.success && response.data) {
+      conversations = conversations.map((c) => (c.id === id ? response.data : c));
+      if (currentConversation?.id === id) {
+        currentConversation = response.data;
+      }
+    }
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to update conversation";
+  }
+}
+
 async function sendMessage(content: string, modelKey: string, options?: SendMessageOptions) {
   // For anonymous users, handle differently
   if (!authStore.isAuthenticated) {
     return await sendAnonymousMessage(content, modelKey, options);
   }
 
+  // Ensure conversation exists before sending message
   if (!currentConversation) {
-    // Create new conversation first
-    const conv = await createNewConversation(chatService.generateTitle(content));
-    if (!conv) return null;
+    console.log("[ChatStore] No current conversation, creating new one...");
+    const conv = await createNewConversation(generateConversationTitle(content));
+    if (!conv) {
+      console.error("[ChatStore] Failed to create conversation");
+      error = "Failed to create conversation";
+      return null;
+    }
+    currentConversation = conv;
+    console.log("[ChatStore] Created conversation:", conv.id);
   }
 
   try {
@@ -132,8 +175,8 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       conversation_id: currentConversation!.id,
       role: "user",
       content,
-      model_id: null,
-      prompt_profile_id: null,
+      model_id: modelKey || null,
+      prompt_profile_id: options?.promptProfileId || null,
       routing_mode: options?.autoRouting ? "auto" : "manual",
       used_web_search: webSearchEnabled,
       used_image_search: imageSearchEnabled,
@@ -145,39 +188,29 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
     };
     messages = [...messages, userMessage];
 
-    // Perform web search if enabled
-    let searchContext = "";
-    if (webSearchEnabled) {
-      const searchResults = await searchService.quickWebSearch(content);
-      searchContext = searchService.formatWebResultsForContext(searchResults);
-    }
-
-    // Build messages array for AI
-    const aiMessages: OpenRouterMessage[] = chatService.toOpenRouterMessages(messages);
-    if (searchContext) {
-      aiMessages.push({
-        role: "system",
-        content: `Here are relevant web search results:\n\n${searchContext}`,
-      });
-    }
-
-    // Send to AI
-    const response = await chatService.sendToAI(currentConversation!.id, aiMessages, modelKey, {
-      temperature: options?.temperature,
-      max_tokens: options?.maxTokens,
-      useWebSearch: webSearchEnabled,
-      useImageSearch: imageSearchEnabled,
-      promptProfileId: currentPromptProfileId || undefined,
+    // Send message to backend API
+    const response = await chatService.sendMessage(currentConversation!.id, {
+      message: content,
+      model_key: modelKey,
+      prompt_profile_id: options?.promptProfileId,
+      autoRouting: options?.autoRouting,
+      webSearch: webSearchEnabled,
+      imageSearch: imageSearchEnabled,
     });
 
     if (response.success && response.data) {
-      // Replace temp message with actual and add response
+      // Replace temp message with actual saved message
       messages = messages.filter((m) => m.id !== userMessage.id);
-      messages = [...messages, response.data.message, response.data.response];
+      messages = [...messages, response.data.userMessage];
+
+      // Add AI response if available
+      if (response.data.aiResponse) {
+        messages = [...messages, response.data.aiResponse];
+      }
 
       // Update conversation title if it's the first message
-      if (messages.length === 2 && currentConversation) {
-        const newTitle = chatService.generateTitle(content);
+      if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
+        const newTitle = generateConversationTitle(content);
         await chatService.updateConversation(currentConversation.id, { title: newTitle });
         currentConversation = { ...currentConversation, title: newTitle };
         conversations = conversations.map((c) =>
@@ -185,14 +218,20 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         );
       }
 
-      return response.data.response;
+      return response.data.userMessage;
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to send message";
     // Remove temp message on error
     messages = messages.filter((m) => !m.id.startsWith("temp-"));
     return null;
+  } finally {
+    isSending = false;
   }
+}
+
+function generateConversationTitle(content: string): string {
+  return content.length > 50 ? content.substring(0, 50) + "..." : content;
 }
 
 async function sendAnonymousMessage(
@@ -223,39 +262,10 @@ async function sendAnonymousMessage(
     };
     messages = [...messages, userMessage];
 
-    // Perform web search if enabled
-    let searchContext = "";
-    if (webSearchEnabled) {
-      const searchResults = await searchService.quickWebSearch(content);
-      searchContext = searchService.formatWebResultsForContext(searchResults);
-    }
+    // For anonymous users, just show the message locally
+    // In a real implementation, you would call chatService.sendAnonymousMessage()
 
-    // Build messages array for AI (include conversation history for context)
-    const aiMessages: OpenRouterMessage[] = chatService.toOpenRouterMessages(
-      messages.filter((m) => m.role !== "system") // Exclude system messages for anonymous chat
-    );
-    if (searchContext) {
-      aiMessages.push({
-        role: "system",
-        content: `Here are relevant web search results:\n\n${searchContext}`,
-      });
-    }
-
-    // Send anonymous message to AI
-    const response = await chatService.sendAnonymousToAI(aiMessages, modelKey, {
-      temperature: options?.temperature,
-      max_tokens: options?.maxTokens,
-      useWebSearch: webSearchEnabled,
-      useImageSearch: imageSearchEnabled,
-    });
-
-    if (response.success && response.data) {
-      // Replace temp message with response data
-      messages = messages.filter((m) => m.id !== userMessage.id);
-      messages = [...messages, response.data.userMessage, response.data.aiResponse];
-
-      return response.data.aiResponse;
-    }
+    return userMessage;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to send message";
     // Remove temp message on error
@@ -276,6 +286,12 @@ function setImageSearchEnabled(enabled: boolean) {
 
 function setPromptProfileId(id: string | null) {
   currentPromptProfileId = id;
+  saveSingleModeSelections();
+}
+
+function setModelKey(key: string | null) {
+  currentModelKey = key;
+  saveSingleModeSelections();
 }
 
 function clearCurrentConversation() {
@@ -286,13 +302,13 @@ function clearCurrentConversation() {
 // Export store object with getters for reactive access
 export const chatStore = {
   get conversations() {
-    return conversations;
+    return Array.isArray(conversations) ? conversations : [];
   },
   get currentConversation() {
     return currentConversation;
   },
   get messages() {
-    return messages;
+    return Array.isArray(messages) ? messages : [];
   },
   get isLoading() {
     return isLoading;
@@ -312,6 +328,9 @@ export const chatStore = {
   get currentPromptProfileId() {
     return currentPromptProfileId;
   },
+  get currentModelKey() {
+    return currentModelKey;
+  },
   get streamingContent() {
     return streamingContent;
   },
@@ -324,11 +343,14 @@ export const chatStore = {
   loadMessages,
   createNewConversation,
   deleteConversation,
+  updateConversation,
   sendMessage,
   setWebSearchEnabled,
   setImageSearchEnabled,
   setPromptProfileId,
+  setModelKey,
   clearCurrentConversation,
+  initializeSingleMode,
 };
 
 export default chatStore;

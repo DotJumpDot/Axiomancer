@@ -42,11 +42,13 @@ export class ChatQuery {
 
     const result = await sql`
       INSERT INTO conversation (
-        id, user_id, title, system_prompt_snapshot, auto_routing_enabled, created_at, updated_at
+        id, user_id, title, system_prompt_snapshot, auto_routing_enabled, archived, created_at, updated_at
       ) VALUES (
         ${id}, ${userId || null}, ${conversation.title},
         ${conversation.system_prompt_snapshot || null},
-        ${conversation.auto_routing_enabled ?? true}, ${now}, ${now}
+        ${conversation.auto_routing_enabled ?? true}, ${
+      conversation.archived ?? false
+    }, ${now}, ${now}
       )
       RETURNING *
     `;
@@ -73,6 +75,10 @@ export class ChatQuery {
     if (updates.auto_routing_enabled !== undefined) {
       setClause.push(`auto_routing_enabled = $${setClause.length + 1}`);
       values.push(updates.auto_routing_enabled);
+    }
+    if (updates.archived !== undefined) {
+      setClause.push(`archived = $${setClause.length + 1}`);
+      values.push(updates.archived);
     }
 
     if (setClause.length === 0) {

@@ -64,6 +64,7 @@ export interface Conversation {
   title: string;
   system_prompt_snapshot: string | null;
   auto_routing_enabled: boolean;
+  archived: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -72,12 +73,14 @@ export interface CreateConversationRequest {
   title: string;
   system_prompt_snapshot?: string;
   auto_routing_enabled?: boolean;
+  archived?: boolean;
 }
 
 export interface UpdateConversationRequest {
   title?: string;
   system_prompt_snapshot?: string | null;
   auto_routing_enabled?: boolean;
+  archived?: boolean;
 }
 
 // UI-specific types

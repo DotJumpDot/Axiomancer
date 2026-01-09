@@ -144,8 +144,9 @@
   }
 
   .messages-list {
-    max-width: 800px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
   .typing-indicator {

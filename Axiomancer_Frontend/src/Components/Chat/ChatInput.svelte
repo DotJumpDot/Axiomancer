@@ -29,10 +29,25 @@
     const content = inputValue.trim();
     if (!content || chatStore.isSending) return;
 
-    const modelKey = aiStore.selectedModel?.model_key;
-    if (!modelKey && !aiStore.autoRoutingEnabled) {
-      alert("Please select a model or enable auto-routing");
-      return;
+    // Check if in single mode and model/prompt are selected
+    const isAutoRouting = aiStore.autoRoutingEnabled;
+    
+    if (!isAutoRouting) {
+      // Single mode - must have both model and prompt
+      if (!chatStore.currentModelKey) {
+        alert("Please select a model for single mode");
+        return;
+      }
+      if (!chatStore.currentPromptProfileId) {
+        alert("Please select a prompt for single mode");
+        return;
+      }
+    } else {
+      // Auto mode - must have model selection
+      if (!aiStore.selectedModel) {
+        alert("Please select a model or enable auto-routing");
+        return;
+      }
     }
 
     inputValue = "";
@@ -40,8 +55,11 @@
       textareaRef.style.height = "auto";
     }
 
+    const modelKey = !isAutoRouting ? chatStore.currentModelKey : aiStore.selectedModel?.model_key;
+    
     await chatStore.sendMessage(content, modelKey || "auto", {
-      autoRouting: aiStore.autoRoutingEnabled,
+      autoRouting: isAutoRouting,
+      promptProfileId: chatStore.currentPromptProfileId || undefined,
     });
   }
 
@@ -54,6 +72,7 @@
       // TODO: Implement image upload
     }
   }
+
 </script>
 
 <div class="chat-input-container">

@@ -249,6 +249,7 @@ Follow these naming patterns:
   import { chatService } from "./chat_service";
   import type { ChatType } from "./chat_type";
   ```
+- **Function Comments**: Use Better Comments tags sparingly above function names for readability when creating functions. Use `*` for important/key functions, `!` for critical/error-handling functions, or `?` for functions needing review. Keep comments concise and only apply where additional context enhances understanding.
 
 ### Frontend (Svelte/TypeScript)
 
@@ -264,6 +265,7 @@ Follow these naming patterns:
   import ChatComponent from "./lib/ChatComponent.svelte";
   import { chatStore } from "./store/chat";
   ```
+- **Function Comments**: Use Better Comments tags sparingly above function names for readability when creating functions. Use `*` for important/key functions, `!` for critical/error-handling functions, or `?` for functions needing review. Keep comments concise and only apply where additional context enhances understanding.
 
 ---
 

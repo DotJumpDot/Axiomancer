@@ -77,6 +77,24 @@ export const chatService = {
     );
   },
 
+  // Send message with model and prompt (single mode)
+  async sendMessage(
+    conversationId: string,
+    data: {
+      message: string;
+      model_key?: string;
+      prompt_profile_id?: string;
+      autoRouting?: boolean;
+      webSearch?: boolean;
+      imageSearch?: boolean;
+    }
+  ) {
+    return apiClient.post<{ userMessage: Chat; aiResponse?: Chat }>(
+      `${CHAT_ENDPOINTS.conversations}/${conversationId}/send`,
+      data
+    );
+  },
+
   // Send anonymous message to AI (no conversation required)
   async sendAnonymousToAI(
     messages: OpenRouterMessage[],

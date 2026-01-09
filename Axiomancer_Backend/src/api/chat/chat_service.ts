@@ -1,5 +1,9 @@
 import { ChatQuery } from "./chat_query";
-import { openRouterClient } from "@/api/ai/ai_openrouter";
+import { openRouterClient, OpenRouterClient } from "@/api/ai/ai_openrouter";
+import { getAiModelByModelKey } from "@/api/ai/ai_query";
+import { getPromptProfileById } from "@/api/prompt/prompt_query";
+import { getUserById } from "@/api/user/user_query";
+import { decryptApiKey } from "@/api/user/user_service";
 import type {
   Chat,
   CreateChatRequest,
@@ -8,6 +12,7 @@ import type {
   CreateConversationRequest,
   UpdateConversationRequest,
 } from "./chat_type";
+import type { OpenRouterRequest } from "@/api/ai/ai_type";
 
 export class ChatService {
   // Conversation management
@@ -197,32 +202,147 @@ export class ChatService {
     }
   }
 
-  // Send message and get AI response (placeholder for AI integration)
+  // Send message and get AI response
   static async sendMessage(
     conversationId: string,
     userMessage: string,
+    modelKey?: string,
+    promptProfileId?: string,
+    options?: {
+      webSearch?: boolean;
+      imageSearch?: boolean;
+    },
     userId?: number
   ): Promise<{
     userMessage: Chat;
     aiResponse?: Chat;
   }> {
     try {
-      // Create user message
+      // Validate conversation exists
+      const conversation = await ChatQuery.getConversationById(conversationId);
+      if (!conversation) {
+        throw new Error("Conversation not found");
+      }
+
+      // Get user's OpenRouter API key if user is authenticated
+      let userApiKey: string | undefined;
+      if (userId) {
+        const user = await getUserById(userId);
+        if (user?.openrouter_api_key) {
+          try {
+            userApiKey = decryptApiKey(user.openrouter_api_key);
+          } catch (error) {
+            console.error("Error decrypting user API key:", error);
+          }
+        }
+      }
+
+      // Determine which OpenRouter client to use
+      const activeClient = userApiKey ? new OpenRouterClient(userApiKey) : openRouterClient;
+
+      if (!activeClient) {
+        throw new Error("OpenRouter API key not configured. Please add your API key in settings.");
+      }
+
+      // Get the AI model details if modelKey provided
+      let actualModelKey = modelKey;
+      if (modelKey) {
+        const aiModel = await getAiModelByModelKey(modelKey);
+        if (aiModel) {
+          actualModelKey = aiModel.model_key;
+        }
+      }
+
+      // Get prompt profile if provided
+      let systemPrompt: string | undefined;
+      if (promptProfileId) {
+        const promptProfile = await getPromptProfileById(promptProfileId);
+        if (promptProfile) {
+          systemPrompt = promptProfile.system_prompt;
+        }
+      }
+
+      // If no system prompt from profile, use conversation snapshot
+      if (!systemPrompt && conversation.system_prompt_snapshot) {
+        systemPrompt = conversation.system_prompt_snapshot;
+      }
+
+      // Create user message first
       const userChat: CreateChatRequest = {
         conversation_id: conversationId,
         role: "user",
         content: userMessage,
-        routing_mode: "auto",
+        model_id: actualModelKey || null,
+        prompt_profile_id: promptProfileId || null,
+        routing_mode: "manual",
+        used_web_search: options?.webSearch || false,
+        used_image_search: options?.imageSearch || false,
       };
 
       const savedUserMessage = await this.createChat(userChat);
 
-      // TODO: Implement AI response generation
-      // For now, return just the user message
-      // Later this will integrate with AI service for routing and response generation
+      // Get conversation history for context
+      const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+
+      // Build messages array for OpenRouter (excluding the just-added user message)
+      const openRouterMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+
+      // Add system prompt if available
+      if (systemPrompt) {
+        openRouterMessages.push({ role: "system", content: systemPrompt });
+      }
+
+      // Add conversation history (limit to last 20 messages for context)
+      const recentMessages = previousMessages.slice(-20);
+      for (const msg of recentMessages) {
+        if (msg.role === "user" || msg.role === "assistant") {
+          openRouterMessages.push({
+            role: msg.role,
+            content: msg.content,
+          });
+        }
+      }
+
+      // Prepare OpenRouter request
+      const openRouterRequest: OpenRouterRequest = {
+        model: actualModelKey || "anthropic/claude-3-haiku",
+        messages: openRouterMessages,
+      };
+
+      // Call OpenRouter API
+      const startTime = Date.now();
+      const aiResponse = await activeClient.chatCompletion(openRouterRequest);
+      const latencyMs = Date.now() - startTime;
+
+      // Extract AI response content
+      const aiContent = aiResponse.choices[0]?.message?.content || "No response generated";
+      const tokenUsage = aiResponse.usage;
+
+      // Create AI message
+      const aiChat: CreateChatRequest = {
+        conversation_id: conversationId,
+        role: "assistant",
+        content: aiContent,
+        model_id: actualModelKey || null,
+        prompt_profile_id: promptProfileId || null,
+        routing_mode: "manual",
+        used_web_search: options?.webSearch || false,
+        used_image_search: options?.imageSearch || false,
+        token_usage: tokenUsage
+          ? {
+              prompt_tokens: tokenUsage.prompt_tokens,
+              completion_tokens: tokenUsage.completion_tokens,
+              total_tokens: tokenUsage.total_tokens,
+            }
+          : null,
+        latency_ms: latencyMs,
+      };
+
+      const savedAiMessage = await this.createChat(aiChat);
 
       return {
         userMessage: savedUserMessage,
+        aiResponse: savedAiMessage,
       };
     } catch (error) {
       console.error("Error sending message:", error);

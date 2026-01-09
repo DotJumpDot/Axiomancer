@@ -2,8 +2,16 @@
   import { chatStore, settingsStore, authStore } from "@/Store";
   import type { Conversation } from "@/Types";
   import { formatRelativeTime, truncate } from "@/Function";
+  import ConversationSetting from "./ConversationSetting.svelte";
 
   let { onSelectConversation }: { onSelectConversation?: (id: string) => void } = $props();
+  let showArchiveModal = $state(false);
+  let archivedConversations = $derived(
+    Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => c.archived) : []
+  );
+  let activeConversations = $derived(
+    Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => !c.archived) : []
+  );
 
   function handleSelect(conversation: Conversation) {
     if (onSelectConversation) {
@@ -12,15 +20,38 @@
     chatStore.loadConversation(conversation.id);
   }
 
-  function handleDelete(e: Event, id: string) {
+  async function handleDelete(e: Event, id: string) {
     e.stopPropagation();
-    if (confirm("Delete this conversation?")) {
-      chatStore.deleteConversation(id);
+    if (confirm("Delete this conversation permanently?")) {
+      await chatStore.deleteConversation(id);
+    }
+  }
+
+  async function handleArchive(e: Event, id: string) {
+    e.stopPropagation();
+    const conversation = chatStore.conversations.find(c => c.id === id);
+    if (conversation) {
+      await chatStore.updateConversation(id, { archived: true });
+    }
+  }
+
+  async function handleUnarchive(id: string) {
+    const conversation = chatStore.conversations.find(c => c.id === id);
+    if (conversation) {
+      await chatStore.updateConversation(id, { archived: false });
     }
   }
 
   function handleNewChat() {
     chatStore.clearCurrentConversation();
+  }
+
+  function openArchiveModal() {
+    showArchiveModal = true;
+  }
+
+  function closeArchiveModal() {
+    showArchiveModal = false;
   }
 </script>
 
@@ -60,10 +91,10 @@
       </div>
     {:else if chatStore.isLoading}
       <div class="loading">Loading conversations...</div>
-    {:else if chatStore.conversations.length === 0}
+    {:else if activeConversations.length === 0}
       <div class="empty">No conversations yet</div>
     {:else}
-      {#each chatStore.conversations as conversation (conversation.id)}
+      {#each activeConversations as conversation (conversation.id)}
         <div
           class="conversation-item"
           class:active={chatStore.currentConversation?.id === conversation.id}
@@ -80,25 +111,58 @@
         >
           <span class="conversation-title">{truncate(conversation.title, 30)}</span>
           <span class="conversation-date">{formatRelativeTime(conversation.updated_at)}</span>
-          <button 
-            class="delete-btn" 
-            onclick={(e) => handleDelete(e, conversation.id)}
-            onkeydown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleDelete(e, conversation.id);
-              }
-            }}
-            aria-label="Delete conversation"
-            title="Delete conversation"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </button>
+          <div class="conversation-actions">
+            <button 
+              class="action-btn archive-btn" 
+              onclick={(e) => handleArchive(e, conversation.id)}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleArchive(e, conversation.id);
+                }
+              }}
+              aria-label="Archive conversation"
+              title="Archive conversation"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                <line x1="1" y1="3" x2="23" y2="3"></line>
+                <path d="M10 12v6"></path>
+                <path d="M14 12v6"></path>
+              </svg>
+            </button>
+            <button 
+              class="action-btn delete-btn" 
+              onclick={(e) => handleDelete(e, conversation.id)}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleDelete(e, conversation.id);
+                }
+              }}
+              aria-label="Delete conversation"
+              title="Delete conversation"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
         </div>
       {/each}
+    {/if}
+    
+    {#if authStore.isAuthenticated && archivedConversations.length > 0}
+      <button class="view-archive-btn" onclick={openArchiveModal}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="21 8 21 21 3 21 3 8"></polyline>
+          <line x1="1" y1="3" x2="23" y2="3"></line>
+          <path d="M10 12v6"></path>
+          <path d="M14 12v6"></path>
+        </svg>
+        View Archive ({archivedConversations.length})
+      </button>
     {/if}
   </div>
 
@@ -112,6 +176,13 @@
     </button>
   </div>
 </aside>
+
+<!-- Archive Modal -->
+<ConversationSetting
+  isOpen={showArchiveModal}
+  archivedConversations={archivedConversations}
+  onClose={closeArchiveModal}
+/>
 
 <style>
   .sidebar {
@@ -253,27 +324,66 @@
     width: 100%;
   }
 
-  .delete-btn {
+  .conversation-actions {
+    display: flex;
+    gap: 4px;
     position: absolute;
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
     opacity: 0;
+  }
+
+  .conversation-item:hover .conversation-actions {
+    opacity: 1;
+  }
+
+  .action-btn {
     padding: 4px;
     background: transparent;
     border: none;
     border-radius: 4px;
     color: var(--text-secondary, #888);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
   }
 
-  .conversation-item:hover .delete-btn {
-    opacity: 1;
+  .action-btn:hover {
+    background: var(--hover-bg, #3d3d3d);
+  }
+
+  .archive-btn:hover {
+    background: var(--warning-bg, rgba(59, 130, 246, 0.2));
+    color: var(--warning-color, #3b82f6);
   }
 
   .delete-btn:hover {
     background: var(--danger-bg, rgba(239, 68, 68, 0.2));
     color: var(--danger-color, #ef4444);
+  }
+
+  .view-archive-btn {
+    width: calc(100% - 16px);
+    margin: 8px 8px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--hover-bg, #2d2d2d);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 8px;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .view-archive-btn:hover {
+    background: var(--primary-color, #6366f1);
+    color: white;
   }
 
   .sidebar-footer {

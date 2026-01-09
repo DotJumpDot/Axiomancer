@@ -10,6 +10,9 @@
     
     // Load settings
     settingsStore.loadSettings();
+    
+    // Initialize single mode from localStorage
+    chatStore.initializeSingleMode();
   });
 
   // Load authenticated data when user logs in

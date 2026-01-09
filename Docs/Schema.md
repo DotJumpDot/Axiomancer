@@ -52,15 +52,16 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### Conversation
 
-| Column                 | Type     | Nullable | Description                                     |
-| ---------------------- | -------- | -------- | ----------------------------------------------- |
-| id                     | uuid     | No       | Primary key, conversation ID                    |
-| user_id                | int      | Yes      | Foreign key to user.id (nullable for anonymous) |
-| title                  | str      | No       | Conversation title                              |
-| system_prompt_snapshot | text     | Yes      | Snapshot of system prompt at creation           |
-| auto_routing_enabled   | boolean  | No       | Whether auto model routing is enabled           |
-| created_at             | datetime | No       | Record creation timestamp                       |
-| updated_at             | datetime | No       | Record last update timestamp                    |
+| Column                 | Type     | Nullable | Description                                      |
+| ---------------------- | -------- | -------- | ------------------------------------------------ |
+| id                     | uuid     | No       | Primary key, conversation ID                     |
+| user_id                | int      | Yes      | Foreign key to user.id (nullable for anonymous)  |
+| title                  | str      | No       | Conversation title                               |
+| system_prompt_snapshot | text     | Yes      | Snapshot of system prompt at creation            |
+| auto_routing_enabled   | boolean  | No       | Whether auto model routing is enabled            |
+| archived               | boolean  | No       | Whether conversation is archived (default false) |
+| created_at             | datetime | No       | Record creation timestamp                        |
+| updated_at             | datetime | No       | Record last update timestamp                     |
 
 ### AI Model
 
@@ -189,6 +190,7 @@ CREATE TABLE conversation (
     title TEXT NOT NULL,
     system_prompt_snapshot TEXT,
     auto_routing_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES "user"(id)

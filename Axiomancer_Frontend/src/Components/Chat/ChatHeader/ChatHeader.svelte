@@ -18,6 +18,12 @@
   let showPromptEditor = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
+  
+  // Single mode selections
+  let selectedModelKey = $state<string | null>(null);
+  let selectedModelName = $state<string>("");
+  let selectedPromptId = $state<string | null>(null);
+  let selectedPromptName = $state<string>("");
 
   let loginDialog: any;
   let apiKeyDialog: any;
@@ -26,6 +32,14 @@
   let hasApiKey = $derived(authStore.currentUser ? !!authStore.currentUser.openrouter_api_key : true);
 
   onMount(async () => {
+    // Initialize single mode selections from localStorage
+    chatStore.initializeSingleMode();
+    selectedModelKey = chatStore.currentModelKey;
+    selectedPromptId = chatStore.currentPromptProfileId;
+    
+    // Load model and prompt names
+    updateModelAndPromptNames();
+    
     const axmLogin = localStorage.getItem("AxmLogin");
     if (axmLogin) {
       try {
@@ -42,13 +56,42 @@
     }
   });
 
-  function selectPrompt(profileId: string | null) {
-    promptStore.selectProfile(profileId);
-    if (profileId) {
-      chatStore.setPromptProfileId(profileId);
+  //* Sync local state with chatStore changes
+  $effect(() => {
+    const newModelKey = chatStore.currentModelKey;
+    const newPromptId = chatStore.currentPromptProfileId;
+    if (newModelKey !== selectedModelKey || newPromptId !== selectedPromptId) {
+      selectedModelKey = newModelKey;
+      selectedPromptId = newPromptId;
+      updateModelAndPromptNames();
     }
+  });
+
+  function updateModelAndPromptNames() {
+    if (selectedModelKey) {
+      const model = aiStore.enabledModels.find(m => m.model_key === selectedModelKey);
+      selectedModelName = model?.display_name || selectedModelKey;
+    }
+    
+    if (selectedPromptId) {
+      const prompt = promptStore.profiles.find(p => p.id === selectedPromptId);
+      selectedPromptName = prompt?.name || "Select Prompt";
+    }
+  }
+
+  function selectModel(modelKey: string | null) {
+    selectedModelKey = modelKey;
+    chatStore.setModelKey(modelKey);
+    updateModelAndPromptNames();
+    showModelSelector = false;
+  }
+
+  function selectPrompt(profileId: string | null) {
+    selectedPromptId = profileId;
+    chatStore.setPromptProfileId(profileId);
+    updateModelAndPromptNames();
     showPromptDropdown = false;
-    showSystemPrompt = false; // Close system prompt when selecting new prompt
+    showSystemPrompt = false;
   }
 
   function toggleMode() {
@@ -84,7 +127,7 @@
   }
 
   function handleModelSelect(event: any) {
-    aiStore.selectModel(event.detail);
+    selectModel(event.detail);
     showModelSelector = false;
   }
 
@@ -206,9 +249,10 @@
           class="dropdown-trigger"
           onclick={() => (showModelSelector = true)}
         >
-          {#if aiStore.selectedModel}
-            <span class="model-provider">{formatProviderName(aiStore.selectedModel.provider)}: </span>
-            <span class="model-name">{formatModelName(aiStore.selectedModel.model_key)}</span>
+          {#if selectedModelName && selectedModelName !== selectedModelKey}
+            <span class="model-name">{selectedModelName}</span>
+          {:else if selectedModelKey}
+            <span class="model-name">{formatModelName(selectedModelKey)}</span>
           {:else}
             Select Model
           {/if}
@@ -230,7 +274,7 @@
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
           </svg>
-          {promptStore.selectedProfile?.name || "Default"}
+          {selectedPromptName || "Select Prompt"}
           <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>

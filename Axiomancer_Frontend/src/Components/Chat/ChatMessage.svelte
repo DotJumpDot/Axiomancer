@@ -80,16 +80,22 @@
     padding: 16px 20px;
     border-radius: 12px;
     margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
   }
 
   .message.user {
     background: var(--user-message-bg, #2d2d2d);
-    margin-left: 48px;
+    align-self: flex-end;
+    margin-left: auto;
   }
 
   .message.assistant {
     background: var(--assistant-message-bg, #1a1a1a);
     border: 1px solid var(--border-color, #2d2d2d);
+    align-self: flex-start;
+    margin-right: auto;
   }
 
   .message-header {
