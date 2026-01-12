@@ -67,6 +67,11 @@
     }
   });
 
+  //* Sync current mode with aiStore auto routing state
+  $effect(() => {
+    currentMode = aiStore.autoRoutingEnabled ? 'auto' : 'single';
+  });
+
   function updateModelAndPromptNames() {
     if (selectedModelKey) {
       const model = aiStore.enabledModels.find(m => m.model_key === selectedModelKey);
@@ -100,6 +105,17 @@
       aiStore.enableAutoRouting();
     } else {
       aiStore.disableAutoRouting();
+      // When switching to single mode, ensure selections are initialized
+      chatStore.initializeSingleMode();
+      selectedModelKey = chatStore.currentModelKey;
+      selectedPromptId = chatStore.currentPromptProfileId;
+      updateModelAndPromptNames();
+      
+      // If no model is selected, open model selector
+      if (!selectedModelKey) {
+        showModelSelector = true;
+      }
+      // If no prompt is selected, it defaults to null (default prompt) - no need to open dropdown
     }
     showModelDropdown = false;
   }
