@@ -4,8 +4,6 @@ let theme = $state<"light" | "dark" | "system">("system");
 let sidebarOpen = $state(true);
 let fontSize = $state<"small" | "medium" | "large">("medium");
 let sendOnEnter = $state(true);
-let showTokenUsage = $state(true);
-let showLatency = $state(true);
 let streamResponses = $state(true);
 
 // Persist settings to localStorage
@@ -15,8 +13,6 @@ function saveSettings() {
     sidebarOpen,
     fontSize,
     sendOnEnter,
-    showTokenUsage,
-    showLatency,
     streamResponses,
   };
   localStorage.setItem("axiomancer_settings", JSON.stringify(settings));
@@ -31,8 +27,6 @@ function loadSettings() {
       sidebarOpen = settings.sidebarOpen ?? true;
       fontSize = settings.fontSize ?? "medium";
       sendOnEnter = settings.sendOnEnter ?? true;
-      showTokenUsage = settings.showTokenUsage ?? true;
-      showLatency = settings.showLatency ?? true;
       streamResponses = settings.streamResponses ?? true;
     } catch (e) {
       console.error("Failed to load settings:", e);
@@ -78,16 +72,6 @@ function setSendOnEnter(enabled: boolean) {
   saveSettings();
 }
 
-function setShowTokenUsage(enabled: boolean) {
-  showTokenUsage = enabled;
-  saveSettings();
-}
-
-function setShowLatency(enabled: boolean) {
-  showLatency = enabled;
-  saveSettings();
-}
-
 function setStreamResponses(enabled: boolean) {
   streamResponses = enabled;
   saveSettings();
@@ -107,12 +91,6 @@ export const settingsStore = {
   get sendOnEnter() {
     return sendOnEnter;
   },
-  get showTokenUsage() {
-    return showTokenUsage;
-  },
-  get showLatency() {
-    return showLatency;
-  },
   get streamResponses() {
     return streamResponses;
   },
@@ -124,8 +102,6 @@ export const settingsStore = {
   setSidebarOpen,
   setFontSize,
   setSendOnEnter,
-  setShowTokenUsage,
-  setShowLatency,
   setStreamResponses,
 };
 

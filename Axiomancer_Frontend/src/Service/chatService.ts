@@ -2,6 +2,7 @@
 import apiClient from "./apiClient";
 import type {
   Chat,
+  ChatAiRespond,
   Conversation,
   CreateChatRequest,
   UpdateChatRequest,
@@ -89,7 +90,7 @@ export const chatService = {
       imageSearch?: boolean;
     }
   ) {
-    return apiClient.post<{ userMessage: Chat; aiResponse?: Chat }>(
+    return apiClient.post<{ userMessage: Chat; aiResponse?: ChatAiRespond }>(
       `${CHAT_ENDPOINTS.conversations}/${conversationId}/send`,
       data
     );

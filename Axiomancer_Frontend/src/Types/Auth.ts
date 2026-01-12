@@ -45,7 +45,7 @@ export interface TokenPayload {
 
 export interface ApiKey {
   id: string;
-  user_id: number;
+  user_uuid: string;
   name: string;
   permissions: string[];
   expires_at: Date | null;

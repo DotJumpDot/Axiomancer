@@ -12,6 +12,7 @@
     - [Prompt Profile](#prompt-profile)
     - [Chat](#chat)
     - [Search Log](#search-log)
+    - [Chat AI Respond](#chat-ai-respond)
     - [User Selected Models](#user-selected-models)
   - [Entity Relationships](#entity-relationships)
   - [SQL Schema](#sql-schema)
@@ -52,16 +53,16 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### Conversation
 
-| Column                 | Type     | Nullable | Description                                      |
-| ---------------------- | -------- | -------- | ------------------------------------------------ |
-| id                     | uuid     | No       | Primary key, conversation ID                     |
-| user_id                | int      | Yes      | Foreign key to user.id (nullable for anonymous)  |
-| title                  | str      | No       | Conversation title                               |
-| system_prompt_snapshot | text     | Yes      | Snapshot of system prompt at creation            |
-| auto_routing_enabled   | boolean  | No       | Whether auto model routing is enabled            |
-| archived               | boolean  | No       | Whether conversation is archived (default false) |
-| created_at             | datetime | No       | Record creation timestamp                        |
-| updated_at             | datetime | No       | Record last update timestamp                     |
+| Column               | Type     | Nullable | Description                                       |
+| -------------------- | -------- | -------- | ------------------------------------------------- |
+| id                   | uuid     | No       | Primary key, conversation ID                      |
+| user_uuid            | str      | Yes      | Foreign key to user.uuid (nullable for anonymous) |
+| title                | str      | No       | Conversation title                                |
+| auto_routing_enabled | boolean  | No       | Whether auto model routing is enabled             |
+| chat_log             | text[]   | No       | Array of chat IDs in chronological order          |
+| archived             | boolean  | No       | Whether conversation is archived (default false)  |
+| created_at           | datetime | No       | Record creation timestamp                         |
+| updated_at           | datetime | No       | Record last update timestamp                      |
 
 ### AI Model
 
@@ -92,22 +93,22 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### Chat
 
-| Column            | Type     | Nullable | Description                          |
-| ----------------- | -------- | -------- | ------------------------------------ |
-| id                | uuid     | No       | Primary key, message ID              |
-| conversation_id   | uuid     | No       | Foreign key to conversation.id       |
-| role              | str      | No       | Message role (user/assistant/system) |
-| content           | text     | No       | Message content                      |
-| model_id          | uuid     | Yes      | Foreign key to ai_model.id           |
-| prompt_profile_id | uuid     | Yes      | Foreign key to prompt_profile.id     |
-| routing_mode      | str      | No       | Routing mode (auto/manual)           |
-| used_web_search   | boolean  | No       | Whether web search was used          |
-| used_image_search | boolean  | No       | Whether image search was used        |
-| search_context    | json     | Yes      | Search results context               |
-| token_usage       | json     | Yes      | Token usage statistics               |
-| latency_ms        | int      | Yes      | Response latency in milliseconds     |
-| created_at        | datetime | No       | Record creation timestamp            |
-| updated_at        | datetime | No       | Record last update timestamp         |
+| Column             | Type     | Nullable | Description                                |
+| ------------------ | -------- | -------- | ------------------------------------------ |
+| id                 | uuid     | No       | Primary key, message ID                    |
+| conversation_id    | uuid     | No       | Foreign key to conversation.id             |
+| role               | str      | No       | Message role (user/assistant/system)       |
+| content            | text     | No       | User message content (empty for assistant) |
+| model_id           | uuid     | Yes      | Foreign key to ai_model.id                 |
+| prompt_profile_id  | uuid     | Yes      | Foreign key to prompt_profile.id           |
+| routing_mode       | str      | No       | Routing mode (auto/manual)                 |
+| used_web_search    | boolean  | No       | Whether web search was used                |
+| used_image_search  | boolean  | No       | Whether image search was used              |
+| search_context     | json     | Yes      | Search results context                     |
+| chat_ai_respond_id | uuid     | Yes      | Foreign key to chat_ai_respond.id          |
+| respond_error      | boolean  | No       | Whether AI response failed (default false) |
+| created_at         | datetime | No       | Record creation timestamp                  |
+| updated_at         | datetime | No       | Record last update timestamp               |
 
 ### Search Log
 
@@ -119,6 +120,19 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | query        | str      | No       | Search query                         |
 | result_count | int      | No       | Number of results returned           |
 | created_at   | datetime | No       | Record creation timestamp            |
+
+### Chat AI Respond
+
+| Column        | Type     | Nullable | Description                                  |
+| ------------- | -------- | -------- | -------------------------------------------- |
+| id            | uuid     | No       | Primary key, AI response ID                  |
+| ai_content    | text     | No       | AI response text content                     |
+| model_key     | str      | Yes      | Model that generated the response            |
+| token_usage   | json     | Yes      | Token usage (prompt, completion, total)      |
+| latency_ms    | int      | Yes      | Response generation latency in milliseconds  |
+| finish_reason | str      | Yes      | Completion finish reason (stop, length, etc) |
+| created_at    | datetime | No       | Record creation timestamp                    |
+| updated_at    | datetime | No       | Record last update timestamp                 |
 
 ### User Selected Models
 
@@ -144,6 +158,7 @@ conversation (1) ──── (many) chat
 chat (many) ──── (1) ai_model
 chat (many) ──── (1) prompt_profile
 chat (1) ──── (many) search_log
+chat (1) ──── (1) chat_ai_respond
 user_selected_models (many) ──── (many) ai_model
 user_selected_models (many) ──── (1) prompt_profile
 ```
@@ -160,9 +175,11 @@ For PostgreSQL deployment, use the following adapted schema:
 -- Drop tables if they exist (for clean setup)
 DROP TABLE IF EXISTS search_log;
 DROP TABLE IF EXISTS chat;
+DROP TABLE IF EXISTS chat_ai_respond;
 DROP TABLE IF EXISTS prompt_profile;
 DROP TABLE IF EXISTS ai_model;
 DROP TABLE IF EXISTS conversation;
+DROP TABLE IF EXISTS user_selected_models;
 DROP TABLE IF EXISTS "user";
 
 -- User table
@@ -186,14 +203,14 @@ CREATE TABLE "user" (
 -- Conversation table
 CREATE TABLE conversation (
     id TEXT PRIMARY KEY,
-    user_id INTEGER,
+    user_uuid TEXT,
     title TEXT NOT NULL,
-    system_prompt_snapshot TEXT,
-    auto_routing_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    auto_routing_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    chat_log TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
     archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES "user"(id)
+    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
 );
 
 -- AI Model table
@@ -222,6 +239,18 @@ CREATE TABLE prompt_profile (
     FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
 );
 
+-- Chat AI Respond table
+CREATE TABLE chat_ai_respond (
+    id TEXT PRIMARY KEY,
+    ai_content TEXT NOT NULL,
+    model_key TEXT,
+    token_usage JSONB,
+    latency_ms INTEGER,
+    finish_reason TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Chat table
 CREATE TABLE chat (
     id TEXT PRIMARY KEY,
@@ -234,13 +263,14 @@ CREATE TABLE chat (
     used_web_search BOOLEAN NOT NULL DEFAULT FALSE,
     used_image_search BOOLEAN NOT NULL DEFAULT FALSE,
     search_context JSONB,
-    token_usage JSONB,
-    latency_ms INTEGER,
+    chat_ai_respond_id TEXT,
+    respond_error BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES conversation(id),
     FOREIGN KEY (model_id) REFERENCES ai_model(id),
-    FOREIGN KEY (prompt_profile_id) REFERENCES prompt_profile(id)
+    FOREIGN KEY (prompt_profile_id) REFERENCES prompt_profile(id),
+    FOREIGN KEY (chat_ai_respond_id) REFERENCES chat_ai_respond(id)
 );
 
 -- Search Log table
@@ -270,10 +300,12 @@ CREATE TABLE user_selected_models (
 );
 
 -- Performance indexes
-CREATE INDEX idx_conversation_user_id ON conversation(user_id);
+CREATE INDEX idx_conversation_user_uuid ON conversation(user_uuid);
 CREATE INDEX idx_chat_conversation_id ON chat(conversation_id);
 CREATE INDEX idx_chat_model_id ON chat(model_id);
+CREATE INDEX idx_chat_ai_respond_id ON chat(chat_ai_respond_id);
 CREATE INDEX idx_chat_created_at ON chat(created_at);
+CREATE INDEX idx_chat_ai_respond_created_at ON chat_ai_respond(created_at);
 CREATE INDEX idx_search_log_message_id ON search_log(message_id);
 CREATE INDEX idx_user_username ON "user"(username);
 CREATE INDEX idx_user_selected_models_user_uuid ON user_selected_models(user_uuid);

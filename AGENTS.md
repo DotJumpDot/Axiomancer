@@ -49,13 +49,15 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
 - **PostgreSQL** for development
 - **Schema documentation** in `Docs/Schema.MD`
 - **Run migrations carefully** — always review SQL before executing
+- **If you have questions about database structure, read the file `Docs/Schema.md`**
 
 ### Git
 
-- **When instructed with "git a/c/p"** — Perform the following automated workflow:
+- **When instructed with "git acp"** — Perform the following automated workflow:
   - Run `git status` to check current changes
   - For each modified file, run `git diff <file>` to analyze changes and generate a meaningful commit message
   - Run `git add . && git commit -m "feat/fix/clean/improve/refact: [brief description]\n- [bullet points of changes]" && git push` (from the monorepo root directory)
+  - **Note:** Don't include the literal '\n' in the commit message; it just indicates where to enter a new line.
 
 ---
 

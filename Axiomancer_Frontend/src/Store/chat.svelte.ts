@@ -85,7 +85,24 @@ async function loadMessages(conversationId: string) {
   try {
     const response = await chatService.getMessages(conversationId);
     if (response.success && response.data) {
-      messages = response.data;
+      // Transform user messages into display format: user message + AI response
+      const displayMessages: Chat[] = [];
+      for (const chat of response.data) {
+        // Add user message
+        displayMessages.push(chat);
+
+        // If has AI response, create assistant message for display
+        if (chat.chat_ai_respond_id && chat.ai_content) {
+          displayMessages.push({
+            ...chat,
+            id: chat.chat_ai_respond_id,
+            role: "assistant",
+            content: chat.ai_content,
+            model_id: chat.ai_model_key || chat.model_id,
+          });
+        }
+      }
+      messages = displayMessages;
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load messages";
@@ -99,7 +116,6 @@ async function createNewConversation(title?: string, systemPrompt?: string) {
 
     const response = await chatService.createConversation({
       title: title || "New Conversation",
-      system_prompt_snapshot: systemPrompt,
       auto_routing_enabled: true,
     });
 
@@ -181,8 +197,8 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       used_web_search: webSearchEnabled,
       used_image_search: imageSearchEnabled,
       search_context: null,
-      token_usage: null,
-      latency_ms: null,
+      chat_ai_respond_id: null,
+      respond_error: false,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -203,9 +219,28 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       messages = messages.filter((m) => m.id !== userMessage.id);
       messages = [...messages, response.data.userMessage];
 
-      // Add AI response if available
+      // Add AI response if available (ChatAiRespond type)
       if (response.data.aiResponse) {
-        messages = [...messages, response.data.aiResponse];
+        const aiMessage: Chat = {
+          id: response.data.aiResponse.id,
+          conversation_id: currentConversation!.id,
+          role: "assistant",
+          content: response.data.aiResponse.ai_content,
+          model_id: response.data.aiResponse.model_key,
+          prompt_profile_id: response.data.userMessage.prompt_profile_id,
+          routing_mode: response.data.userMessage.routing_mode,
+          used_web_search: response.data.userMessage.used_web_search,
+          used_image_search: response.data.userMessage.used_image_search,
+          search_context: response.data.userMessage.search_context,
+          chat_ai_respond_id: null,
+          respond_error: response.data.userMessage.respond_error,
+          created_at: new Date(response.data.aiResponse.created_at),
+          updated_at: new Date(response.data.aiResponse.updated_at),
+          ai_token_usage: response.data.aiResponse.token_usage,
+          ai_latency_ms: response.data.aiResponse.latency_ms,
+          ai_finish_reason: response.data.aiResponse.finish_reason,
+        };
+        messages = [...messages, aiMessage];
       }
 
       // Update conversation title if it's the first message
@@ -255,8 +290,8 @@ async function sendAnonymousMessage(
       used_web_search: webSearchEnabled,
       used_image_search: imageSearchEnabled,
       search_context: null,
-      token_usage: null,
-      latency_ms: null,
+      chat_ai_respond_id: null,
+      respond_error: false,
       created_at: new Date(),
       updated_at: new Date(),
     };

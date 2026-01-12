@@ -21,7 +21,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         });
       }
 
-      const conversations = await ChatService.getAllConversations(auth.user.id);
+      const conversations = await ChatService.getAllConversations(auth.user.uuid);
       console.log("[Chat API] GET /api/conversations ✔️");
       return new Response(JSON.stringify({ success: true, data: conversations }), {
         status: 200,
@@ -57,9 +57,13 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           );
         }
 
+        // Determine auto_routing based on request (default false for single mode)
+        const autoRouting = body.auto_routing_enabled ?? false;
+
         const conversation = await ChatService.createConversation(
           body as CreateConversationRequest,
-          auth.user.id
+          auth.user.uuid,
+          autoRouting
         );
         console.log("[Chat API] POST /api/conversations ✔️");
         return new Response(JSON.stringify({ success: true, data: conversation }), {
@@ -80,7 +84,6 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     {
       body: t.Object({
         title: t.String(),
-        system_prompt_snapshot: t.Optional(t.String()),
         auto_routing_enabled: t.Optional(t.Boolean()),
       }),
     }
@@ -147,7 +150,6 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     {
       body: t.Object({
         title: t.Optional(t.String()),
-        system_prompt_snapshot: t.Optional(t.String()),
         auto_routing_enabled: t.Optional(t.Boolean()),
       }),
     }
@@ -245,8 +247,6 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         used_web_search: t.Optional(t.Boolean()),
         used_image_search: t.Optional(t.Boolean()),
         search_context: t.Optional(t.Any()),
-        token_usage: t.Optional(t.Any()),
-        latency_ms: t.Optional(t.Number()),
       }),
     }
   )

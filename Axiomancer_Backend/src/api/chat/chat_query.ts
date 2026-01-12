@@ -6,17 +6,55 @@ import type {
   Conversation,
   CreateConversationRequest,
   UpdateConversationRequest,
+  ChatAiRespond,
+  CreateChatAiRespondRequest,
 } from "./chat_type";
 
 export class ChatQuery {
+  // ===========================
+  // Chat AI Respond queries
+  // ===========================
+
+  //* Create AI respond record
+  static async createChatAiRespond(respond: CreateChatAiRespondRequest): Promise<ChatAiRespond> {
+    const id = crypto.randomUUID();
+    const now = new Date();
+
+    const result = await sql`
+      INSERT INTO chat_ai_respond (
+        id, ai_content, model_key, token_usage, latency_ms, finish_reason, created_at, updated_at
+      ) VALUES (
+        ${id}, ${respond.ai_content}, ${respond.model_key || null},
+        ${respond.token_usage ? JSON.stringify(respond.token_usage) : null},
+        ${respond.latency_ms || null}, ${respond.finish_reason || null},
+        ${now}, ${now}
+      )
+      RETURNING *
+    `;
+
+    return result[0] as unknown as ChatAiRespond;
+  }
+
+  //* Get AI respond by ID
+  static async getChatAiRespondById(id: string): Promise<ChatAiRespond | null> {
+    const result = await sql`
+      SELECT * FROM chat_ai_respond
+      WHERE id = ${id}
+    `;
+    return result.length > 0 ? (result[0] as unknown as ChatAiRespond) : null;
+  }
+
+  // ===========================
   // Conversation queries
-  static async getAllConversations(userId?: number): Promise<Conversation[]> {
+  // ===========================
+
+  static async getAllConversations(userUuid?: string): Promise<Conversation[]> {
     let query = `SELECT * FROM conversation`;
     const params = [];
 
-    if (userId) {
-      query += ` WHERE user_id = $1`;
-      params.push(userId);
+    if (userUuid) {
+      query += ` WHERE user_uuid = $1`;
+      params.push(userUuid);
     }
 
     query += ` ORDER BY updated_at DESC`;
@@ -33,22 +71,22 @@ export class ChatQuery {
     return result.length > 0 ? (result[0] as unknown as Conversation) : null;
   }
 
+  //* Create conversation with user_uuid and auto_routing based on mode
   static async createConversation(
     conversation: CreateConversationRequest,
-    userId?: number
+    userUuid?: string,
+    autoRouting?: boolean
   ): Promise<Conversation> {
     const id = crypto.randomUUID();
     const now = new Date();
 
     const result = await sql`
       INSERT INTO conversation (
-        id, user_id, title, system_prompt_snapshot, auto_routing_enabled, archived, created_at, updated_at
+        id, user_uuid, title, auto_routing_enabled, chat_log, archived, created_at, updated_at
       ) VALUES (
-        ${id}, ${userId || null}, ${conversation.title},
-        ${conversation.system_prompt_snapshot || null},
-        ${conversation.auto_routing_enabled ?? true}, ${
-      conversation.archived ?? false
-    }, ${now}, ${now}
+        ${id}, ${userUuid || null}, ${conversation.title},
+        ${autoRouting ?? false}, ${sql.array([])},
+        ${conversation.archived ?? false}, ${now}, ${now}
       )
       RETURNING *
     `;
@@ -56,6 +94,7 @@ export class ChatQuery {
     return result[0] as unknown as Conversation;
   }
 
+  //* Update conversation including chat_log
   static async updateConversation(
     id: string,
     updates: UpdateConversationRequest
@@ -68,13 +107,13 @@ export class ChatQuery {
       setClause.push(`title = $${setClause.length + 1}`);
       values.push(updates.title);
     }
-    if (updates.system_prompt_snapshot !== undefined) {
-      setClause.push(`system_prompt_snapshot = $${setClause.length + 1}`);
-      values.push(updates.system_prompt_snapshot);
-    }
     if (updates.auto_routing_enabled !== undefined) {
       setClause.push(`auto_routing_enabled = $${setClause.length + 1}`);
       values.push(updates.auto_routing_enabled);
+    }
+    if (updates.chat_log !== undefined) {
+      setClause.push(`chat_log = $${setClause.length + 1}`);
+      values.push(updates.chat_log);
     }
     if (updates.archived !== undefined) {
       setClause.push(`archived = $${setClause.length + 1}`);
@@ -100,6 +139,16 @@ export class ChatQuery {
     return result.length > 0 ? (result[0] as unknown as Conversation) : null;
   }
 
+  //* Append chat ID to conversation's chat_log
+  static async appendToChatLog(conversationId: string, chatId: string): Promise<void> {
+    await sql`
+      UPDATE conversation
+      SET chat_log = array_append(chat_log, ${chatId}),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${conversationId}
+    `;
+  }
+
   static async deleteConversation(id: string): Promise<boolean> {
     // First delete all chats in this conversation
     await this.deleteChatsByConversationId(id);
@@ -115,11 +164,29 @@ export class ChatQuery {
   // Chat queries
   static async getChatsByConversationId(conversationId: string): Promise<Chat[]> {
     const result = await sql`
-      SELECT * FROM chat
-      WHERE conversation_id = ${conversationId}
-      ORDER BY created_at ASC
+      SELECT 
+        c.*,
+        car.ai_content,
+        car.model_key as ai_model_key,
+        car.token_usage as ai_token_usage,
+        car.latency_ms as ai_latency_ms,
+        car.finish_reason as ai_finish_reason
+      FROM chat c
+      LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
+      WHERE c.conversation_id = ${conversationId}
+      ORDER BY c.created_at ASC
     `;
-    return result.map((row) => row as unknown as Chat);
+    return result.map((row) => {
+      const chat = row as unknown as Chat & {
+        ai_content?: string;
+        ai_model_key?: string;
+        ai_token_usage?: any;
+        ai_latency_ms?: number;
+        ai_finish_reason?: string;
+      };
+      // Include AI response data in the Chat object
+      return chat as Chat;
+    });
   }
 
   // Get chat by ID
@@ -140,17 +207,20 @@ export class ChatQuery {
       INSERT INTO chat (
         id, conversation_id, role, content, model_id, prompt_profile_id,
         routing_mode, used_web_search, used_image_search, search_context,
-        token_usage, latency_ms, created_at, updated_at
+        chat_ai_respond_id, respond_error, created_at, updated_at
       ) VALUES (
         ${id}, ${chat.conversation_id}, ${chat.role}, ${chat.content},
         ${chat.model_id || null}, ${chat.prompt_profile_id || null},
         ${chat.routing_mode}, ${chat.used_web_search || false},
         ${chat.used_image_search || false}, ${JSON.stringify(chat.search_context) || null},
-        ${JSON.stringify(chat.token_usage) || null}, ${chat.latency_ms || null},
+        ${chat.chat_ai_respond_id || null}, ${chat.respond_error || false},
         ${now}, ${now}
       )
       RETURNING *
     `;
+
+    // Append chat ID to conversation's chat_log
+    await this.appendToChatLog(chat.conversation_id, id);
 
     return result[0] as unknown as Chat;
   }
@@ -193,13 +263,13 @@ export class ChatQuery {
       setClause.push(`search_context = $${setClause.length + 1}`);
       values.push(JSON.stringify(updates.search_context));
     }
-    if (updates.token_usage !== undefined) {
-      setClause.push(`token_usage = $${setClause.length + 1}`);
-      values.push(JSON.stringify(updates.token_usage));
+    if (updates.chat_ai_respond_id !== undefined) {
+      setClause.push(`chat_ai_respond_id = $${setClause.length + 1}`);
+      values.push(updates.chat_ai_respond_id);
     }
-    if (updates.latency_ms !== undefined) {
-      setClause.push(`latency_ms = $${setClause.length + 1}`);
-      values.push(updates.latency_ms);
+    if (updates.respond_error !== undefined) {
+      setClause.push(`respond_error = $${setClause.length + 1}`);
+      values.push(updates.respond_error);
     }
 
     if (setClause.length === 0) {

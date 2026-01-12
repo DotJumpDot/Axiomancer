@@ -7,21 +7,28 @@
 
   let copied = $state(false);
 
+  // Get the appropriate content based on message type
+  const displayContent = $derived(
+    message.role === "user" 
+      ? message.content 
+      : (message.ai_content || message.content || "")
+  );
+
   async function handleCopy() {
-    await copyToClipboard(message.content);
+    await copyToClipboard(displayContent);
     copied = true;
     setTimeout(() => (copied = false), 2000);
   }
 
   const isUser = $derived(message.role === "user");
-  const htmlContent = $derived(markdownToHtml(message.content));
+  const htmlContent = $derived(markdownToHtml(displayContent));
 </script>
 
 <div class="message" class:user={isUser} class:assistant={!isUser}>
   <div class="message-header">
     <span class="role">{formatRole(message.role)}</span>
-    {#if message.model_id && !isUser}
-      <span class="model-badge">{message.model_id}</span>
+    {#if !isUser && (message.ai_model_key || message.model_id)}
+      <span class="model-badge">{message.ai_model_key || message.model_id}</span>
     {/if}
     <div class="message-actions">
       <button class="action-btn" onclick={handleCopy} title="Copy">
@@ -43,25 +50,8 @@
     {@html htmlContent}
   </div>
 
-  {#if !isUser && (settingsStore.showTokenUsage || settingsStore.showLatency)}
+  {#if !isUser && (message.used_web_search || message.used_image_search)}
     <div class="message-meta">
-      {#if settingsStore.showTokenUsage && message.token_usage}
-        <span class="meta-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-          </svg>
-          {formatTokens(message.token_usage.total_tokens || 0)} tokens
-        </span>
-      {/if}
-      {#if settingsStore.showLatency && message.latency_ms}
-        <span class="meta-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          {formatLatency(message.latency_ms)}
-        </span>
-      {/if}
       {#if message.used_web_search}
         <span class="meta-item search">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

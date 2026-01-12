@@ -11,14 +11,15 @@ import type {
   Conversation,
   CreateConversationRequest,
   UpdateConversationRequest,
+  ChatAiRespond,
 } from "./chat_type";
 import type { OpenRouterRequest } from "@/api/ai/ai_type";
 
 export class ChatService {
   // Conversation management
-  static async getAllConversations(userId?: number): Promise<Conversation[]> {
+  static async getAllConversations(userUuid?: string): Promise<Conversation[]> {
     try {
-      return await ChatQuery.getAllConversations(userId);
+      return await ChatQuery.getAllConversations(userUuid);
     } catch (error) {
       console.error("Error getting conversations:", error);
       throw new Error("Failed to retrieve conversations");
@@ -36,7 +37,8 @@ export class ChatService {
 
   static async createConversation(
     conversation: CreateConversationRequest,
-    userId?: number
+    userUuid?: string,
+    autoRouting?: boolean
   ): Promise<Conversation> {
     try {
       // Validate required fields
@@ -44,7 +46,10 @@ export class ChatService {
         throw new Error("Conversation title is required");
       }
 
-      return await ChatQuery.createConversation(conversation, userId);
+      // Single mode defaults to auto_routing = false, auto mode = true
+      const effectiveAutoRouting = autoRouting ?? conversation.auto_routing_enabled ?? false;
+
+      return await ChatQuery.createConversation(conversation, userUuid, effectiveAutoRouting);
     } catch (error) {
       console.error("Error creating conversation:", error);
       throw error instanceof Error ? error : new Error("Failed to create conversation");
@@ -202,7 +207,7 @@ export class ChatService {
     }
   }
 
-  // Send message and get AI response
+  //! Send message and get AI response with error handling
   static async sendMessage(
     conversationId: string,
     userMessage: string,
@@ -211,12 +216,15 @@ export class ChatService {
     options?: {
       webSearch?: boolean;
       imageSearch?: boolean;
+      autoRouting?: boolean;
     },
     userId?: number
   ): Promise<{
     userMessage: Chat;
-    aiResponse?: Chat;
+    aiResponse?: ChatAiRespond;
   }> {
+    let savedUserMessage: Chat | null = null;
+
     try {
       // Validate conversation exists
       const conversation = await ChatQuery.getConversationById(conversationId);
@@ -262,10 +270,8 @@ export class ChatService {
         }
       }
 
-      // If no system prompt from profile, use conversation snapshot
-      if (!systemPrompt && conversation.system_prompt_snapshot) {
-        systemPrompt = conversation.system_prompt_snapshot;
-      }
+      // Determine routing mode
+      const routingMode = options?.autoRouting ? "auto" : "manual";
 
       // Create user message first
       const userChat: CreateChatRequest = {
@@ -274,12 +280,13 @@ export class ChatService {
         content: userMessage,
         model_id: actualModelKey || null,
         prompt_profile_id: promptProfileId || null,
-        routing_mode: "manual",
+        routing_mode: routingMode,
         used_web_search: options?.webSearch || false,
         used_image_search: options?.imageSearch || false,
+        respond_error: false,
       };
 
-      const savedUserMessage = await this.createChat(userChat);
+      savedUserMessage = await this.createChat(userChat);
 
       // Get conversation history for context
       const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
@@ -317,17 +324,12 @@ export class ChatService {
       // Extract AI response content
       const aiContent = aiResponse.choices[0]?.message?.content || "No response generated";
       const tokenUsage = aiResponse.usage;
+      const finishReason = aiResponse.choices[0]?.finish_reason;
 
-      // Create AI message
-      const aiChat: CreateChatRequest = {
-        conversation_id: conversationId,
-        role: "assistant",
-        content: aiContent,
-        model_id: actualModelKey || null,
-        prompt_profile_id: promptProfileId || null,
-        routing_mode: "manual",
-        used_web_search: options?.webSearch || false,
-        used_image_search: options?.imageSearch || false,
+      //* Create chat_ai_respond record
+      const chatAiRespond = await ChatQuery.createChatAiRespond({
+        ai_content: aiContent,
+        model_key: actualModelKey || null,
         token_usage: tokenUsage
           ? {
               prompt_tokens: tokenUsage.prompt_tokens,
@@ -336,16 +338,59 @@ export class ChatService {
             }
           : null,
         latency_ms: latencyMs,
-      };
+        finish_reason: finishReason || null,
+      });
 
-      const savedAiMessage = await this.createChat(aiChat);
+      // Update user message to link to AI response
+      await ChatQuery.updateChat(savedUserMessage.id, {
+        chat_ai_respond_id: chatAiRespond.id,
+        respond_error: false,
+      });
+
+      // Update local user message with AI response link
+      savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
 
       return {
         userMessage: savedUserMessage,
-        aiResponse: savedAiMessage,
+        aiResponse: chatAiRespond,
       };
     } catch (error) {
       console.error("Error sending message:", error);
+
+      //! Save error message to database even if AI call fails
+      if (savedUserMessage) {
+        try {
+          const errorContent = `Error: ${
+            error instanceof Error ? error.message : "Failed to get AI response"
+          }`;
+
+          const errorRespond = await ChatQuery.createChatAiRespond({
+            ai_content: errorContent,
+            model_key: modelKey || null,
+            token_usage: null,
+            latency_ms: null,
+            finish_reason: "error",
+          });
+
+          // Update user message to link to error response
+          await ChatQuery.updateChat(savedUserMessage.id, {
+            chat_ai_respond_id: errorRespond.id,
+            respond_error: true,
+          });
+
+          // Update local user message
+          savedUserMessage.chat_ai_respond_id = errorRespond.id;
+          savedUserMessage.respond_error = true;
+
+          return {
+            userMessage: savedUserMessage,
+            aiResponse: errorRespond,
+          };
+        } catch (dbError) {
+          console.error("Error saving error message to database:", dbError);
+        }
+      }
+
       throw error instanceof Error ? error : new Error("Failed to send message");
     }
   }
@@ -361,7 +406,8 @@ export class ChatService {
       }
 
       const userMessage = body.message;
-      const modelKey = body.model_key || "anthropic/claude-3-haiku"; // Default model
+      const modelKey =
+        body.model_key || process.env.SERVER_ANON_MODEL || "xiaomi/mimo-v2-flash:free"; // Default model
 
       // Get AI response
       const aiContent = await openRouterClient.simpleChat(modelKey, userMessage);
@@ -378,8 +424,8 @@ export class ChatService {
         used_web_search: false,
         used_image_search: false,
         search_context: null,
-        token_usage: null,
-        latency_ms: null,
+        chat_ai_respond_id: null,
+        respond_error: false,
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -395,8 +441,8 @@ export class ChatService {
         used_web_search: false,
         used_image_search: false,
         search_context: null,
-        token_usage: null,
-        latency_ms: null,
+        chat_ai_respond_id: null,
+        respond_error: false,
         created_at: new Date(),
         updated_at: new Date(),
       };

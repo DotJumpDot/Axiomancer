@@ -35,46 +35,49 @@ const app = new Elysia()
   .use(swagger({ path: "/w" }))
   // Auth API (no authentication required - used to get tokens/API keys)
   .use(authApi)
-  // Protected APIs (require JWT token OR API key)
-  .derive(async ({ request, set }) => {
-    try {
-      let auth = null;
+  // Optional authentication middleware - sets auth context if valid credentials provided
+  .derive(async ({ request }) => {
+    let auth = null;
 
-      // Check JWT token from Authorization header (primary auth method)
-      const authHeader = request.headers.get("Authorization");
-      if (authHeader && authHeader.startsWith("Bearer ")) {
-        const token = authHeader.substring(7);
+    // Check JWT token from Authorization header (primary auth method)
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      try {
         const tokenValidation = await AuthService.validateToken(token);
-
         if (tokenValidation.valid) {
           auth = {
             user: tokenValidation.user,
             authMethod: "jwt",
           };
-          return { auth };
         }
+      } catch (error) {
+        console.error("JWT validation error:", error);
+        // Continue without auth - let route handlers decide if auth is required
       }
+    }
 
-      // Fallback to API key from X-API-KEY header
+    // Fallback to API key from X-API-KEY header
+    if (!auth) {
       const apiKey = request.headers.get("X-API-KEY");
       if (apiKey) {
-        const apiKeyValidation = await AuthService.validateApiKey(apiKey);
-        if (apiKeyValidation.valid) {
-          auth = {
-            user: apiKeyValidation.user,
-            authMethod: "apikey",
-          };
-          return { auth };
+        try {
+          const apiKeyValidation = await AuthService.validateApiKey(apiKey);
+          if (apiKeyValidation.valid) {
+            auth = {
+              user: apiKeyValidation.user,
+              authMethod: "apikey",
+            };
+          }
+        } catch (error) {
+          console.error("API key validation error:", error);
+          // Continue without auth - let route handlers decide if auth is required
         }
       }
-
-      // No valid authentication found
-      set.status = 401;
-      throw new Error("Authentication required: Provide JWT Bearer token or X-API-KEY header");
-    } catch (error) {
-      set.status = 401;
-      throw new Error(error instanceof Error ? error.message : "Authentication failed");
     }
+
+    // Return auth context (null if no valid authentication provided)
+    return { auth };
   })
   .use(chatApi)
   .use(aiApi)
