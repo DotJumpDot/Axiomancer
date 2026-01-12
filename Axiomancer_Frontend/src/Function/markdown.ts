@@ -1,18 +1,69 @@
 // Markdown processing utilities
 import { extractCodeBlocks } from "./formatters";
 
+export interface CodeBlock {
+  id: string;
+  language: string;
+  code: string;
+}
+
+export interface MarkdownResult {
+  parts: Array<{ type: "html" | "code"; content: string; id?: string }>;
+  codeBlocks: CodeBlock[];
+}
+
+// Extract and process markdown with code blocks separated
+export function processMarkdown(markdown: string): MarkdownResult {
+  const codeBlocks: CodeBlock[] = [];
+  const parts: Array<{ type: "html" | "code"; content: string; id?: string }> = [];
+
+  let lastIndex = 0;
+  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  let match;
+
+  while ((match = codeBlockRegex.exec(markdown)) !== null) {
+    // Add text before code block
+    if (match.index > lastIndex) {
+      const textBefore = markdown.substring(lastIndex, match.index);
+      parts.push({
+        type: "html",
+        content: markdownToHtml(textBefore),
+      });
+    }
+
+    // Add code block
+    const id = `code-block-${codeBlocks.length}`;
+    const language = match[1] || "text";
+    const code = match[2].trim();
+
+    codeBlocks.push({ id, language, code });
+    parts.push({
+      type: "code",
+      content: code,
+      id,
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < markdown.length) {
+    const textAfter = markdown.substring(lastIndex);
+    parts.push({
+      type: "html",
+      content: markdownToHtml(textAfter),
+    });
+  }
+
+  return { parts, codeBlocks };
+}
+
 // Simple markdown to HTML converter (basic subset)
 export function markdownToHtml(markdown: string): string {
   let html = markdown;
 
   // Escape HTML entities first
   html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  // Code blocks (triple backticks)
-  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
-    const language = lang || "text";
-    return `<pre class="code-block" data-language="${language}"><code>${code.trim()}</code></pre>`;
-  });
 
   // Inline code
   html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');

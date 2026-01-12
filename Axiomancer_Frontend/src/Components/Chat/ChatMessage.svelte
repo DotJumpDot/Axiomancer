@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Chat } from "@/Types";
-  import { markdownToHtml, formatRole, formatLatency, formatTokens, copyToClipboard } from "@/Function";
+  import { processMarkdown, formatRole, formatLatency, formatTokens, copyToClipboard } from "@/Function";
   import { settingsStore } from "@/Store";
+  import CodeBlock from "./MessageMarkdown/CodeBlock.svelte";
 
   let { message }: { message: Chat } = $props();
 
@@ -9,8 +10,8 @@
 
   // Get the appropriate content based on message type
   const displayContent = $derived(
-    message.role === "user" 
-      ? message.content 
+    message.role === "user"
+      ? message.content
       : (message.ai_content || message.content || "")
   );
 
@@ -21,9 +22,13 @@
   }
 
   const isUser = $derived(message.role === "user");
-  const htmlContent = $derived(markdownToHtml(displayContent));
+  const markdownData = $derived(processMarkdown(displayContent));
+
+  // Show reminder for AI messages with code blocks
+  const hasCodeInContent = $derived(markdownData.codeBlocks.length > 0);
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="message" class:user={isUser} class:assistant={!isUser}>
   <div class="message-header">
     <span class="role">{formatRole(message.role)}</span>
@@ -31,7 +36,7 @@
       <span class="model-badge">{message.ai_model_key || message.model_id}</span>
     {/if}
     <div class="message-actions">
-      <button class="action-btn" onclick={handleCopy} title="Copy">
+      <button class="action-btn" onclick={handleCopy} title="Copy message">
         {#if copied}
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="20 6 9 17 4 12"></polyline>
@@ -47,8 +52,22 @@
   </div>
 
   <div class="message-content">
-    {@html htmlContent}
+    {#each markdownData.parts as part}
+      {#if part.type === 'html'}
+        {@html part.content}
+      {:else if part.type === 'code'}
+        {#each markdownData.codeBlocks.filter(cb => cb.id === part.id) as codeBlock}
+          <CodeBlock code={codeBlock.code} language={codeBlock.language} />
+        {/each}
+      {/if}
+    {/each}
   </div>
+
+  {#if !isUser && hasCodeInContent}
+    <div class="message-reminder">
+      <span class="reminder-text">💡 Code blocks include a copy button in the top-right corner</span>
+    </div>
+  {/if}
 
   {#if !isUser && (message.used_web_search || message.used_image_search)}
     <div class="message-meta">
@@ -152,12 +171,42 @@
     margin-bottom: 0;
   }
 
-  .message-content :global(pre.code-block) {
+  .message-content :global(.code-block-wrapper) {
     background: var(--code-bg, #0d0d0d);
-    padding: 12px 16px;
     border-radius: 8px;
-    overflow-x: auto;
     margin: 12px 0;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #2d2d2d);
+  }
+
+  .message-content :global(.code-block-header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-color, #2d2d2d);
+  }
+
+  .message-content :global(.code-language) {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    text-transform: uppercase;
+    font-weight: 600;
+    font-family: "Fira Code", "Consolas", monospace;
+  }
+
+  .message-content :global(pre.code-block) {
+    padding: 12px 16px;
+    margin: 0;
+    overflow-x: auto;
+    font-family: "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .message-content :global(pre.code-block code) {
+    color: var(--text-primary, #fff);
   }
 
   .message-content :global(code.inline-code) {
@@ -192,6 +241,22 @@
     padding-left: 16px;
     margin: 12px 0;
     color: var(--text-secondary, #888);
+  }
+
+  .message-reminder {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 6px;
+    border-left: 2px solid var(--primary-color, #6366f1);
+  }
+
+  .reminder-text {
+    font-size: 11px;
+    color: var(--primary-color, #6366f1);
+    font-weight: 500;
   }
 
   .message-meta {
