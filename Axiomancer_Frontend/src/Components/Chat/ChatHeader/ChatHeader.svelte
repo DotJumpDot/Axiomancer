@@ -27,6 +27,7 @@
 
   let loginDialog: any;
   let apiKeyDialog: any;
+  let isInitializing = $state(true);
 
   // Derived state for API key status - defaults to true until we know otherwise
   let hasApiKey = $derived(authStore.currentUser ? !!authStore.currentUser.openrouter_api_key : true);
@@ -54,6 +55,9 @@
         console.error("Failed to load stored user:", error);
       }
     }
+    
+    // Mark initialization as complete
+    isInitializing = false;
   });
 
   //* Sync local state with chatStore changes
@@ -67,10 +71,6 @@
     }
   });
 
-  //* Sync current mode with aiStore auto routing state
-  $effect(() => {
-    currentMode = aiStore.autoRoutingEnabled ? 'auto' : 'single';
-  });
 
   function updateModelAndPromptNames() {
     if (selectedModelKey) {
@@ -83,6 +83,42 @@
       selectedPromptName = prompt?.name || "Select Prompt";
     }
   }
+
+  // Initialize mode when user becomes authenticated
+  $effect(() => {
+    if (authStore.isAuthenticated && authStore.currentUser) {
+      // Get saved mode from localStorage
+      const savedMode = authStore.getMode();
+      
+      // Only update if different to avoid infinite loops
+      if (currentMode !== savedMode) {
+        currentMode = savedMode;
+      }
+      
+      // Apply to aiStore
+      if (savedMode === 'auto') {
+        aiStore.enableAutoRouting();
+      } else {
+        aiStore.disableAutoRouting();
+      }
+    }
+  });
+
+  // Keep currentMode in sync with aiStore (but don't override localStorage)
+  $effect(() => {
+    // Skip during initialization to prevent overriding localStorage
+    if (isInitializing) return;
+    
+    // This effect runs when aiStore.autoRoutingEnabled changes
+    // We use it to update currentMode, but we don't save to localStorage here
+    // to avoid circular updates
+    const aiMode = aiStore.autoRoutingEnabled ? 'auto' : 'single';
+    
+    // Only update if different (this handles external changes to aiStore)
+    if (currentMode !== aiMode) {
+      currentMode = aiMode;
+    }
+  });
 
   function selectModel(modelKey: string | null) {
     selectedModelKey = modelKey;
@@ -101,6 +137,13 @@
 
   function toggleMode() {
     currentMode = currentMode === 'auto' ? 'single' : 'auto';
+    
+    // Save mode to localStorage
+    if (authStore.isAuthenticated) {
+      authStore.saveMode(currentMode);
+    }
+    
+    // Update aiStore state
     if (currentMode === 'auto') {
       aiStore.enableAutoRouting();
     } else {
@@ -123,8 +166,15 @@
   function toggleAutoRouting() {
     if (aiStore.autoRoutingEnabled) {
       aiStore.disableAutoRouting();
+      currentMode = 'single';
     } else {
       aiStore.enableAutoRouting();
+      currentMode = 'auto';
+    }
+    
+    // Save mode to localStorage
+    if (authStore.isAuthenticated) {
+      authStore.saveMode(currentMode);
     }
   }
 

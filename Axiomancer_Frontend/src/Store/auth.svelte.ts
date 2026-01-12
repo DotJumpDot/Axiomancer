@@ -207,6 +207,34 @@ function getSelections(): { modelKey: string | null; promptId: string | null } {
   return { modelKey: null, promptId: null };
 }
 
+//* Save mode selection to AxmLogin
+function saveMode(mode: 'auto' | 'single') {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      loginData.mode_last_selected = mode;
+      localStorage.setItem("AxmLogin", JSON.stringify(loginData));
+    } catch (error) {
+      console.error("Failed to save mode to AxmLogin:", error);
+    }
+  }
+}
+
+//* Get mode selection from AxmLogin
+function getMode(): 'auto' | 'single' {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      return loginData.mode_last_selected || 'auto';
+    } catch (error) {
+      console.error("Failed to get mode from AxmLogin:", error);
+    }
+  }
+  return 'auto';
+}
+
 // Export store object with getters for reactive access
 export const authStore = {
   get isAuthenticated() {
@@ -233,6 +261,8 @@ export const authStore = {
   updateCurrentUser,
   saveSelections,
   getSelections,
+  saveMode,
+  getMode,
 };
 
 export default authStore;

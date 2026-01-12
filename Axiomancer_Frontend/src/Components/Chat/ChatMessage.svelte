@@ -115,13 +115,13 @@
   }
 
   .role {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary, #fff);
   }
 
   .model-badge {
-    font-size: 11px;
+    font-size: 13px;
     padding: 2px 8px;
     background: var(--badge-bg, #3d3d3d);
     border-radius: 4px;

@@ -180,7 +180,7 @@
 
   .input-wrapper {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
     background: var(--input-bg, #2d2d2d);
     border: 1px solid var(--border-color, #3d3d3d);
