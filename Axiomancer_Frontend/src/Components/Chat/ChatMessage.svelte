@@ -172,7 +172,6 @@
   }
 
   .message-content :global(.code-block-wrapper) {
-    background: var(--code-bg, #0d0d0d);
     border-radius: 8px;
     margin: 12px 0;
     overflow: hidden;
