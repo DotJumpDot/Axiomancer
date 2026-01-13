@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chatStore } from "@/Store";
+  import { chatStore, aiStore } from "@/Store";
   import ChatMessage from "./ChatMessage.svelte";
   import { scrollToBottom } from "@/Function";
   import { onMount } from "svelte";
@@ -16,6 +16,30 @@
   onMount(() => {
     scrollToBottom(messagesContainer);
   });
+
+  //* Handle quick action button click
+  async function handleQuickAction(text: string) {
+    if (chatStore.isSending) return;
+
+    // Check if in single mode or auto-routing mode
+    const isAutoRouting = aiStore.autoRoutingEnabled;
+    
+    // Determine model key to use
+    let modelKey: string;
+    if (!isAutoRouting) {
+      // Single mode - use selected model or fallback to default
+      modelKey = chatStore.currentModelKey || "auto"; // Backend will handle SERVER_ANON_MODEL
+    } else {
+      // Auto mode - use selected model
+      modelKey = aiStore.selectedModel?.model_key || "auto";
+    }
+
+    // Send message with current prompt (if selected) or backend will use default
+    await chatStore.sendMessage(text, modelKey, {
+      autoRouting: isAutoRouting,
+      promptProfileId: chatStore.currentPromptProfileId || undefined,
+    });
+  }
 </script>
 
 <div class="messages-container" bind:this={messagesContainer}>
@@ -29,14 +53,14 @@
       <h2>Start a new conversation</h2>
       <p>Select a model and type your message below to begin</p>
       <div class="quick-actions">
-        <button class="quick-action">
+        <button class="quick-action" onclick={() => handleQuickAction("Help me code")}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="16 18 22 12 16 6"></polyline>
             <polyline points="8 6 2 12 8 18"></polyline>
           </svg>
           Help me code
         </button>
-        <button class="quick-action">
+        <button class="quick-action" onclick={() => handleQuickAction("Explain a concept")}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -44,14 +68,14 @@
           </svg>
           Explain a concept
         </button>
-        <button class="quick-action">
+        <button class="quick-action" onclick={() => handleQuickAction("Write content")}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
           </svg>
           Write content
         </button>
-        <button class="quick-action">
+        <button class="quick-action" onclick={() => handleQuickAction("Research a topic")}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>

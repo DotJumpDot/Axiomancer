@@ -8,6 +8,9 @@
 
   let copied = $state(false);
 
+  // Check if message has an error
+  const hasError = $derived(message.respond_error === true);
+
   // Get the appropriate content based on message type
   const displayContent = $derived(
     message.role === "user"
@@ -15,21 +18,28 @@
       : (message.ai_content || message.content || "")
   );
 
+  // Simplified content for error messages
+  const displayContentForError = $derived(
+    hasError && message.role !== "user"
+      ? "Failed to send AI response"
+      : displayContent
+  );
+
   async function handleCopy() {
-    await copyToClipboard(displayContent);
+    await copyToClipboard(displayContentForError);
     copied = true;
     setTimeout(() => (copied = false), 2000);
   }
 
   const isUser = $derived(message.role === "user");
-  const markdownData = $derived(processMarkdown(displayContent));
+  const markdownData = $derived(processMarkdown(displayContentForError));
 
   // Show reminder for AI messages with code blocks
   const hasCodeInContent = $derived(markdownData.codeBlocks.length > 0);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="message" class:user={isUser} class:assistant={!isUser}>
+<div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError}>
   <div class="message-header">
     <span class="role">{formatRole(message.role)}</span>
     {#if !isUser && (message.ai_model_key || message.model_id)}
@@ -63,7 +73,13 @@
     {/each}
   </div>
 
-  {#if !isUser && hasCodeInContent}
+  {#if !isUser && hasError}
+    <div class="message-reminder error">
+      <span class="reminder-text" title={displayContent.replace(/^Error:\s*/, '')}>
+        ⚠️ {displayContent.replace(/^Error:\s*/, '')}
+      </span>
+    </div>
+  {:else if !isUser && hasCodeInContent}
     <div class="message-reminder">
       <span class="reminder-text">💡 Code blocks include a copy button in the top-right corner</span>
     </div>
@@ -105,6 +121,11 @@
     border: 1px solid var(--border-color, #2d2d2d);
     align-self: flex-start;
     margin-right: auto;
+  }
+
+  .message.assistant.error {
+    border: 1px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
   }
 
   .message-header {
@@ -252,10 +273,25 @@
     border-left: 2px solid var(--primary-color, #6366f1);
   }
 
+  .message-reminder.error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 2px solid #ef4444;
+    justify-content: flex-start;
+  }
+
   .reminder-text {
     font-size: 11px;
     color: var(--primary-color, #6366f1);
     font-weight: 500;
+  }
+
+  .message-reminder.error .reminder-text {
+    color: #ef4444;
+    font-weight: 600;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .message-meta {
