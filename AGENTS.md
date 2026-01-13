@@ -16,6 +16,7 @@
 5. **Image Search Integration** - Pixabay API for image retrieval in conversations
 6. **Conversation History** - Persistent storage of multi-turn conversations with metadata (tokens, latency, search context)
 7. **User Authentication & API Key Management** - Secure user accounts with OpenRouter API key storage
+8. **Favorites System** - User can favorite models, prompts, and conversations for quick access and prioritized display
 
 ### Technology Stack:
 
@@ -54,6 +55,7 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
 ### Git
 
 - **When instructed with "git acp"** — Perform the following automated workflow:
+
   - Run `git status` to check current changes
   - For each modified file, run `git diff <file>` to analyze changes and generate a meaningful commit message
   - Run `git add . && git commit -m "feat/fix/clean/improve/refact: [brief description]
@@ -126,6 +128,24 @@ The Axiomancer backend implements the following core entities:
 | **Fields**          | id (UUID), message_id (FK), provider (duckduckgo/pixabay), query, result_count, created_at, updated_at |
 | **Relationships**   | References Chat message; many logs per message for multi-source searches                               |
 
+#### **User Favorite**
+
+| Purpose              | Details                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **User Preferences** | Stores user's favorite models, prompts, and conversations for quick access                                                      |
+| **Personalization**  | Enables prioritized display and easy selection of frequently used items                                                         |
+| **Fields**           | id, user_uuid (FK), favorite_models (text[]), favorite_prompts (text[]), favorite_conversation (text[]), created_at, updated_at |
+| **Relationships**    | Belongs to User; many-to-many with AiModel, PromptProfile, and Conversation                                                     |
+
+#### **User Selected Models**
+
+| Purpose                   | Details                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| **Model Selection**       | Stores user's selected AI models for specific prompts or general use                 |
+| **Routing Configuration** | Enables custom model selection per prompt profile for personalized routing           |
+| **Fields**                | id, user_uuid (FK), prompt_id (FK), selected_models (text[]), created_at, updated_at |
+| **Relationships**         | Belongs to User; optionally references PromptProfile; many-to-many with AiModel      |
+
 ### Backend File Structure
 
 ```
@@ -165,6 +185,11 @@ Axiomancer_Backend/src/
 │   │       ├── pixabay_service.ts       # Pixabay business logic
 │   │       ├── pixabay_query.ts         # Pixabay data layer
 │   │       └── pixabay_type.ts          # Pixabay type definitions
+│   ├── favorite/                        # User favorites management
+│   │   ├── favorite_api.ts              # Routes: GET/POST/PUT/DELETE /favorites
+│   │   ├── favorite_service.ts          # Favorite operations business logic
+│   │   ├── favorite_query.ts            # Database queries for favorites
+│   │   └── favorite_type.ts             # TypeScript interfaces (Favorite, CreateFavoriteRequest, etc.)
 │   └── user/                            # User account management
 │       ├── user_api.ts                  # Routes: GET/POST/PUT/DELETE /api/users
 │       ├── user_service.ts              # User profile operations
