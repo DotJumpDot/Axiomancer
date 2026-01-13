@@ -273,31 +273,21 @@
 
         {#if showModelDropdown}
           <div class="dropdown-menu">
-            <button class="dropdown-item" onclick={toggleMode}>
+            <button class="dropdown-item" class:active-mode={currentMode === 'auto'} onclick={toggleMode}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
               </svg>
               <span class="item-name">Auto-Routing</span>
               <span class="item-desc">Automatically select best model</span>
-              {#if currentMode === 'auto'}
-                <svg class="check" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              {/if}
             </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" onclick={toggleMode}>
+            <button class="dropdown-item" class:active-mode={currentMode === 'single'} class:single={currentMode === 'single'} onclick={toggleMode}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
               </svg>
               <span class="item-name">Single Model</span>
               <span class="item-desc">Select a specific model</span>
-              {#if currentMode === 'single'}
-                <svg class="check" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              {/if}
             </button>
           </div>
         {/if}

@@ -1002,12 +1002,6 @@
 <style>
   @import './ChatHeader.popup.css';
 
-  .delete-buttons {
-    display: flex;
-    gap: 5px;
-    flex-direction: row-reverse;
-  }
-
   .inline-favorite-btn {
     background: none;
     border: none;

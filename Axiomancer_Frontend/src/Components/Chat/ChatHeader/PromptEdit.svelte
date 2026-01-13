@@ -427,7 +427,440 @@
 {/if}
 
 <style>
-	@import './ChatHeader.popup.css';
+	/* ChatHeader - Preset Popup */
+	.preset-popup-backdrop {
+	  position: fixed;
+	  top: 0;
+	  left: 0;
+	  right: 0;
+	  bottom: 0;
+	  background: #000000cc;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  z-index: 1000;
+	}
+
+	.preset-popup {
+	  background: var(--bg-primary, #1a1a1a);
+	  border: 1px solid var(--border-color, #2d2d2d);
+	  border-radius: 12px;
+	  width: 1200px;
+	  height: 90vh;
+	  display: flex;
+	  flex-direction: column;
+	  overflow: hidden;
+	}
+
+	.preset-popup-header {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 0;
+	  padding: 20px 24px;
+	  border-bottom: 1px solid var(--border-color, #2d2d2d);
+	}
+
+	.preset-popup-header > div:first-child {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  width: 100%;
+	}
+
+	.preset-popup-header h3 {
+	  margin: 0;
+	  color: var(--text-primary, #fff);
+	  font-size: 18px;
+	  font-weight: 600;
+	}
+
+	.preset-title {
+	  margin: 0;
+	  color: var(--text-primary, #fff);
+	  font-size: 18px;
+	  font-weight: 600;
+	  transition: opacity 0.2s;
+	}
+
+	.preset-title:hover {
+	  opacity: 0.8;
+	}
+
+	.preset-popup-header .message {
+	  width: 100%;
+	  padding: 8px 12px;
+	  border-radius: 6px;
+	  font-size: 13px;
+	  margin-top: 12px;
+	}
+
+	.preset-popup-header .error-message {
+	  background: rgba(255, 68, 68, 0.1);
+	  border: 1px solid #ff4444;
+	  color: #ff6666;
+	}
+
+	.preset-popup-header .success-message {
+	  background: rgba(0, 255, 200, 0.1);
+	  border: 1px solid #00ffc8;
+	  color: #00ffc8;
+	}
+
+	.preset-popup-content {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 20px;
+	  flex: 1;
+	  overflow: hidden;
+	  padding: 20px 24px;
+	}
+
+	.preset-panel {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 12px;
+	  overflow: hidden;
+	  min-height: 400px;
+	}
+
+	.preset-panel-header {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  margin-bottom: 8px;
+	}
+
+	.preset-panel-header .header-left {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 4px;
+	}
+
+	.preset-panel-header .header-left h4 {
+	  margin: 0;
+	  color: var(--text-primary, #fff);
+	  font-size: 16px;
+	  font-weight: 600;
+	}
+
+	.add-prompt-btn {
+	  background: #00ffc8;
+	  border: none;
+	  color: #000000;
+	  cursor: pointer;
+	  padding: 6px 12px;
+	  border-radius: 6px;
+	  transition: all 0.2s;
+	  display: flex;
+	  align-items: center;
+	  gap: 6px;
+	  font-size: 13px;
+	  font-weight: 500;
+	}
+
+	.add-prompt-btn:hover {
+	  background: #01b18b;
+	}
+
+	.model-count {
+	  font-size: 12px;
+	  padding: 4px 12px;
+	  background: var(--input-bg, #2d2d2d);
+	  border-radius: 12px;
+	  color: var(--text-secondary, #888);
+	}
+
+	.prompt-list {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 8px;
+	  overflow-y: auto;
+	  flex: 1;
+	  padding-right: 8px;
+	  min-height: 300px;
+	}
+
+	.prompt-list::-webkit-scrollbar {
+	  width: 6px;
+	}
+
+	.prompt-list::-webkit-scrollbar-track {
+	  background: transparent;
+	}
+
+	.prompt-list::-webkit-scrollbar-thumb {
+	  background: var(--border-color, #3d3d3d);
+	  border-radius: 3px;
+	}
+
+	.prompt-radio-item {
+	  display: flex;
+	  align-items: center;
+	  gap: 12px;
+	  padding: 12px;
+	  background: var(--input-bg, #2d2d2d);
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 8px;
+	  cursor: pointer;
+	  transition: all 0.2s;
+	}
+
+	.prompt-radio-item:hover {
+	  background: var(--hover-bg, #3d3d3d);
+	  border-color: var(--border-color-hover, #4d4d4d);
+	}
+
+	.prompt-radio-item.selected {
+	  background: rgba(99, 102, 241, 0.1);
+	  border-color: var(--primary-color, #6366f1);
+	  box-shadow: 0 0 0 1px var(--primary-color, #6366f1);
+	}
+
+	.prompt-radio-item input[type="radio"] {
+	  accent-color: var(--primary-color, #6366f1);
+	}
+
+	.show-prompt-label {
+	  margin-left: auto;
+	  padding: 4px;
+	  background: transparent;
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 4px;
+	  color: var(--text-secondary, #888);
+	  cursor: pointer;
+	  transition: all 0.2s;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	}
+
+	.show-prompt-label:hover {
+	  background: var(--hover-bg, #3d3d3d);
+	  color: var(--text-primary, #fff);
+	  border-color: var(--border-color-hover, #4d4d4d);
+	}
+
+	.edit-prompt-btn,
+	.delete-prompt-btn {
+	  padding: 6px;
+	  background: transparent;
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 4px;
+	  color: var(--text-secondary, #888);
+	  cursor: pointer;
+	  transition: all 0.2s;
+	  display: inline-flex;
+	  align-items: center;
+	  justify-content: center;
+	}
+
+	.edit-prompt-btn:hover {
+	  background: var(--hover-bg, #3d3d3d);
+	  color: #00ffc8;
+	  border-color: #00ffc8;
+	}
+
+	.delete-prompt-btn:hover {
+	  background: var(--danger-color, #e53e3e);
+	  color: white;
+	  border-color: var(--danger-color, #e53e3e);
+	}
+
+	.edit-prompt-form {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 8px;
+	  width: 100%;
+	}
+
+	.edit-input {
+	  background: var(--bg-secondary, #2a2a2a);
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 4px;
+	  color: var(--text-primary, #fff);
+	  padding: 6px 8px;
+	  font-size: 13px;
+	  outline: none;
+	  width: 1080px;
+	}
+
+	.edit-input:focus {
+	  border-color: var(--accent-color, #007acc);
+	  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+	}
+
+	.edit-actions {
+	  display: flex;
+	  gap: 6px;
+	  justify-content: flex-end;
+	}
+
+	.save-edit-btn,
+	.cancel-edit-btn {
+	  padding: 10px 30px;
+	  border-radius: 4px;
+	  cursor: pointer;
+	  transition: all 0.2s;
+	  display: flex;
+	  align-items: center;
+	  gap: 4px;
+	  font-size: 12px;
+	  font-weight: 500;
+	  border: none;
+	}
+
+	.save-edit-btn {
+	  background: #00ffc8;
+	  color: #000;
+	}
+
+	.save-edit-btn:hover {
+	  background: #01b18b;
+	}
+
+	.cancel-edit-btn {
+	  background: var(--danger-color, #e53e3e);
+	  color: white;
+	}
+
+	.cancel-edit-btn:hover {
+	  background: #8b2626;
+	}
+
+	.prompt-info .item-name {
+	  color: var(--text-primary, #fff);
+	  font-weight: 500;
+	  font-size: 14px;
+	}
+
+	.prompt-info .item-desc {
+	  color: var(--text-secondary, #888);
+	  font-size: 12px;
+	}
+
+	.preset-popup-footer {
+	  display: flex;
+	  justify-content: flex-start;
+	  gap: 12px;
+	  padding: 20px 24px;
+	  border-top: 1px solid var(--border-color, #2d2d2d);
+	}
+
+	.cancel-btn {
+	  margin-left: auto;
+	  padding: 8px 16px;
+	  background: var(--danger-color, #e53e3e);
+	  border: 1px solid var(--danger-color, #e53e3e);
+	  border-radius: 6px;
+	  color: white;
+	  cursor: pointer;
+	  font-size: 14px;
+	  font-weight: 500;
+	  transition: all 0.2s;
+	}
+
+	.cancel-btn:hover {
+	  background: #8b2626;
+	  border-color: #8b2626;
+	}
+
+	.apply-btn {
+	  padding: 8px 16px;
+	  background: var(--primary-color, #6366f1);
+	  border: 1px solid var(--primary-color, #6366f1);
+	  border-radius: 6px;
+	  color: white;
+	  cursor: pointer;
+	  font-size: 14px;
+	  font-weight: 500;
+	  transition: all 0.2s;
+	}
+
+	.apply-btn:hover {
+	  background: var(--primary-color-hover, #5855eb);
+	  border-color: var(--primary-color-hover, #5855eb);
+	}
+
+	.individual-system-prompt {
+	  margin: 8px 0 12px 36px;
+	  padding: 12px;
+	  background: var(--input-bg, #2d2d2d);
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 6px;
+	}
+
+	.individual-system-prompt .system-prompt-header {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  margin-bottom: 8px;
+	}
+
+	.individual-system-prompt .system-prompt-header h5 {
+	  margin: 0;
+	  color: var(--text-primary, #fff);
+	  font-size: 13px;
+	  font-weight: 600;
+	}
+
+	.edit-system-prompt-btn {
+	  padding: 4px 8px;
+	  background: transparent;
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 4px;
+	  color: var(--text-secondary, #888);
+	  cursor: pointer;
+	  transition: all 0.2s;
+	  display: flex;
+	  align-items: center;
+	  gap: 4px;
+	  font-size: 12px;
+	}
+
+	.edit-system-prompt-btn:hover {
+	  background: var(--hover-bg, #3d3d3d);
+	  color: #00ffc8;
+	  border-color: #00ffc8;
+	}
+
+	.edit-system-prompt-form {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 8px;
+	}
+
+	.edit-textarea {
+	  background: var(--bg-secondary, #2a2a2a);
+	  border: 1px solid var(--border-color, #3d3d3d);
+	  border-radius: 4px;
+	  color: var(--text-primary, #fff);
+	  padding: 8px;
+	  font-size: 12px;
+	  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+	  outline: none;
+	  resize: vertical;
+	  line-height: 1.4;
+	}
+
+	.edit-textarea:focus {
+	  border-color: var(--accent-color, #007acc);
+	  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+	}
+
+	.individual-system-prompt .system-prompt-content {
+	  max-height: 150px;
+	  overflow-y: auto;
+	}
+
+	.individual-system-prompt .system-prompt-content pre {
+	  margin: 0;
+	  color: var(--text-primary, #fff);
+	  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+	  font-size: 12px;
+	  line-height: 1.4;
+	  white-space: pre-wrap;
+	  word-wrap: break-word;
+	}
 
 	.prompt-edit-header {
 		display: flex;

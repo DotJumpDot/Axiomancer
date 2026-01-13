@@ -159,7 +159,7 @@ See [AGENTS.md](AGENTS.md) for AI-assisted development guidelines and convention
 
 ### **API Documentation**
 
-Backend API endpoints are documented via Swagger at `http://localhost:3000/swagger`
+Backend API endpoints are documented via Swagger at `http://localhost:4100/w`
 
 ---
 
