@@ -14,6 +14,7 @@
     - [Search Log](#search-log)
     - [Chat AI Respond](#chat-ai-respond)
     - [User Selected Models](#user-selected-models)
+    - [User Favorite](#user-favorite)
   - [Entity Relationships](#entity-relationships)
   - [SQL Schema](#sql-schema)
     - [Create Tables](#create-tables)
@@ -146,6 +147,18 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | created_at   | datetime | No       | Record creation timestamp                  |
 | updated_at   | datetime | No       | Record last update timestamp               |
 
+### User Favorite
+
+| Column                | Type     | Nullable | Description                               |
+| --------------------- | -------- | -------- | ----------------------------------------- |
+| id                    | int      | No       | Primary key, auto-incremented favorite ID |
+| user_uuid             | str      | No       | Foreign key to user.uuid                  |
+| favorite_models       | text[]   | No       | Array of favorite model keys              |
+| favorite_prompts      | text[]   | No       | Array of favorite prompt profile IDs      |
+| favorite_conversation | text[]   | No       | Array of favorite conversation IDs        |
+| created_at            | datetime | No       | Record creation timestamp                 |
+| updated_at            | datetime | No       | Record last update timestamp              |
+
 ---
 
 ## Entity Relationships
@@ -154,6 +167,7 @@ This document describes the complete database schema for the Axiomancer AI chat 
 user (1) ──── (many) conversation
 user (1) ──── (many) user_selected_models
 user (1) ──── (many) prompt_profile
+user (1) ──── (1) user_favorite
 conversation (1) ──── (many) chat
 chat (many) ──── (1) ai_model
 chat (many) ──── (1) prompt_profile
@@ -161,6 +175,9 @@ chat (1) ──── (many) search_log
 chat (1) ──── (1) chat_ai_respond
 user_selected_models (many) ──── (many) ai_model
 user_selected_models (many) ──── (1) prompt_profile
+user_favorite (many) ──── (many) ai_model
+user_favorite (many) ──── (many) prompt_profile
+user_favorite (many) ──── (many) conversation
 ```
 
 ---
@@ -297,7 +314,21 @@ CREATE TABLE user_selected_models (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_uuid) REFERENCES "user"(uuid),
     FOREIGN KEY (prompt_id) REFERENCES prompt_profile(id)
+
 );
+
+-- User Favorite table
+CREATE TABLE user_favorite (
+    id SERIAL PRIMARY KEY,
+    user_uuid TEXT NOT NULL UNIQUE,
+    favorite_models TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    favorite_prompts TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    favorite_conversation TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
+);
+
 
 -- Performance indexes
 CREATE INDEX idx_conversation_user_uuid ON conversation(user_uuid);
@@ -309,6 +340,7 @@ CREATE INDEX idx_chat_ai_respond_created_at ON chat_ai_respond(created_at);
 CREATE INDEX idx_search_log_message_id ON search_log(message_id);
 CREATE INDEX idx_user_username ON "user"(username);
 CREATE INDEX idx_user_selected_models_user_uuid ON user_selected_models(user_uuid);
+CREATE INDEX idx_user_favorite_user_uuid ON user_favorite(user_uuid);
 ```
 
 ## Sample Data

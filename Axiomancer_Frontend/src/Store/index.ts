@@ -5,3 +5,4 @@ export { default as chatStore } from "./chat.svelte";
 export { default as promptStore } from "./prompt.svelte";
 export { default as settingsStore } from "./settings.svelte";
 export { selectionStore } from "./selection.svelte";
+export { favoriteStore } from "./favorite.svelte";

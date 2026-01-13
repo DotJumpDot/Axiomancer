@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Sidebar, ChatHeader, MessageList, ChatInput } from "@/Components";
-  import { authStore, chatStore, aiStore, promptStore, settingsStore } from "@/Store";
+  import { authStore, chatStore, aiStore, promptStore, settingsStore, favoriteStore } from "@/Store";
 
   // Initialize stores on mount
   onMount(() => {
@@ -17,10 +17,11 @@
 
   // Load authenticated data when user logs in
   $effect(() => {
-    if (authStore.isAuthenticated) {
+    if (authStore.isAuthenticated && authStore.currentUser?.uuid) {
       aiStore.loadEnabledModels();
       promptStore.loadProfiles();
       chatStore.loadConversations();
+      favoriteStore.loadFavorites(authStore.currentUser.uuid);
     }
   });
 

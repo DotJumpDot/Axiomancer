@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { aiStore } from "@/Store";
+  import { aiStore, favoriteStore, authStore } from "@/Store";
   import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
 
   let { 
@@ -19,7 +19,11 @@
   let selectedCapability: 'none' | 'fast' | 'reasoning' | 'coding' | 'vision' = $state('none');
   let sortBy = $state<'none' | 'price-low-to-high' | 'price-high-to-low' | 'name-a-z' | 'name-z-a' | 'provider-a-z' | 'provider-z-a'>('none');
 
+  // Derived value for filtered models - reactive to favorites
   let filteredModels = $derived.by(() => {
+    // Force reactivity with favorite store
+    const favorites = favoriteStore.favorites;
+    
     let models = aiStore.enabledModels.filter(model =>
       model.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       model.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -50,10 +54,38 @@
       models = models.sort((a, b) => a.provider.localeCompare(b.provider));
     } else if (sortBy === 'provider-z-a') {
       models = models.sort((a, b) => b.provider.localeCompare(a.provider));
+    } else {
+      // No sort applied - use favorite sorting
+      models = models.sort((a, b) => {
+        const aIsFavorite = favoriteStore.isFavorite('model', a.id);
+        const bIsFavorite = favoriteStore.isFavorite('model', b.id);
+        
+        if (aIsFavorite && !bIsFavorite) return -1;
+        if (!aIsFavorite && bIsFavorite) return 1;
+        return 0;
+      });
     }
 
     return models;
   });
+
+  async function toggleModelFavorite(e: Event, modelId: string) {
+    e.stopPropagation();
+    if (!authStore.currentUser?.uuid) return;
+    
+    const isFav = favoriteStore.isFavorite('model', modelId);
+    try {
+      if (isFav) {
+        await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'model', modelId);
+      } else {
+        await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'model', modelId);
+      }
+      // Force reactivity by triggering a small delay
+      await new Promise(resolve => setTimeout(resolve, 10));
+    } catch (error) {
+      console.error("Failed to toggle model favorite:", error);
+    }
+  }
 
   function selectModel(modelId: string) {
     dispatch('select', modelId);
@@ -138,7 +170,18 @@
               <div class="grid-item-left">
                 <div class="item-left">
                   <span class="item-provider">{formatProviderName(model.provider)}</span>
-                  <span class="item-name">{formatModelName(model.display_name)}</span>
+                  <span class="item-name">
+                    {formatModelName(model.display_name)}
+                    <button
+                      class="inline-favorite-btn {favoriteStore.isFavorite('model', model.id) ? 'favorited' : ''}"
+                      onclick={(e) => toggleModelFavorite(e, model.id)}
+                      title={favoriteStore.isFavorite('model', model.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('model', model.id) ? "#ffc107" : "none"} stroke="#ffc107" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </button>
+                  </span>
                 </div>
               </div>
 
@@ -517,6 +560,44 @@
     color: var(--text-primary, #fff);
   }
 
+ .inline-favorite-btn {
+   background: none;
+   border: none;
+   cursor: pointer;
+   padding: 2px;
+   margin-left: 6px;
+   border-radius: 3px;
+   transition: all 0.2s;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   opacity: 0;
+   visibility: hidden;
+ }
+
+ .inline-favorite-btn:hover {
+   background: rgba(255, 193, 7, 0.2);
+ }
+
+ /* Show favorite button on hover of the parent item */
+ .model-grid:hover .inline-favorite-btn {
+   opacity: 1;
+   visibility: visible;
+ }
+
+ /* Always show favorite button if it's already favorited */
+ .inline-favorite-btn.favorited {
+   opacity: 1;
+   visibility: visible;
+ }
+
+ /* Ensure the item-name span can contain the button properly */
+ .item-name {
+   display: inline-flex;
+   align-items: center;
+   flex-wrap: wrap;
+ }
+
 
   .no-models {
     display: flex;
@@ -526,4 +607,5 @@
     color: var(--text-secondary, #888);
     font-size: 18px;
   }
+
 </style>

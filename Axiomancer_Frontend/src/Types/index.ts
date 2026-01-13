@@ -6,6 +6,7 @@ export * from "./Chat";
 export * from "./Prompt";
 export * from "./Search";
 export * from "./Selection";
+export * from "./Favorite";
 
 // Common API response types
 export interface ApiResponse<T> {

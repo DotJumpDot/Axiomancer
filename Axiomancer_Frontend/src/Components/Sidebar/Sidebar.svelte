@@ -1,17 +1,32 @@
 <script lang="ts">
-  import { chatStore, settingsStore, authStore } from "@/Store";
+  import { chatStore, settingsStore, authStore, favoriteStore } from "@/Store";
   import type { Conversation } from "@/Types";
   import { formatRelativeTime, truncate } from "@/Function";
   import ConversationSetting from "./ConversationSetting.svelte";
 
   let { onSelectConversation }: { onSelectConversation?: (id: string) => void } = $props();
   let showArchiveModal = $state(false);
+  
   let archivedConversations = $derived(
     Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => c.archived) : []
   );
-  let activeConversations = $derived(
-    Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => !c.archived) : []
-  );
+  
+  // Sort conversations: favorites first, then by updated_at
+  let activeConversations = $derived.by(() => {
+    const active = Array.isArray(chatStore.conversations) 
+      ? chatStore.conversations.filter(c => !c.archived) 
+      : [];
+    
+    return active.sort((a, b) => {
+      const aIsFavorite = favoriteStore.isFavorite('conversation', a.id);
+      const bIsFavorite = favoriteStore.isFavorite('conversation', b.id);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+  });
 
   function handleSelect(conversation: Conversation) {
     if (onSelectConversation) {
@@ -24,6 +39,22 @@
     e.stopPropagation();
     if (confirm("Delete this conversation permanently?")) {
       await chatStore.deleteConversation(id);
+    }
+  }
+
+  async function handleFavorite(e: Event, id: string) {
+    e.stopPropagation();
+    if (!authStore.currentUser?.uuid) return;
+    
+    const isFav = favoriteStore.isFavorite('conversation', id);
+    try {
+      if (isFav) {
+        await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'conversation', id);
+      } else {
+        await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'conversation', id);
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
     }
   }
 
@@ -109,11 +140,49 @@
           tabindex="0"
           aria-label={`Select conversation: ${conversation.title}`}
         >
-          <span class="conversation-title">{truncate(conversation.title, 30)}</span>
+          <span class="conversation-title">
+            {#if favoriteStore.isFavorite('conversation', conversation.id)}
+              <button
+                class="title-favorite-btn"
+                onclick={(e) => handleFavorite(e, conversation.id)}
+                onkeydown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleFavorite(e, conversation.id);
+                  }
+                }}
+                aria-label="Remove from favorites"
+                title="Remove from favorites"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </button>
+            {/if}
+            {truncate(conversation.title, 30)}
+          </span>
           <span class="conversation-date">{formatRelativeTime(conversation.updated_at)}</span>
           <div class="conversation-actions">
-            <button 
-              class="action-btn archive-btn" 
+            {#if !favoriteStore.isFavorite('conversation', conversation.id)}
+              <button
+                class="action-btn favorite-btn"
+                onclick={(e) => handleFavorite(e, conversation.id)}
+                onkeydown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleFavorite(e, conversation.id);
+                  }
+                }}
+                aria-label="Add to favorites"
+                title="Add to favorites"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </button>
+            {/if}
+            <button
+              class="action-btn archive-btn"
               onclick={(e) => handleArchive(e, conversation.id)}
               onkeydown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -131,8 +200,8 @@
                 <path d="M14 12v6"></path>
               </svg>
             </button>
-            <button 
-              class="action-btn delete-btn" 
+            <button
+              class="action-btn delete-btn"
               onclick={(e) => handleDelete(e, conversation.id)}
               onkeydown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -353,6 +422,33 @@
 
   .action-btn:hover {
     background: var(--hover-bg, #3d3d3d);
+  }
+
+  .title-favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 5px;
+    margin-right: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    transition: all 0.2s;
+  }
+
+  .title-favorite-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .favorite-btn {
+    color: #888;
+  }
+
+  .favorite-btn:hover {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
   }
 
   .archive-btn:hover {

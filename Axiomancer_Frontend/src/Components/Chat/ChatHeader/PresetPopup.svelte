@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
-  import { aiStore, promptStore } from "@/Store";
-  import { authStore } from "@/Store";
+  import { aiStore, promptStore, favoriteStore, authStore } from "@/Store";
   import { selectionService } from "@/Service";
   import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
   import type { AiModel, UserSelectedModels } from "@/Types";
@@ -462,7 +461,47 @@
     }, 3000);
   }
 
+  async function toggleModelFavorite(e: Event, modelId: string) {
+    e.stopPropagation();
+    if (!authStore.currentUser?.uuid) return;
+    
+    const isFav = favoriteStore.isFavorite('model', modelId);
+    try {
+      if (isFav) {
+        await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'model', modelId);
+      } else {
+        await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'model', modelId);
+      }
+      // Force reactivity by triggering a small delay
+      await new Promise(resolve => setTimeout(resolve, 10));
+    } catch (error) {
+      console.error("Failed to toggle model favorite:", error);
+    }
+  }
+
+  async function togglePromptFavorite(e: Event, promptId: string) {
+    e.stopPropagation();
+    if (!authStore.currentUser?.uuid) return;
+    
+    const isFav = favoriteStore.isFavorite('prompt', promptId);
+    try {
+      if (isFav) {
+        await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'prompt', promptId);
+      } else {
+        await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'prompt', promptId);
+      }
+      // Force reactivity by triggering a small delay
+      await new Promise(resolve => setTimeout(resolve, 10));
+    } catch (error) {
+      console.error("Failed to toggle prompt favorite:", error);
+    }
+  }
+
+  // Derived value for filtered models - reactive to favorites
   let filteredModels = $derived.by(() => {
+    // Force reactivity with favorite store
+    const favorites = favoriteStore.favorites;
+    
     let models = aiStore.enabledModels.filter(model =>
       model.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       model.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -484,6 +523,7 @@
       models = models.filter(model => model.capabilities[selectedCapability]);
     }
 
+    // Apply sorting
     if (sortBy === 'price-low-to-high') {
       models = models.sort((a, b) => a.cost_per_1k_token - b.cost_per_1k_token);
     } else if (sortBy === 'price-high-to-low') {
@@ -496,9 +536,37 @@
       models = models.sort((a, b) => a.provider.localeCompare(b.provider));
     } else if (sortBy === 'provider-z-a') {
       models = models.sort((a, b) => b.provider.localeCompare(a.provider));
+    } else {
+      // No sort applied - use favorite sorting
+      models = models.sort((a, b) => {
+        const aIsFavorite = favoriteStore.isFavorite('model', a.id);
+        const bIsFavorite = favoriteStore.isFavorite('model', b.id);
+        
+        if (aIsFavorite && !bIsFavorite) return -1;
+        if (!aIsFavorite && bIsFavorite) return 1;
+        return 0;
+      });
     }
 
     return models;
+  });
+
+  // Derived value for filtered prompts - reactive to favorites
+  let filteredPrompts = $derived.by(() => {
+    // Force reactivity with favorite store
+    const favorites = favoriteStore.favorites;
+    
+    const profiles = [...promptStore.profiles];
+    
+    // Sort prompts with favorites first
+    return profiles.sort((a, b) => {
+      const aIsFavorite = favoriteStore.isFavorite('prompt', a.id);
+      const bIsFavorite = favoriteStore.isFavorite('prompt', b.id);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return 0;
+    });
   });
 </script>
 
@@ -669,7 +737,18 @@
                   <div class="grid-itemLeft">
                     <div class="item-left">
                       <!-- <span class="item-provider">{formatProviderName(model.provider)}</span> -->
-                      <span class="item-name" style="padding: 20px;">{formatModelName(model.display_name)}</span>
+                      <span class="item-name" style="padding: 20px;">
+                        {formatModelName(model.display_name)}
+                        <button
+                          class="inline-favorite-btn {favoriteStore.isFavorite('model', model.id) ? 'favorited' : ''}"
+                          onclick={(e) => toggleModelFavorite(e, model.id)}
+                          title={favoriteStore.isFavorite('model', model.id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('model', model.id) ? "#ffc107" : "none"} stroke="#ffc107" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                          </svg>
+                        </button>
+                      </span>
                     </div>
                   </div>
 
@@ -783,7 +862,7 @@
                   </div>
                 </div>
               {/if}
-              {#each promptStore.profiles as profile (profile.id)}
+              {#each filteredPrompts as profile (profile.id)}
                 <label class="prompt-radio-item {selectedPrompt === profile.id ? 'selected' : ''}">
                   <input
                     type="radio"
@@ -824,7 +903,18 @@
                         </div>
                       </div>
                     {:else}
-                      <span class="item-name">{profile.name}</span>
+                      <span class="item-name">
+                        {profile.name}
+                        <button
+                          class="inline-favorite-btn {favoriteStore.isFavorite('prompt', profile.id) ? 'favorited' : ''}"
+                          onclick={(e) => togglePromptFavorite(e, profile.id)}
+                          title={favoriteStore.isFavorite('prompt', profile.id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('prompt', profile.id) ? "#ffc107" : "none"} stroke="#ffc107" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                          </svg>
+                        </button>
+                      </span>
                       <button class="edit-prompt-btn" style="margin-left: 10px;" onclick={(e) => { e.preventDefault(); startEditPromptInfo(profile.id); }} title="Edit Name & Description">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -916,5 +1006,44 @@
     display: flex;
     gap: 5px;
     flex-direction: row-reverse;
+  }
+
+  .inline-favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    margin-left: 6px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .inline-favorite-btn:hover {
+    background: rgba(255, 193, 7, 0.2);
+  }
+
+  /* Show favorite button on hover of the parent item */
+  .model-grid:hover .inline-favorite-btn,
+  .prompt-radio-item:hover .inline-favorite-btn {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Always show favorite button if it's already favorited */
+  .inline-favorite-btn.favorited {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Ensure the item-name span can contain the button properly */
+  .item-name {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
   }
 </style>
