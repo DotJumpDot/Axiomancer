@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: #000000cc;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -397,6 +397,12 @@
   border-color: var(--border-color-hover, #4d4d4d);
 }
 
+.prompt-radio-item.selected {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 1px var(--primary-color, #6366f1);
+}
+
 .prompt-radio-item input[type="radio"] {
   accent-color: var(--primary-color, #6366f1);
 }
@@ -694,6 +700,11 @@
   transition: background-color 0.3s, border-color 0.3s;
 }
 
+.model-grid:hover {
+  background-color: #202020; /* Slightly changed background color */
+  border-color: #ff6600; /* Highlight border */
+}
+
 .model-grid.selected {
   background-color: #2e2e2e; /* Slightly changed background color */
   border-color: #007bff; /* Highlight border */
@@ -730,13 +741,48 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s, color 0.3s;
+  color: var(--text-secondary, #888);
 }
 
 .capability-icon.active {
+  color: currentColor;
   opacity: 1;
 }
 
 .capability-icon:not(.active) {
   opacity: 0.3;
+}
+
+/* Capability-specific colors - matching ModelSelector */
+.capability-icon.fast {
+  color: #888;
+}
+
+.capability-icon.fast.active {
+  color: #22c55e;
+}
+
+.capability-icon.reasoning {
+  color: #888;
+}
+
+.capability-icon.reasoning.active {
+  color: #6366f1;
+}
+
+.capability-icon.coding {
+  color: #888;
+}
+
+.capability-icon.coding.active {
+  color: #a855f7;
+}
+
+.capability-icon.vision {
+  color: #888;
+}
+
+.capability-icon.vision.active {
+  color: #ec4899;
 }

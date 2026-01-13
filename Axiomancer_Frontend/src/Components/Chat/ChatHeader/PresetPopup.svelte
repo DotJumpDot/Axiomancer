@@ -759,7 +759,7 @@
               </button>
             </div>
             <div class="prompt-list">
-              <label class="prompt-radio-item">
+              <label class="prompt-radio-item {selectedPrompt === null ? 'selected' : ''}">
                 <input
                   type="radio"
                   name="preset-prompt"
@@ -784,7 +784,7 @@
                 </div>
               {/if}
               {#each promptStore.profiles as profile (profile.id)}
-                <label class="prompt-radio-item">
+                <label class="prompt-radio-item {selectedPrompt === profile.id ? 'selected' : ''}">
                   <input
                     type="radio"
                     name="preset-prompt"

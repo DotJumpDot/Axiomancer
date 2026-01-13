@@ -395,7 +395,7 @@
     gap: 16px;
     align-items: center;
     padding: 12px 16px;
-    background: var(--input-bg, #2d2d2d);
+    background: #141414;
     border: 1px solid var(--border-color, #3d3d3d);
     border-radius: 8px;
     cursor: pointer;
@@ -403,7 +403,7 @@
   }
 
   .model-grid:hover {
-    background: var(--hover-bg, #3d3d3d);
+    background: #141414;
     border-color: var(--primary-color, #6366f1);
   }
 
