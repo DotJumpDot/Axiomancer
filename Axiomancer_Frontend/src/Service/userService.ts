@@ -47,19 +47,27 @@ export const userService = {
     return apiClient.upload<UploadResponse>(`/api/user/${userId}/upload-profile`, formData);
   },
 
-  // Get current user profile (uses auth API)
+  // Get current user profile
   async getCurrentProfile(): Promise<ApiResponse<User>> {
-    const { authService } = await import("./authService");
-    // Use auth service to get current user profile
-    const response = await authService.getCurrentUser();
-    return response;
+    return apiClient.get<User>("/api/user/me");
   },
 
-  // Update current user profile - TODO: implement in backend if needed
-  // async updateCurrentProfile(data: UpdateUserRequest): Promise<ApiResponse<User>> {
-  //   // This endpoint doesn't exist in backend yet
-  //   return apiClient.put("/api/auth/me", data);
-  // },
+  // Update current user profile
+  async updateCurrentProfile(data: UpdateUserRequest): Promise<ApiResponse<User>> {
+    return apiClient.put<User>("/api/user/me", data);
+  },
+
+  // Delete current user account
+  async deleteCurrentProfile(): Promise<ApiResponse<boolean>> {
+    return apiClient.delete<boolean>("/api/user/me");
+  },
+
+  // Upload profile picture for current user
+  async uploadCurrentProfilePicture(file: File): Promise<ApiResponse<UploadResponse>> {
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+    return apiClient.upload<UploadResponse>("/api/user/me/upload-profile", formData);
+  },
 
   // Get profile picture URL
   getProfilePictureUrl(pictureUrl: string): string {

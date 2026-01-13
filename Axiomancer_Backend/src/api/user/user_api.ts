@@ -7,6 +7,24 @@ import type {
   UploadResponse,
 } from "./user_type";
 
+// Middleware to extract token from Authorization header
+const authMiddleware = async (request: Request) => {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  const { AuthService } = await import("../auth/auth_service");
+  const validation = await AuthService.validateToken(token);
+
+  if (!validation.valid) {
+    throw new Error("Invalid token");
+  }
+
+  return validation.user;
+};
+
 export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Get all users
   .get("/users", async () => {
@@ -225,4 +243,132 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
         status: 500,
       };
     }
-  });
+  })
+
+  // ============ Current User Routes (/me) ============
+
+  // Get current user profile
+  .get("/user/me", async ({ request }) => {
+    try {
+      const user = await authMiddleware(request);
+      if (!user) {
+        return { success: false, error: "Unauthorized", status: 401 };
+      }
+
+      const fullUser = await UserService.getUserById(user.id);
+      if (!fullUser) {
+        return { success: false, error: "User not found", status: 404 };
+      }
+
+      return { success: true, data: UserService.getPublicUser(fullUser) };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch profile",
+        status: 500,
+      };
+    }
+  })
+
+  // Update current user profile
+  .put(
+    "/user/me",
+    async ({ request, body }: { request: Request; body: UpdateUserRequest }) => {
+      try {
+        const user = await authMiddleware(request);
+        if (!user) {
+          return { success: false, error: "Unauthorized", status: 401 };
+        }
+
+        const updatedUser = await UserService.updateUser(user.id, body);
+        if (!updatedUser) {
+          return { success: false, error: "Failed to update profile", status: 500 };
+        }
+
+        return {
+          success: true,
+          data: UserService.getPublicUser(updatedUser),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to update profile",
+          status: 400,
+        };
+      }
+    },
+    {
+      body: t.Object({
+        email: t.Optional(t.String()),
+        firstname: t.Optional(t.Union([t.String(), t.Null()])),
+        lastname: t.Optional(t.Union([t.String(), t.Null()])),
+        nickname: t.Optional(t.Union([t.String(), t.Null()])),
+        tel: t.Optional(t.Union([t.String(), t.Null()])),
+        password: t.Optional(t.String({ minLength: 6 })),
+      }),
+    }
+  )
+
+  // Delete current user account
+  .delete("/user/me", async ({ request }) => {
+    try {
+      const user = await authMiddleware(request);
+      if (!user) {
+        return { success: false, error: "Unauthorized", status: 401 };
+      }
+
+      const deleted = await UserService.deleteUser(user.id);
+      if (!deleted) {
+        return { success: false, error: "Failed to delete account", status: 500 };
+      }
+
+      return { success: true, message: "Account deleted successfully" };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete account",
+        status: 500,
+      };
+    }
+  })
+
+  // Upload profile picture for current user
+  .post(
+    "/user/me/upload-profile",
+    async ({ request, body }) => {
+      try {
+        const user = await authMiddleware(request);
+        if (!user) {
+          return { success: false, error: "Unauthorized", status: 401 };
+        }
+
+        const file = body.profile_picture as File;
+        if (!file) {
+          return { success: false, error: "No file provided", status: 400 };
+        }
+
+        const result = await UserService.uploadProfilePicture(user.id, file);
+        if (!result.success) {
+          return { success: false, error: result.error, status: 400 };
+        }
+
+        return {
+          success: true,
+          message: "Profile picture uploaded successfully",
+          filename: result.filename,
+          url: result.url,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Upload failed",
+          status: 500,
+        };
+      }
+    },
+    {
+      body: t.Object({
+        profile_picture: t.File(),
+      }),
+    }
+  );

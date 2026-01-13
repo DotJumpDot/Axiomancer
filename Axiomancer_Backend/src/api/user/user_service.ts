@@ -245,9 +245,8 @@ export class UserService {
       const buffer = Buffer.from(arrayBuffer);
       await fs.writeFile(filepath, buffer);
 
-      // Update user record
-      const pictureUrl = `/uploads/profiles/${filename}`;
-      const updatedUser = await userQuery.updateUserPicture(userId, pictureUrl);
+      // Update user record with just the filename (frontend will construct full path)
+      const updatedUser = await userQuery.updateUserPicture(userId, filename);
 
       if (!updatedUser) {
         // Clean up file if update failed
@@ -258,7 +257,7 @@ export class UserService {
       return {
         success: true,
         filename,
-        url: pictureUrl,
+        url: `/Picture/Profile/${filename}`,
       };
     } catch (error) {
       console.error("File upload error:", error);

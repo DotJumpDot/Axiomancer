@@ -2,6 +2,7 @@
 	import { createEventDispatcher } from "svelte";
 	import { promptStore, authStore, favoriteStore } from "@/Store";
 
+
 	// Focus helper used throughout the popup to reduce clicks
 	function focusInput(node: HTMLInputElement | HTMLTextAreaElement) {
 		node.focus();
@@ -230,6 +231,9 @@
 	    console.error("Failed to toggle prompt favorite:", error);
 	  }
 	}
+
+
+
 </script>
 
 {#if isOpen}
