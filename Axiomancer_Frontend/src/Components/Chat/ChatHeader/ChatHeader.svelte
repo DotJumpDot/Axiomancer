@@ -250,7 +250,7 @@
     }
   }
 
-  	  function openUserSettingDialog() {
+    function openUserSettingDialog() {
     if (authStore.isAuthenticated) {
       userSettingDialog?.open();
     }
@@ -484,9 +484,9 @@
     {#if authStore.isAuthenticated}
       {#if authStore.currentUser}
         <div class="user-section">
-          <img 
-            src={`/Picture/Profile/${authStore.currentUser.picture_url || "userUnidentified.png"}`} 
-            alt="User avatar" 
+          <img
+            src={`/Picture/Profile/${authStore.currentUser.picture_url || "userUnidentified.png"}?v=${Date.now()}`}
+            alt="User avatar"
             class="user-avatar"
           />
           <span class="user-name">{authStore.currentUser.nickname || authStore.currentUser.username}</span>
@@ -500,9 +500,9 @@
         </div>
       {:else if storedUser}
         <div class="user-section">
-          <img 
-            src={`/Picture/Profile/${storedUser.picture_url || "userUnidentified.png"}`} 
-            alt="User avatar" 
+          <img
+            src={`/Picture/Profile/${storedUser.picture_url || "userUnidentified.png"}?v=${Date.now()}`}
+            alt="User avatar"
             class="user-avatar"
           />
           <span class="user-name">{storedUser.nickname || storedUser.username}</span>

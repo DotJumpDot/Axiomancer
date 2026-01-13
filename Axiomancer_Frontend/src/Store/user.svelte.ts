@@ -84,10 +84,14 @@ class UserStore {
     try {
       const response = await userService.uploadCurrentProfilePicture(file);
 
-      if (response.success && response.data) {
+      if (response.success) {
         // Reload user to get updated picture URL
-        await this.loadCurrentUser();
-        return { success: true, data: response.data };
+        const loadResult = await this.loadCurrentUser();
+        if (!loadResult.success) {
+          // Even if loading fails, the upload succeeded
+          console.warn("Upload succeeded but failed to reload user data");
+        }
+        return { success: true, data: response };
       } else {
         this.error = response.error || "Failed to upload profile picture";
         return { success: false, error: this.error };

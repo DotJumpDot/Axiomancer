@@ -50,6 +50,15 @@
       if (result.success && userStore.currentUser) {
         const user = userStore.currentUser;
         
+        // Also update authStore to keep both stores in sync
+        authStore.updateCurrentUser({
+          email: user.email || "",
+          firstname: user.firstname || "",
+          lastname: user.lastname || "",
+          nickname: user.nickname || "",
+          picture_url: user.picture_url || "",
+        });
+        
         originalData = {
           email: user.email || "",
           firstname: user.firstname || "",
@@ -101,6 +110,13 @@
 
       if (result.success) {
         success = "Profile picture updated successfully!";
+        
+        // Update authStore to reflect the new picture immediately
+        if (userStore.currentUser) {
+          authStore.updateCurrentUser({
+            picture_url: userStore.currentUser.picture_url
+          });
+        }
         
         selectedFile = null;
         previewUrl = null;
@@ -155,9 +171,16 @@
       if (result.success) {
         success = "Profile updated successfully!";
         
-        // Update original data to new values
+        // Update authStore to keep both stores in sync
         if (userStore.currentUser) {
           const user = userStore.currentUser;
+          authStore.updateCurrentUser({
+            email: user.email || "",
+            firstname: user.firstname || "",
+            lastname: user.lastname || "",
+            nickname: user.nickname || "",
+          });
+          
           originalData = {
             email: user.email || "",
             firstname: user.firstname || "",
@@ -236,13 +259,40 @@
       return () => window.removeEventListener("keydown", handleEsc);
     }
   });
+
+  // Track mousedown outside to close modal only on mousedown, not mouseup
+  let mouseDownOutside = $state(false);
+  
+  function handleOverlayMouseDown(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('modal-overlay')) {
+      mouseDownOutside = true;
+    }
+  }
+
+  function handleOverlayMouseUp(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('modal-overlay') && mouseDownOutside) {
+      close();
+    }
+    mouseDownOutside = false;
+  }
+
+  function handleOverlayMouseLeave() {
+    mouseDownOutside = false;
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 {#if isOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="modal-overlay" onclick={close}>
+  <div
+    class="modal-overlay"
+    onmousedown={handleOverlayMouseDown}
+    onmouseup={handleOverlayMouseUp}
+    onmouseleave={handleOverlayMouseLeave}
+  >
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
         <h2>User Settings</h2>
@@ -257,7 +307,9 @@
 
       <div class="modal-body">
         {#if isLoading}
-          <div class="loading-spinner"></div>
+          <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+          </div>
         {/if}
 
         {#if error}
@@ -487,6 +539,7 @@
 
   .modal-body {
     padding: 24px;
+    position: relative;
   }
 
   .section {
@@ -659,15 +712,30 @@
     color: #86efac;
   }
 
+  /* Loading Overlay */
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 12px;
+  }
+
   /* Loading Spinner */
   .loading-spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--border-color, #333);
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color, #333);
     border-top-color: var(--primary-color, #6366f1);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-    margin: 0 auto 16px;
   }
 
   @keyframes spin {

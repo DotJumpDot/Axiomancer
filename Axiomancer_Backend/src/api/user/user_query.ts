@@ -124,6 +124,39 @@ export async function updateUserPicture(id: number, pictureUrl: string): Promise
 }
 
 export async function deleteUser(id: number): Promise<boolean> {
+  // First get the user's UUID
+  const user = await getUserById(id);
+  if (!user) return false;
+
+  // Delete related records in correct order to avoid foreign key violations
+  // 1. Delete user_favorite records
+  await sql`
+    DELETE FROM user_favorite WHERE user_uuid = ${user.uuid}
+  `;
+
+  // 2. Delete user_selected_models records
+  await sql`
+    DELETE FROM user_selected_models WHERE user_uuid = ${user.uuid}
+  `;
+
+  // 3. Delete chat messages in conversations owned by this user
+  await sql`
+    DELETE FROM chat WHERE conversation_id IN (
+      SELECT id FROM conversation WHERE user_uuid = ${user.uuid}
+    )
+  `;
+
+  // 4. Delete conversations owned by this user
+  await sql`
+    DELETE FROM conversation WHERE user_uuid = ${user.uuid}
+  `;
+
+  // 5. Delete prompt profiles owned by this user
+  await sql`
+    DELETE FROM prompt_profile WHERE user_uuid = ${user.uuid}
+  `;
+
+  // 6. Finally delete the user
   const result = await sql`
     DELETE FROM "user" WHERE id = ${id}
   `;

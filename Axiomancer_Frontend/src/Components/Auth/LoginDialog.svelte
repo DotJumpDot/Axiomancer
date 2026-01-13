@@ -18,6 +18,14 @@
   let isOpen = $state(false);
 
   export function open() {
+    isLogin = true;
+    isOpen = true;
+  }
+
+  // New method to open dialog in login mode with pre-filled username
+  export function openLoginWithUsername(username: string) {
+    isLogin = true;
+    loginData.username = username;
     isOpen = true;
   }
 
@@ -43,9 +51,102 @@
     nickname: "",
   });
 
+  // Reset form data when user logs out
+  $effect(() => {
+    // This effect runs when isAuthenticated changes
+    if (!authStore.isAuthenticated) {
+      // Reset login data
+      loginData = {
+        username: "",
+        password: "",
+      };
+      
+      // Reset register data
+      registerData = {
+        username: "",
+        password: "",
+        email: "",
+        firstname: "",
+        lastname: "",
+        nickname: "",
+      };
+      
+      // Reset validation errors
+      clearValidationErrors();
+      
+      // Reset error message
+      error = null;
+      
+      // Reset to login mode
+      isLogin = true;
+    }
+  });
+
+  // Real-time validation state
+  let validationErrors = $state({
+    username: "",
+    password: "",
+    email: "",
+  });
+
+  // Real-time validation function
+  function validateField(field: string, value: string) {
+    if (field === "username") {
+      if (!value) {
+        validationErrors.username = "Username is required";
+      } else if (value.length < 3) {
+        validationErrors.username = "Username must be at least 3 characters";
+      } else {
+        validationErrors.username = "";
+      }
+    } else if (field === "password") {
+      if (!value) {
+        validationErrors.password = "Password is required";
+      } else if (value.length < 6) {
+        validationErrors.password = "Password must be at least 6 characters";
+      } else {
+        validationErrors.password = "";
+      }
+    } else if (field === "email") {
+      if (!value) {
+        validationErrors.email = "Email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        validationErrors.email = "Please enter a valid email";
+      } else {
+        validationErrors.email = "";
+      }
+    }
+  }
+
+  // Event handlers for validation
+  function handleUsernameInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    validateField('username', target.value);
+  }
+
+  function handlePasswordInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    validateField('password', target.value);
+  }
+
+  function handleEmailInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    validateField('email', target.value);
+  }
+
+  // Clear validation errors when switching modes
+  function clearValidationErrors() {
+    validationErrors = {
+      username: "",
+      password: "",
+      email: "",
+    };
+  }
+
   function switchMode() {
     isLogin = !isLogin;
     error = null;
+    clearValidationErrors();
   }
 
   async function handleLogin() {
@@ -72,9 +173,37 @@
     }
   }
 
+  // Check if register form is valid
+  function isRegisterFormValid(): boolean {
+    return (
+      registerData.username.length >= 3 &&
+      registerData.password.length >= 6 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email) &&
+      !validationErrors.username &&
+      !validationErrors.password &&
+      !validationErrors.email
+    );
+  }
+
   async function handleRegister() {
+    // Client-side validation matching backend rules
     if (!registerData.username || !registerData.password || !registerData.email) {
       error = "Please fill in all required fields";
+      return;
+    }
+
+    if (registerData.username.length < 3) {
+      error = "Username must be at least 3 characters long";
+      return;
+    }
+
+    if (registerData.password.length < 6) {
+      error = "Password must be at least 6 characters long";
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) {
+      error = "Please enter a valid email address";
       return;
     }
 
@@ -85,7 +214,30 @@
       const result = await authStore.register(registerData);
       if (result.success) {
         (window as any).notification.success("Registration Successful", "Welcome to Axiomancer! Your account has been created.");
-        close();
+        
+        // Auto-switch to login mode and fill username
+        isLogin = true;
+        loginData.username = registerData.username;
+        loginData.password = ""; // Clear password for security
+        
+        // Clear register form data
+        registerData = {
+          username: "",
+          password: "",
+          email: "",
+          firstname: "",
+          lastname: "",
+          nickname: "",
+        };
+        
+        // Clear validation errors
+        clearValidationErrors();
+        
+        // Show additional notification to guide user
+        setTimeout(() => {
+          (window as any).notification.info("Please Login", "Enter your password to complete login");
+        }, 500);
+        
       } else {
         error = result.error || "Registration failed";
       }
@@ -156,9 +308,16 @@
               id="register-username"
               type="text"
               bind:value={registerData.username}
+              oninput={handleUsernameInput}
               placeholder="Choose a username"
               disabled={isLoading}
+              class:error={validationErrors.username}
             />
+            {#if validationErrors.username}
+              <div class="validation-error">{validationErrors.username}</div>
+            {:else}
+              <div class="password-hint">Minimum 3 characters</div>
+            {/if}
           </div>
 
           <div class="form-group">
@@ -167,9 +326,14 @@
               id="register-email"
               type="email"
               bind:value={registerData.email}
+              oninput={handleEmailInput}
               placeholder="Enter your email"
               disabled={isLoading}
+              class:error={validationErrors.email}
             />
+            {#if validationErrors.email}
+              <div class="validation-error">{validationErrors.email}</div>
+            {/if}
           </div>
 
           <div class="form-group">
@@ -178,9 +342,16 @@
               id="register-password"
               type="password"
               bind:value={registerData.password}
+              oninput={handlePasswordInput}
               placeholder="Choose a password"
               disabled={isLoading}
+              class:error={validationErrors.password}
             />
+            {#if validationErrors.password}
+              <div class="validation-error">{validationErrors.password}</div>
+            {:else}
+              <div class="password-hint">Minimum 6 characters</div>
+            {/if}
           </div>
 
           <div class="form-row">
@@ -238,7 +409,7 @@
         <button
           class="primary-btn"
           onclick={isLogin ? handleLogin : handleRegister}
-          disabled={isLoading}
+          disabled={isLoading || (!isLogin && !isRegisterFormValid())}
         >
           {#if isLoading}
             <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -349,9 +520,27 @@
     border-color: var(--primary-color, #6366f1);
   }
 
+  .form-group input.error {
+    border-color: var(--error-border, #ef4444);
+  }
+
   .form-group input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  .validation-error {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--error-border, #ef4444);
+    font-weight: 500;
+  }
+
+  .password-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+    font-style: italic;
   }
 
   .error-message {
