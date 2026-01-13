@@ -38,9 +38,6 @@
     selectedModelKey = chatStore.currentModelKey;
     selectedPromptId = chatStore.currentPromptProfileId;
     
-    // Load model and prompt names
-    updateModelAndPromptNames();
-    
     const axmLogin = localStorage.getItem("AxmLogin");
     if (axmLogin) {
       try {
@@ -58,6 +55,12 @@
     
     // Mark initialization as complete
     isInitializing = false;
+    
+    // Update model and prompt names after a short delay to ensure stores are loaded
+    // This handles the case where stores need time to fetch data
+    setTimeout(() => {
+      updateModelAndPromptNames();
+    }, 100);
   });
 
   //* Sync local state with chatStore changes
@@ -76,11 +79,15 @@
     if (selectedModelKey) {
       const model = aiStore.enabledModels.find(m => m.model_key === selectedModelKey);
       selectedModelName = model?.display_name || selectedModelKey;
+    } else {
+      selectedModelName = "";
     }
     
     if (selectedPromptId) {
       const prompt = promptStore.profiles.find(p => p.id === selectedPromptId);
       selectedPromptName = prompt?.name || "Select Prompt";
+    } else {
+      selectedPromptName = "Select Prompt";
     }
   }
 
@@ -117,6 +124,15 @@
     // Only update if different (this handles external changes to aiStore)
     if (currentMode !== aiMode) {
       currentMode = aiMode;
+    }
+  });
+
+  // Update model and prompt names when stores are populated
+  $effect(() => {
+    // This effect runs when aiStore.enabledModels or promptStore.profiles change
+    // This ensures names are updated once data is loaded from backend
+    if (aiStore.enabledModels.length > 0 || promptStore.profiles.length > 0) {
+      updateModelAndPromptNames();
     }
   });
 
