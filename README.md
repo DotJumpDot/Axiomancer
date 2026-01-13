@@ -13,7 +13,7 @@
 
 **An intelligent AI chat platform with multi-model auto-routing**
 
-[Features](#-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Documentation](#-documentation)
+[Features](#-features) • [Architecture](#-architecture) • [Documentation](#-documentation)
 
 </div>
 
@@ -60,6 +60,12 @@ Automatically routes conversations to optimal AI models based on:
 - Response latency monitoring
 - Search integration metrics
 
+### ⭐ **Favorites System**
+
+- Favorite AI models, prompt profiles, and conversations for quick access
+- Prioritized display of favorite items in selection interfaces
+- Personalized user experience with saved preferences
+
 ---
 
 ## 🔐 Architecture
@@ -95,6 +101,7 @@ Axiomancer/
 │   │   │   ├── ai/         # AI model management
 │   │   │   ├── auth/       # Authentication & JWT
 │   │   │   ├── chat/       # Message & conversation handling
+│   │   │   ├── favorite/   # User favorites management
 │   │   │   ├── prompt/     # Prompt profile management
 │   │   │   ├── search/     # DuckDuckGo & Pixabay integration
 │   │   │   ├── selection/  # Model selection management
@@ -136,93 +143,6 @@ api/{feature}/
 ```
 HTTP Request → API Layer → Service Layer → Query Layer → PostgreSQL
             ←           ←               ←             ← Response
-```
-
----
-
-## 🚀 Getting Started
-
-### **Prerequisites**
-
-- [Bun](https://bun.sh/) 1.x or higher
-- [Node.js](https://nodejs.org/) 18.x or higher
-- [PostgreSQL](https://www.postgresql.org/) 15 or higher
-- [OpenRouter API Key](https://openrouter.ai/) (for AI models)
-
-### **Installation**
-
-1. **Clone the repository**
-
-```bash
-git clone https://github.com/yourusername/axiomancer.git
-cd Axiomancer
-```
-
-2. **Setup Backend**
-
-```bash
-cd Axiomancer_Backend
-
-# Install dependencies
-bun install
-
-# Configure environment variables
-cp .env.example .env
-# Edit .env with your database credentials and API keys
-
-# Run database migrations
-bun run migrate
-
-# Start dev server
-bun run dev
-```
-
-3. **Setup Frontend**
-
-```bash
-cd ../Axiomancer_Frontend
-
-# Install dependencies
-npm install
-
-# Configure environment variables
-cp .env.example .env
-# Edit .env with backend API URL
-
-# Start dev server
-npm run dev
-```
-
-4. **Access the application**
-
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3000
-
-### **Environment Variables**
-
-#### Backend (.env)
-
-```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/axiomancer
-
-# JWT Authentication
-JWT_SECRET=your-secret-key-here
-JWT_REFRESH_SECRET=your-refresh-secret-here
-
-# API Keys (optional - users can provide their own)
-OPENROUTER_API_KEY=your-openrouter-key
-DUCKDUCKGO_API_KEY=your-duckduckgo-key (if required)
-PIXABAY_API_KEY=your-pixabay-key
-
-# Server
-PORT=3000
-```
-
-#### Frontend (.env)
-
-```env
-VITE_API_URL=http://localhost:3000
 ```
 
 ---
@@ -291,46 +211,6 @@ Seamlessly augment AI responses with real-time data:
 
 ---
 
-## 🛠️ Development
-
-### **Backend Development**
-
-```bash
-cd Axiomancer_Backend
-bun run dev          # Start dev server with hot reload
-bun run lint         # Run ESLint
-bun run type-check   # TypeScript type checking
-```
-
-### **Frontend Development**
-
-```bash
-cd Axiomancer_Frontend
-npm run dev          # Start Vite dev server with HMR
-npm run build        # Production build
-npm run preview      # Preview production build
-```
-
-### **Database Migrations**
-
-```bash
-# Create new migration
-cd Axiomancer_Backend/migrations
-touch 002_your_migration.sql
-
-# Apply migrations
-bun run migrate
-```
-
-### **Code Conventions**
-
-- **Backend**: snake_case for files, PascalCase for types
-- **Frontend**: PascalCase for components, camelCase for utilities
-- **Imports**: Use relative paths within features, absolute for cross-feature
-- **Types**: Co-locate types with features in `*_type.ts` files
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these guidelines:
@@ -364,6 +244,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ by the Axiomancer Team**
 
-[Report Bug](https://github.com/yourusername/axiomancer/issues) • [Request Feature](https://github.com/yourusername/axiomancer/issues)
+[Report Bug](https://github.com/DotJumpDot/axiomancer/issues) • [Request Feature](https://github.com/DotJumpDot/axiomancer/issues)
 
 </div>
