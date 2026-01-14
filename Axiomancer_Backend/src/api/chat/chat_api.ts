@@ -182,6 +182,55 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     }
   })
 
+  .put(
+    "/conversations/:id/archive",
+    async (context: any) => {
+      const { params, body, auth } = context;
+
+      try {
+        // Only authenticated users can archive conversations
+        if (!auth?.user) {
+          console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Authentication required to archive conversations",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const conversation = await ChatService.archiveConversation(params.id, body.archived);
+        if (!conversation) {
+          console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`);
+          return new Response(JSON.stringify({ success: false, error: "Conversation not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ✔️`);
+        return new Response(JSON.stringify({ success: true, data: conversation }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`, error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to archive conversation",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    },
+    {
+      body: t.Object({
+        archived: t.Boolean(),
+      }),
+    }
+  )
+
   // Chat message routes
   .get("/conversations/:id/messages", async ({ params }) => {
     try {

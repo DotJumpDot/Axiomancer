@@ -34,6 +34,12 @@ export const chatService = {
     return apiClient.put<Conversation>(`${CHAT_ENDPOINTS.conversations}/${id}`, data);
   },
 
+  async archiveConversation(id: string, archived: boolean) {
+    return apiClient.put<Conversation>(`${CHAT_ENDPOINTS.conversations}/${id}/archive`, {
+      archived,
+    });
+  },
+
   async deleteConversation(id: string) {
     return apiClient.delete<boolean>(`${CHAT_ENDPOINTS.conversations}/${id}`);
   },

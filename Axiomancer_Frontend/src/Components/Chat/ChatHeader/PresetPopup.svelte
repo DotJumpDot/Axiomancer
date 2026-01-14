@@ -203,9 +203,12 @@
   }
 
   function applyPreset() {
+    const currentPreset = userPresets.find(p => p.preset === selectedPresetId);
+    const presetName = getPresetDisplayName(currentPreset);
     dispatch('apply', {
       models: selectedModels,
-      prompt: selectedPrompt
+      prompt: selectedPrompt,
+      presetName: presetName
     });
     closePopup();
   }

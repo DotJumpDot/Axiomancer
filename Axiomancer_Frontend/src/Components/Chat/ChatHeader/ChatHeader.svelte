@@ -19,7 +19,8 @@
   let showPromptEditor = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
-  
+  let currentPresetName = $state<string | null>(null);
+
   // Single mode selections
   let selectedModelKey = $state<string | null>(null);
   let selectedModelName = $state<string>("");
@@ -172,10 +173,6 @@
       selectedPromptId = chatStore.currentPromptProfileId;
       updateModelAndPromptNames();
       
-      // If no model is selected, open model selector
-      if (!selectedModelKey) {
-        showModelSelector = true;
-      }
       // If no prompt is selected, it defaults to null (default prompt) - no need to open dropdown
     }
     showModelDropdown = false;
@@ -216,8 +213,9 @@
   }
 
   function handlePresetApply(event: any) {
-    const { models, prompt } = event.detail;
-    console.log('Applying preset:', { models, prompt });
+    const { models, prompt, presetName } = event.detail;
+    console.log('Applying preset:', { models, prompt, presetName });
+    currentPresetName = presetName;
     closePresetPopup();
   }
 
@@ -426,7 +424,7 @@
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        Preset
+        {currentPresetName || "Preset"}
       </button>
     {/if}
 

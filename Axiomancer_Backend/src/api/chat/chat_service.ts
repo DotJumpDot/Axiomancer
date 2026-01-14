@@ -94,6 +94,15 @@ export class ChatService {
     }
   }
 
+  static async archiveConversation(id: string, archived: boolean): Promise<Conversation | null> {
+    try {
+      return await this.updateConversation(id, { archived });
+    } catch (error) {
+      console.error("Error archiving conversation:", error);
+      throw error instanceof Error ? error : new Error("Failed to archive conversation");
+    }
+  }
+
   // Chat message management
   static async getChatsByConversationId(conversationId: string): Promise<Chat[]> {
     try {

@@ -162,6 +162,20 @@ async function updateConversation(id: string, updates: any) {
   }
 }
 
+async function archiveConversation(id: string, archived: boolean) {
+  try {
+    const response = await chatService.archiveConversation(id, archived);
+    if (response.success && response.data) {
+      conversations = conversations.map((c) => (c.id === id ? response.data : c));
+      if (currentConversation?.id === id) {
+        currentConversation = response.data;
+      }
+    }
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to archive conversation";
+  }
+}
+
 async function sendMessage(content: string, modelKey: string, options?: SendMessageOptions) {
   // For anonymous users, handle differently
   if (!authStore.isAuthenticated) {
@@ -379,6 +393,7 @@ export const chatStore = {
   createNewConversation,
   deleteConversation,
   updateConversation,
+  archiveConversation,
   sendMessage,
   setWebSearchEnabled,
   setImageSearchEnabled,

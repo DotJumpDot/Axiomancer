@@ -6,6 +6,8 @@
 
   let { onSelectConversation }: { onSelectConversation?: (id: string) => void } = $props();
   let showArchiveModal = $state(false);
+  let editingConversationId = $state<string | null>(null);
+  let editingTitle = $state('');
   
   let archivedConversations = $derived(
     Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => c.archived) : []
@@ -37,6 +39,8 @@
 
   async function handleDelete(e: Event, id: string) {
     e.stopPropagation();
+    if (!authStore.currentUser?.uuid) return;
+
     if (confirm("Delete this conversation permanently?")) {
       await chatStore.deleteConversation(id);
     }
@@ -60,17 +64,15 @@
 
   async function handleArchive(e: Event, id: string) {
     e.stopPropagation();
-    const conversation = chatStore.conversations.find(c => c.id === id);
-    if (conversation) {
-      await chatStore.updateConversation(id, { archived: true });
-    }
+    if (!authStore.currentUser?.uuid) return;
+
+    await chatStore.archiveConversation(id, true);
   }
 
   async function handleUnarchive(id: string) {
-    const conversation = chatStore.conversations.find(c => c.id === id);
-    if (conversation) {
-      await chatStore.updateConversation(id, { archived: false });
-    }
+    if (!authStore.currentUser?.uuid) return;
+
+    await chatStore.archiveConversation(id, false);
   }
 
   function handleNewChat() {
@@ -83,6 +85,39 @@
 
   function closeArchiveModal() {
     showArchiveModal = false;
+  }
+
+  function startEditingTitle(conversation: Conversation) {
+    editingConversationId = conversation.id;
+    editingTitle = conversation.title;
+  }
+
+  function cancelEditingTitle() {
+    editingConversationId = null;
+    editingTitle = '';
+  }
+
+  async function saveTitle(conversationId: string) {
+    if (editingTitle.trim()) {
+      await chatStore.updateConversation(conversationId, { title: editingTitle.trim() });
+    }
+    editingConversationId = null;
+    editingTitle = '';
+  }
+
+  function handleTitleKeydown(e: KeyboardEvent, conversationId: string) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitle(conversationId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditingTitle();
+    }
+  }
+
+  function focusInput(node: HTMLInputElement) {
+    node.focus();
+    node.select();
   }
 </script>
 
@@ -159,7 +194,32 @@
                 </svg>
               </button>
             {/if}
-            {truncate(conversation.title, 30)}
+            {#if editingConversationId === conversation.id}
+              <input
+                type="text"
+                class="title-input"
+                bind:value={editingTitle}
+                onclick={(e) => e.stopPropagation()}
+                onkeydown={(e) => handleTitleKeydown(e, conversation.id)}
+                onblur={() => saveTitle(conversation.id)}
+                use:focusInput
+              />
+            {:else}
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <span 
+                class="title-text"
+                class:clickable={chatStore.currentConversation?.id === conversation.id}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  if (chatStore.currentConversation?.id === conversation.id) {
+                    startEditingTitle(conversation);
+                  }
+                }}
+              >
+                {truncate(conversation.title, 25)}
+              </span>
+            {/if}
           </span>
           <span class="conversation-date">{formatRelativeTime(conversation.updated_at)}</span>
           <div class="conversation-actions">
@@ -222,7 +282,7 @@
       {/each}
     {/if}
     
-    {#if authStore.isAuthenticated && archivedConversations.length > 0}
+    <!-- {#if authStore.isAuthenticated && archivedConversations.length > 0}
       <button class="view-archive-btn" onclick={openArchiveModal}>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="21 8 21 21 3 21 3 8"></polyline>
@@ -232,16 +292,18 @@
         </svg>
         View Archive ({archivedConversations.length})
       </button>
-    {/if}
+    {/if} -->
   </div>
 
   <div class="sidebar-footer">
-    <button class="settings-btn">
+    <button class="settings-btn" onclick={openArchiveModal}>
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+        <line x1="1" y1="3" x2="23" y2="3"></line>
+        <path d="M10 12v6"></path>
+        <path d="M14 12v6"></path>
       </svg>
-      Settings
+      Archive
     </button>
   </div>
 </aside>
@@ -385,6 +447,41 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .title-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+  }
+
+  .title-text.clickable {
+    cursor: pointer;
+  }
+
+  .title-text.clickable:hover {
+    text-decoration: underline;
+  }
+
+  .title-input {
+    width: auto;
+    max-width: 200px;
+    background: var(--input-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+    font-size: 14px;
+    padding: 2px 6px;
+    outline: none;
+  }
+
+  .title-input:focus {
+    border-color: var(--primary-color, #6366f1);
   }
 
   .conversation-date {

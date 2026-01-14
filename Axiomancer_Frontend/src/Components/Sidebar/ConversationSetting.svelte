@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chatStore } from "@/Store";
+  import { authStore, chatStore } from "@/Store";
   import { formatRelativeTime, truncate } from "@/Function";
   import type { Conversation } from "@/Types";
 
@@ -12,10 +12,9 @@
   let { isOpen, archivedConversations, onClose }: Props = $props();
 
   async function handleUnarchive(id: string) {
-    const conversation = chatStore.conversations.find(c => c.id === id);
-    if (conversation) {
-      await chatStore.updateConversation(id, { archived: false });
-    }
+    if (!authStore.currentUser?.uuid) return;
+
+    await chatStore.archiveConversation(id, false);
   }
 
   async function handleDeleteArchived(id: string) {
@@ -25,9 +24,7 @@
   }
 
   function handleSelectArchived(conversation: Conversation) {
-    // First unarchive it
-    chatStore.updateConversation(conversation.id, { archived: false });
-    // Then load it
+    // Load the archived conversation without unarchiving it
     chatStore.loadConversation(conversation.id);
     onClose();
   }
@@ -73,7 +70,7 @@
                   <button
                     class="action-btn unarchive-btn"
                     onclick={() => handleUnarchive(conversation.id)}
-                    title="Restore conversation"
+                    title="Unarchive conversation"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="21 15 16 10 21 5"></polyline>
