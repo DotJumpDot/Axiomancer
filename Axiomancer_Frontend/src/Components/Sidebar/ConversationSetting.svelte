@@ -10,6 +10,8 @@
   }
 
   let { isOpen, archivedConversations, onClose }: Props = $props();
+  let editingConversationId = $state<string | null>(null);
+  let editingTitle = $state('');
 
   async function handleUnarchive(id: string) {
     if (!authStore.currentUser?.uuid) return;
@@ -27,6 +29,39 @@
     // Load the archived conversation without unarchiving it
     chatStore.loadConversation(conversation.id);
     onClose();
+  }
+
+  function startEditingTitle(conversation: Conversation) {
+    editingConversationId = conversation.id;
+    editingTitle = conversation.title;
+  }
+
+  function cancelEditingTitle() {
+    editingConversationId = null;
+    editingTitle = '';
+  }
+
+  async function saveTitle(conversationId: string) {
+    if (editingTitle.trim()) {
+      await chatStore.updateConversation(conversationId, { title: editingTitle.trim() });
+    }
+    editingConversationId = null;
+    editingTitle = '';
+  }
+
+  function handleTitleKeydown(e: KeyboardEvent, conversationId: string) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitle(conversationId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditingTitle();
+    }
+  }
+
+  function focusInput(node: HTMLInputElement) {
+    node.focus();
+    node.select();
   }
 </script>
 
@@ -62,11 +97,42 @@
           <div class="archived-list">
             {#each archivedConversations as conversation (conversation.id)}
               <div class="archived-item">
-                <div class="item-info" onclick={() => handleSelectArchived(conversation)}>
-                  <div class="item-title">{truncate(conversation.title, 40)}</div>
+                <div class="item-info">
+                  {#if editingConversationId === conversation.id}
+                    <input
+                      type="text"
+                      class="title-input"
+                      bind:value={editingTitle}
+                      onclick={(e) => e.stopPropagation()}
+                      onkeydown={(e) => handleTitleKeydown(e, conversation.id)}
+                      onblur={() => saveTitle(conversation.id)}
+                      use:focusInput
+                    />
+                  {:else}
+                    <div class="title-container">
+                      <div class="item-title" onclick={() => handleSelectArchived(conversation)}>
+                        {truncate(conversation.title, 35)}
+                      </div>
+                    </div>
+                  {/if}
                   <div class="item-date">{formatRelativeTime(conversation.updated_at)}</div>
                 </div>
                 <div class="item-actions">
+                  {#if editingConversationId !== conversation.id}
+                    <button
+                      class="action-btn edit-btn"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        startEditingTitle(conversation);
+                      }}
+                      title="Edit conversation title"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                  {/if}
                   <button
                     class="action-btn unarchive-btn"
                     onclick={() => handleUnarchive(conversation.id)}
@@ -262,5 +328,47 @@
   .delete-btn:hover {
     background: var(--danger-bg, rgba(239, 68, 68, 0.2));
     color: var(--danger-color, #ef4444);
+  }
+
+  .title-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .item-title {
+    cursor: pointer;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .edit-btn {
+    padding: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .edit-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    opacity: 1;
+  }
+
+  .title-input {
+    width: 100%;
+    max-width: 250px;
+    background: var(--input-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+    font-size: 14px;
+    padding: 2px 6px;
+    outline: none;
+  }
+
+  .title-input:focus {
+    border-color: var(--primary-color, #6366f1);
   }
 </style>

@@ -558,26 +558,6 @@
     color: var(--danger-color, #ef4444);
   }
 
-  .view-archive-btn {
-    width: calc(100% - 16px);
-    margin: 8px 8px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: var(--hover-bg, #2d2d2d);
-    border: 1px solid var(--border-color, #3d3d3d);
-    border-radius: 8px;
-    color: var(--text-secondary, #888);
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s;
-  }
-
-  .view-archive-btn:hover {
-    background: var(--primary-color, #6366f1);
-    color: white;
-  }
 
   .sidebar-footer {
     padding: 12px;
