@@ -500,6 +500,7 @@
     overflow-y: auto;
     border: 1px solid var(--border-color, #333);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideIn 0.3s ease-out;
   }
 
   .modal-header {
@@ -838,6 +839,17 @@
 
     .spacer {
       display: none;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
 </style>

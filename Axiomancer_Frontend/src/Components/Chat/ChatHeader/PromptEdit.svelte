@@ -454,6 +454,7 @@
 	  display: flex;
 	  flex-direction: column;
 	  overflow: hidden;
+	  animation: slideIn 0.2s ease-out;
 	}
 
 	.preset-popup-header {
@@ -913,5 +914,16 @@
 		color: #6b7280;
 		font-size: 12px;
 		margin-top: 4px;
+	}
+
+	@keyframes slideIn {
+		from {
+			transform: translateY(-20px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
 	}
 </style>
