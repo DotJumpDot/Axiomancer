@@ -1,0 +1,71 @@
+{
+  "language": {
+    "name": "English",
+    "code": "en"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "close": "Close",
+    "open": "Open",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "send": "Send",
+    "stop": "Stop",
+    "clear": "Clear",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "retry": "Retry",
+    "refresh": "Refresh"
+  },
+  "chat": {
+    "title": "Chat",
+    "placeholder": "Type your message here...",
+    "newChat": "New Chat",
+    "autoRouting": "Auto Routing",
+    "model": "Model",
+    "models": "Models",
+    "conversation": "Conversation",
+    "conversations": "Conversations",
+    "systemPrompt": "System Prompt",
+    "prompt": "Prompt",
+    "prompts": "Prompts",
+    "favorites": "Favorites",
+    "favorite": "Favorite",
+    "unfavorite": "Unfavorite"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "username": "Username",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "nickname": "Nickname",
+    "apiKey": "API Key",
+    "enterApiKey": "Enter OpenRouter API Key",
+    "invalidEmail": "Invalid email address",
+    "invalidPassword": "Password must be at least 6 characters",
+    "passwordsDontMatch": "Passwords don't match",
+    "loginSuccess": "Login successful",
+    "loginError": "Login failed",
+    "registerSuccess": "Registration successful",
+    "registerError": "Registration failed",
+    "apiKeyRequired": "API key is required",
+    "invalidApiKey": "Invalid API key"
+  },
+  "errors": {
+    "networkError": "Network error occurred",
+    "serverError": "Server error occurred",
+    "notFound": "Resource not found",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "unknownError": "Unknown error occurred"
+  }
+}

@@ -5,6 +5,7 @@ let sidebarOpen = $state(true);
 let fontSize = $state<"small" | "medium" | "large">("medium");
 let sendOnEnter = $state(true);
 let streamResponses = $state(true);
+let language = $state<"en" | "th">("en");
 
 // Persist settings to localStorage
 function saveSettings() {
@@ -14,6 +15,7 @@ function saveSettings() {
     fontSize,
     sendOnEnter,
     streamResponses,
+    language,
   };
   localStorage.setItem("axiomancer_settings", JSON.stringify(settings));
 }
@@ -28,6 +30,7 @@ function loadSettings() {
       fontSize = settings.fontSize ?? "medium";
       sendOnEnter = settings.sendOnEnter ?? true;
       streamResponses = settings.streamResponses ?? true;
+      language = settings.language ?? "en";
     } catch (e) {
       console.error("Failed to load settings:", e);
     }
@@ -77,6 +80,11 @@ function setStreamResponses(enabled: boolean) {
   saveSettings();
 }
 
+function setLanguage(newLanguage: "en" | "th") {
+  language = newLanguage;
+  saveSettings();
+}
+
 // Export store object with getters for reactive access
 export const settingsStore = {
   get theme() {
@@ -94,6 +102,9 @@ export const settingsStore = {
   get streamResponses() {
     return streamResponses;
   },
+  get language() {
+    return language;
+  },
 
   loadSettings,
   saveSettings,
@@ -103,6 +114,7 @@ export const settingsStore = {
   setFontSize,
   setSendOnEnter,
   setStreamResponses,
+  setLanguage,
 };
 
 export default settingsStore;

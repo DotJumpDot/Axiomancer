@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { aiStore, chatStore, promptStore, settingsStore, authStore } from "@/Store";
   import { userService } from "@/Service";
   import { formatModelName, formatProviderName } from "@/Function";
@@ -17,6 +17,7 @@
   let showSystemPrompt = $state(false);
   let showModelSelector = $state(false);
   let showPromptEditor = $state(false);
+  let showLanguageDropdown = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
   let currentPresetName = $state<string | null>(null);
@@ -30,6 +31,9 @@
   let loginDialog: any;
   let apiKeyDialog: any;
   let userSettingDialog: any;
+  let languageDropdownRef: HTMLElement;
+  // svelte-ignore non_reactive_update
+    let promptDropdownRef: HTMLElement;
   let isInitializing = $state(true);
 
   // Derived state for API key status - defaults to true until we know otherwise
@@ -64,6 +68,23 @@
     setTimeout(() => {
       updateModelAndPromptNames();
     }, 100);
+
+    // Click outside handler for dropdowns
+    const handleClickOutside = (event: MouseEvent) => {
+      if (languageDropdownRef && !languageDropdownRef.contains(event.target as Node)) {
+        showLanguageDropdown = false;
+      }
+      if (promptDropdownRef && !promptDropdownRef.contains(event.target as Node)) {
+        showPromptDropdown = false;
+        showSystemPrompt = false;
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+
+    onDestroy(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
   });
 
   //* Sync local state with chatStore changes
@@ -254,6 +275,16 @@
     }
   }
 
+  function selectLanguage(language: "en" | "th") {
+    settingsStore.setLanguage(language);
+    showLanguageDropdown = false;
+  }
+
+  function toggleTheme() {
+    const newTheme = settingsStore.theme === 'light' ? 'dark' : 'light';
+    settingsStore.setTheme(newTheme);
+  }
+
   // Ensure reactivity to API key changes
   $effect(() => {
     // This effect ensures the component reacts to API key changes
@@ -343,7 +374,7 @@
 
     <!-- Prompt Profile Selector (only show in single mode) -->
     {#if authStore.isAuthenticated && currentMode === 'single'}
-      <div class="dropdown prompt-selector">
+      <div class="dropdown prompt-selector" bind:this={promptDropdownRef}>
         <button
           class="dropdown-trigger2"
           onclick={() => (showPromptDropdown = !showPromptDropdown)}
@@ -359,7 +390,9 @@
         </button>
 
         {#if showPromptDropdown}
-          <div class="dropdown-menu">
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div class="dropdown-menu" onclick={(e) => e.stopPropagation()}>
             <button
               class="dropdown-item"
               class:selected={!promptStore.selectedProfile}
@@ -385,7 +418,9 @@
         {/if}
 
         {#if showSystemPrompt}
-          <div class="system-prompt-display">
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div class="system-prompt-display" onclick={(e) => e.stopPropagation()}>
             <div class="system-prompt-header">
               <h4>System Prompt</h4>
               <!-- svelte-ignore a11y_consider_explicit_label -->
@@ -447,6 +482,60 @@
   </div>
 
   <div class="header-right">
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle-btn" onclick={toggleTheme} title={settingsStore.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+      {#if settingsStore.theme === 'light'}
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      {:else}
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      {/if}
+    </button>
+
+    <!-- Language Selector -->
+    <div class="dropdown language-selector" bind:this={languageDropdownRef}>
+      <button
+        class="dropdown-trigger language-btn"
+        onclick={() => (showLanguageDropdown = !showLanguageDropdown)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        {settingsStore.language.toUpperCase()}
+        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      {#if showLanguageDropdown}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div class="dropdown-menu2" onclick={(e) => e.stopPropagation()}>
+          <button class="dropdown-item" class:active-language={settingsStore.language === 'en'} onclick={() => selectLanguage('en')}>
+            <span class="item-name">English</span>
+            <span class="item-desc">EN</span>
+          </button>
+          <button class="dropdown-item" class:active-language={settingsStore.language === 'th'} onclick={() => selectLanguage('th')}>
+            <span class="item-name">ภาษาไทย</span>
+            <span class="item-desc">TH</span>
+          </button>
+        </div>
+      {/if}
+    </div>
+
     <!-- API Key Button -->
     {#if authStore.isAuthenticated}
       <div class="api-key-container">
@@ -472,8 +561,8 @@
     {#if authStore.isAuthenticated}
       <button class="settings-btn" onclick={openUserSettingDialog} title="User Settings">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
         </svg>
       </button>
     {/if}

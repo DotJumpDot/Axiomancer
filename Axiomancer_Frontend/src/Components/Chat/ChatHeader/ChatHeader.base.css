@@ -94,6 +94,20 @@
   overflow: hidden;
 }
 
+.dropdown-menu2 {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 130px;
+  background: var(--dropdown-bg, #2d2d2d);
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
 /* System Prompt Display */
 .system-prompt-display {
   position: absolute;

@@ -1,0 +1,374 @@
+<script lang="ts">
+  import { authStore, chatStore } from "@/Store";
+  import { formatRelativeTime, truncate } from "@/Function";
+  import type { Conversation } from "@/Types";
+
+  interface Props {
+    isOpen: boolean;
+    archivedConversations: Conversation[];
+    onClose: () => void;
+  }
+
+  let { isOpen, archivedConversations, onClose }: Props = $props();
+  let editingConversationId = $state<string | null>(null);
+  let editingTitle = $state('');
+
+  async function handleUnarchive(id: string) {
+    if (!authStore.currentUser?.uuid) return;
+
+    await chatStore.archiveConversation(id, false);
+  }
+
+  async function handleDeleteArchived(id: string) {
+    if (confirm("Permanently delete this archived conversation?")) {
+      await chatStore.deleteConversation(id);
+    }
+  }
+
+  function handleSelectArchived(conversation: Conversation) {
+    // Load the archived conversation without unarchiving it
+    chatStore.loadConversation(conversation.id);
+    onClose();
+  }
+
+  function startEditingTitle(conversation: Conversation) {
+    editingConversationId = conversation.id;
+    editingTitle = conversation.title;
+  }
+
+  function cancelEditingTitle() {
+    editingConversationId = null;
+    editingTitle = '';
+  }
+
+  async function saveTitle(conversationId: string) {
+    if (editingTitle.trim()) {
+      await chatStore.updateConversation(conversationId, { title: editingTitle.trim() });
+    }
+    editingConversationId = null;
+    editingTitle = '';
+  }
+
+  function handleTitleKeydown(e: KeyboardEvent, conversationId: string) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitle(conversationId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditingTitle();
+    }
+  }
+
+  function focusInput(node: HTMLInputElement) {
+    node.focus();
+    node.select();
+  }
+</script>
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+{#if isOpen}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="modal-overlay" onclick={onClose}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+      <!-- svelte-ignore a11y_consider_explicit_label -->
+      <div class="modal-header">
+        <h2>Archived Conversations</h2>
+        <button class="close-btn" onclick={onClose}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        {#if archivedConversations.length === 0}
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <line x1="1" y1="3" x2="23" y2="3"></line>
+              <path d="M10 12v6"></path>
+              <path d="M14 12v6"></path>
+            </svg>
+            <p>No archived conversations</p>
+          </div>
+        {:else}
+          <div class="archived-list">
+            {#each archivedConversations as conversation (conversation.id)}
+              <div class="archived-item">
+                <div class="item-info">
+                  {#if editingConversationId === conversation.id}
+                    <input
+                      type="text"
+                      class="title-input"
+                      bind:value={editingTitle}
+                      onclick={(e) => e.stopPropagation()}
+                      onkeydown={(e) => handleTitleKeydown(e, conversation.id)}
+                      onblur={() => saveTitle(conversation.id)}
+                      use:focusInput
+                    />
+                  {:else}
+                    <div class="title-container">
+                      <div class="item-title" onclick={() => handleSelectArchived(conversation)}>
+                        {truncate(conversation.title, 35)}
+                      </div>
+                    </div>
+                  {/if}
+                  <div class="item-date">{formatRelativeTime(conversation.updated_at)}</div>
+                </div>
+                <div class="item-actions">
+                  {#if editingConversationId !== conversation.id}
+                    <button
+                      class="action-btn edit-btn"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        startEditingTitle(conversation);
+                      }}
+                      title="Edit conversation title"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                  {/if}
+                  <button
+                    class="action-btn unarchive-btn"
+                    onclick={() => handleUnarchive(conversation.id)}
+                    title="Unarchive conversation"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="21 15 16 10 21 5"></polyline>
+                      <path d="M4 20c.5-1 2-7 2-10 0-5 1.58-8 8-8h9"></path>
+                    </svg>
+                  </button>
+                  <button
+                    class="action-btn delete-btn"
+                    onclick={() => handleDeleteArchived(conversation.id)}
+                    title="Delete archived conversation"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: var(--modal-bg, #2d2d2d);
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 500px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color, #3d3d3d);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-primary, #fff);
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+
+  .close-btn:hover {
+    color: var(--text-primary, #fff);
+  }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-secondary, #888);
+  }
+
+  .empty-state svg {
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .archived-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .archived-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--hover-bg, #3d3d3d);
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+
+  .archived-item:hover {
+    background: var(--active-bg, #4d4d4d);
+  }
+
+  .item-info {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .item-title {
+    font-size: 14px;
+    color: var(--text-primary, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+
+  .item-date {
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+  }
+
+  .item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .action-btn {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover {
+    background: var(--hover-bg, #5d5d5d);
+  }
+
+  .unarchive-btn:hover {
+    background: var(--success-bg, rgba(34, 197, 94, 0.2));
+    color: var(--success-color, #22c55e);
+  }
+
+  .delete-btn:hover {
+    background: var(--danger-bg, rgba(239, 68, 68, 0.2));
+    color: var(--danger-color, #ef4444);
+  }
+
+  .title-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .item-title {
+    cursor: pointer;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .edit-btn {
+    padding: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .edit-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    opacity: 1;
+  }
+
+  .title-input {
+    width: 100%;
+    max-width: 250px;
+    background: var(--input-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+    font-size: 14px;
+    padding: 2px 6px;
+    outline: none;
+  }
+
+  .title-input:focus {
+    border-color: var(--primary-color, #6366f1);
+  }
+</style>

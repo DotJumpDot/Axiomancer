@@ -175,3 +175,45 @@
   color: var(--primary-color, #6366f1);
   border-color: var(--primary-color, #6366f1);
 }
+
+.language-btn {
+  width: 90px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.language-btn:hover {
+  background: var(--hover-bg, #2d2d2d);
+  color: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+}
+
+.theme-toggle-btn {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 8px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--hover-bg, #2d2d2d);
+  color: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+}

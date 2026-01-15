@@ -2,10 +2,12 @@
   import { chatStore, settingsStore, authStore, favoriteStore } from "@/Store";
   import type { Conversation } from "@/Types";
   import { formatRelativeTime, truncate } from "@/Function";
+  import ArchiveDialog from "./ArchiveDialog.svelte";
   import ConversationSetting from "./ConversationSetting.svelte";
 
   let { onSelectConversation }: { onSelectConversation?: (id: string) => void } = $props();
   let showArchiveModal = $state(false);
+  let showSettingsModal = $state(false);
   let editingConversationId = $state<string | null>(null);
   let editingTitle = $state('');
   
@@ -85,6 +87,14 @@
 
   function closeArchiveModal() {
     showArchiveModal = false;
+  }
+
+  function openSettingsModal() {
+    showSettingsModal = true;
+  }
+
+  function closeSettingsModal() {
+    showSettingsModal = false;
   }
 
   function startEditingTitle(conversation: Conversation) {
@@ -296,8 +306,8 @@
   </div>
 
   <div class="sidebar-footer">
-    <button class="settings-btn" onclick={openArchiveModal}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <button class="archive-btn" onclick={openArchiveModal}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="21 8 21 21 3 21 3 8"></polyline>
         <line x1="1" y1="3" x2="23" y2="3"></line>
         <path d="M10 12v6"></path>
@@ -305,14 +315,27 @@
       </svg>
       Archive
     </button>
+    <!-- svelte-ignore a11y_consider_explicit_label -->
+    <button class="settings-btn" onclick={openSettingsModal}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
   </div>
 </aside>
 
 <!-- Archive Modal -->
-<ConversationSetting
+<ArchiveDialog
   isOpen={showArchiveModal}
   archivedConversations={archivedConversations}
   onClose={closeArchiveModal}
+/>
+
+<!-- Settings Modal -->
+<ConversationSetting
+  isOpen={showSettingsModal}
+  onClose={closeSettingsModal}
 />
 
 <style>
@@ -562,20 +585,41 @@
   .sidebar-footer {
     padding: 12px;
     border-top: 1px solid var(--border-color, #2d2d2d);
+    display: flex;
+    gap: 8px;
   }
 
-  .settings-btn {
-    width: 100%;
+  .archive-btn {
+    flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 10px 16px;
     background: transparent;
     border: 1px solid var(--border-color, #2d2d2d);
     border-radius: 8px;
     color: var(--text-secondary, #888);
     cursor: pointer;
     font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .archive-btn:hover {
+    background: var(--hover-bg, #2d2d2d);
+    color: var(--text-primary, #fff);
+  }
+
+  .settings-btn {
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border-color, #2d2d2d);
+    border-radius: 8px;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s;
   }
 
