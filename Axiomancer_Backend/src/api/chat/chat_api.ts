@@ -14,7 +14,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     try {
       // Only authenticated users can list conversations
       if (!auth?.user) {
-        console.log("[Chat API] GET /api/conversations ✔️");
+        // console.log("[Chat API] GET /api/conversations ✔️");
         return new Response(JSON.stringify({ success: true, data: [] }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -22,13 +22,13 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
       }
 
       const conversations = await ChatService.getAllConversations(auth.user.uuid);
-      console.log("[Chat API] GET /api/conversations ✔️");
+      // console.log("[Chat API] GET /api/conversations ✔️");
       return new Response(JSON.stringify({ success: true, data: conversations }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.log("[Chat API] GET /api/conversations ❌");
+      // console.log("[Chat API] GET /api/conversations ❌");
       return new Response(
         JSON.stringify({
           success: false,
@@ -47,7 +47,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
       try {
         // Only authenticated users can create persistent conversations
         if (!auth?.user) {
-          console.log("[Chat API] POST /api/conversations ❌");
+          // console.log("[Chat API] POST /api/conversations ❌");
           return new Response(
             JSON.stringify({
               success: false,
@@ -65,13 +65,13 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           auth.user.uuid,
           autoRouting
         );
-        console.log("[Chat API] POST /api/conversations ✔️");
+        // console.log("[Chat API] POST /api/conversations ✔️");
         return new Response(JSON.stringify({ success: true, data: conversation }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
-        console.log("[Chat API] POST /api/conversations ❌");
+        // console.log("[Chat API] POST /api/conversations ❌");
         return new Response(
           JSON.stringify({
             success: false,
@@ -93,19 +93,19 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     try {
       const conversation = await ChatService.getConversationById(params.id);
       if (!conversation) {
-        console.log(`[Chat API] GET /api/conversations/${params.id} ❌`);
+        // console.log(`[Chat API] GET /api/conversations/${params.id} ❌`);
         return new Response(JSON.stringify({ success: false, error: "Conversation not found" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         });
       }
-      console.log(`[Chat API] GET /api/conversations/${params.id} ✔️`);
+      // console.log(`[Chat API] GET /api/conversations/${params.id} ✔️`);
       return new Response(JSON.stringify({ success: true, data: conversation }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.log(`[Chat API] GET /api/conversations/${params.id} ❌`, error);
+      // console.log(`[Chat API] GET /api/conversations/${params.id} ❌`, error);
       return new Response(
         JSON.stringify({
           success: false,
@@ -125,19 +125,19 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           body as UpdateConversationRequest
         );
         if (!conversation) {
-          console.log(`[Chat API] PUT /api/conversations/${params.id} ❌`);
+          // console.log(`[Chat API] PUT /api/conversations/${params.id} ❌`);
           return new Response(JSON.stringify({ success: false, error: "Conversation not found" }), {
             status: 404,
             headers: { "Content-Type": "application/json" },
           });
         }
-        console.log(`[Chat API] PUT /api/conversations/${params.id} ✔️`);
+        // console.log(`[Chat API] PUT /api/conversations/${params.id} ✔️`);
         return new Response(JSON.stringify({ success: true, data: conversation }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
-        console.log(`[Chat API] PUT /api/conversations/${params.id} ❌`, error);
+        // console.log(`[Chat API] PUT /api/conversations/${params.id} ❌`, error);
         return new Response(
           JSON.stringify({
             success: false,
@@ -159,19 +159,19 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     try {
       const deleted = await ChatService.deleteConversation(params.id);
       if (!deleted) {
-        console.log(`[Chat API] DELETE /api/conversations/${params.id} ❌`);
+        // console.log(`[Chat API] DELETE /api/conversations/${params.id} ❌`);
         return new Response(JSON.stringify({ success: false, error: "Conversation not found" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         });
       }
-      console.log(`[Chat API] DELETE /api/conversations/${params.id} ✔️`);
+      // console.log(`[Chat API] DELETE /api/conversations/${params.id} ✔️`);
       return new Response(JSON.stringify({ success: true, data: { deleted: true } }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.log(`[Chat API] DELETE /api/conversations/${params.id} ❌`, error);
+      // console.log(`[Chat API] DELETE /api/conversations/${params.id} ❌`, error);
       return new Response(
         JSON.stringify({
           success: false,
@@ -208,13 +208,13 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
             headers: { "Content-Type": "application/json" },
           });
         }
-        console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ✔️`);
+        // console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ✔️`);
         return new Response(JSON.stringify({ success: true, data: conversation }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
-        console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`, error);
+        // console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`, error);
         return new Response(
           JSON.stringify({
             success: false,
@@ -235,7 +235,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
   .get("/conversations/:id/messages", async ({ params }) => {
     try {
       const messages = await ChatService.getChatsByConversationId(params.id);
-      console.log(`[Chat API] GET /api/conversations/${params.id}/messages ✔️`);
+      // console.log(`[Chat API] GET /api/conversations/${params.id}/messages ✔️`);
       return new Response(JSON.stringify({ success: true, data: messages }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -245,7 +245,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         "[Chat API] GET /api/conversations/:id/messages: Error getting messages:",
         error
       );
-      console.log(`[Chat API] GET /api/conversations/${params.id}/messages ❌`);
+      // console.log(`[Chat API] GET /api/conversations/${params.id}/messages ❌`);
       return new Response(
         JSON.stringify({
           success: false,
@@ -266,7 +266,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         };
 
         const message = await ChatService.createChat(chatData);
-        console.log(`[Chat API] POST /api/conversations/${params.id}/messages ✔️`);
+        // console.log(`[Chat API] POST /api/conversations/${params.id}/messages ✔️`);
         return new Response(JSON.stringify({ success: true, data: message }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -276,7 +276,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           "[Chat API] POST /api/conversations/:id/messages: Error creating message:",
           error
         );
-        console.log(`[Chat API] POST /api/conversations/${params.id}/messages ❌`);
+        // console.log(`[Chat API] POST /api/conversations/${params.id}/messages ❌`);
         return new Response(
           JSON.stringify({
             success: false,
@@ -310,7 +310,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         // For anonymous users, we don't save to database, just proxy to AI
         if (!auth?.user) {
           const aiResponse = await ChatService.sendAnonymousMessage(body);
-          console.log(`[Chat API] POST /api/conversations/${params.id}/send ✔️`);
+          // console.log(`[Chat API] POST /api/conversations/${params.id}/send ✔️`);
           return new Response(JSON.stringify({ success: true, data: aiResponse }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
@@ -330,7 +330,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           auth.user.id
         );
 
-        console.log(`[Chat API] POST /api/conversations/${params.id}/send ✔️`);
+        // console.log(`[Chat API] POST /api/conversations/${params.id}/send ✔️`);
         return new Response(JSON.stringify({ success: true, data: result }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -340,7 +340,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         const errorMessage = error instanceof Error ? error.message : "Failed to send message";
         const isNotFound = errorMessage.toLowerCase().includes("not found");
 
-        console.log(`[Chat API] POST /api/conversations/${params.id}/send ❌`);
+        // console.log(`[Chat API] POST /api/conversations/${params.id}/send ❌`);
         return new Response(
           JSON.stringify({
             success: false,
@@ -369,13 +369,13 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
     try {
       const result = await ChatService.getConversationWithMessages(params.id);
       if (!result) {
-        console.log(`[Chat API] GET /api/conversations/${params.id}/full ❌`);
+        // console.log(`[Chat API] GET /api/conversations/${params.id}/full ❌`);
         return new Response(JSON.stringify({ success: false, error: "Conversation not found" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         });
       }
-      console.log(`[Chat API] GET /api/conversations/${params.id}/full ✔️`);
+      // console.log(`[Chat API] GET /api/conversations/${params.id}/full ✔️`);
       return new Response(JSON.stringify({ success: true, data: result }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -385,7 +385,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         "[Chat API] GET /api/conversations/:id/full: Error getting conversation with messages:",
         error
       );
-      console.log(`[Chat API] GET /api/conversations/${params.id}/full ❌`);
+      // console.log(`[Chat API] GET /api/conversations/${params.id}/full ❌`);
       return new Response(
         JSON.stringify({
           success: false,
