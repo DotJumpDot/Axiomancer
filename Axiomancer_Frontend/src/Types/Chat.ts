@@ -9,7 +9,12 @@ export interface TokenUsage {
 }
 
 export interface SearchContext {
-  web_results?: any[];
+  web_search?: {
+    query: string;
+    results: any[];
+    abstract?: string;
+    abstractURL?: string;
+  };
   image_results?: any[];
   query?: string;
 }
@@ -116,8 +121,8 @@ export interface ChatAttachment {
 }
 
 export interface SendMessageOptions {
-  useWebSearch?: boolean;
-  useImageSearch?: boolean;
+  webSearch?: boolean;
+  imageSearch?: boolean;
   selectedModel?: string;
   promptProfileId?: string;
   attachments?: File[];

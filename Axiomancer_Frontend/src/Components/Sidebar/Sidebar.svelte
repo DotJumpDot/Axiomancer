@@ -221,13 +221,14 @@
             {:else}
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <span 
-                class="title-text"
-                class:clickable={chatStore.currentConversation?.id === conversation.id}
+              <span
+                class="title-text clickable"
                 onclick={(e) => {
                   e.stopPropagation();
                   if (chatStore.currentConversation?.id === conversation.id) {
                     startEditingTitle(conversation);
+                  } else {
+                    handleSelect(conversation);
                   }
                 }}
               >

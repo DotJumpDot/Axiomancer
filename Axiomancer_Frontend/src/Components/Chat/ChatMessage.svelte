@@ -91,12 +91,34 @@
   {#if !isUser && (message.used_web_search || message.used_image_search)}
     <div class="message-meta">
       {#if message.used_web_search}
+        {#if message.search_context?.web_search?.results && message.search_context.web_search.results.length > 0}
+          <span class="meta-item search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+            </svg>
+            Web ({message.search_context.web_search.results.length} results)
+          </span>
+        {:else}
+          <span class="meta-item search no-results">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            Web - No results found
+          </span>
+        {/if}
+      {/if}
+      {#if message.used_image_search}
         <span class="meta-item search">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
           </svg>
-          Web
+          Image
         </span>
       {/if}
     </div>
@@ -315,5 +337,9 @@
 
   .meta-item.search {
     color: var(--primary-color, #6366f1);
+  }
+
+  .meta-item.search.no-results {
+    color: #ef4444;
   }
 </style>

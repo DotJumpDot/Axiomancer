@@ -65,6 +65,8 @@
     await chatStore.sendMessage(content, modelKey || "auto", {
       autoRouting: isAutoRouting,
       promptProfileId: chatStore.currentPromptProfileId || undefined,
+      webSearch: chatStore.webSearchEnabled,
+      imageSearch: chatStore.imageSearchEnabled,
     });
   }
 
@@ -138,7 +140,11 @@
       {/if}
     </span>
     <label class="toggle-switch" title="Web Search" style="display: inline-flex; align-items: center; gap: 12px; width: auto;">
-      <input type="checkbox" bind:checked={chatStore.webSearchEnabled} />
+      <input 
+        type="checkbox" 
+        checked={chatStore.webSearchEnabled}
+        onchange={(e) => chatStore.webSearchEnabled = (e.target as HTMLInputElement).checked}
+      />
       <span class="slider" style="flex-shrink: 0;">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
@@ -155,7 +161,11 @@
     </label>
 
     <label class="toggle-switch" title="Image Search" style="display: inline-flex; align-items: center; gap: 12px; width: auto; margin-left: 0 px;">
-      <input type="checkbox" bind:checked={chatStore.imageSearchEnabled} />
+      <input 
+        type="checkbox" 
+        checked={chatStore.imageSearchEnabled}
+        onchange={(e) => chatStore.imageSearchEnabled = (e.target as HTMLInputElement).checked}
+      />
       <span class="slider" style="flex-shrink: 0;">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>

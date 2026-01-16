@@ -4,6 +4,7 @@ import { getAiModelByModelKey } from "@/api/ai/ai_query";
 import { getPromptProfileById } from "@/api/prompt/prompt_query";
 import { getUserById } from "@/api/user/user_query";
 import { decryptApiKey } from "@/api/user/user_service";
+import { DuckDuckGoService } from "@/api/search/duckduckgo/duckduckgo_service";
 import type {
   Chat,
   CreateChatRequest,
@@ -297,6 +298,34 @@ export class ChatService {
 
       savedUserMessage = await this.createChat(userChat);
 
+      //! Perform web search if enabled
+      let searchContext: any = null;
+      if (options?.webSearch) {
+        try {
+          const searchResponse = await DuckDuckGoService.search(userMessage, 5);
+
+          if (searchResponse.success && searchResponse.results.length > 0) {
+            searchContext = {
+              web_search: {
+                query: searchResponse.query,
+                results: searchResponse.results,
+                abstract: searchResponse.abstract,
+                abstractURL: searchResponse.abstractURL,
+              },
+            };
+          }
+        } catch (searchError) {
+          console.error("SearchError : ", searchError);
+          // Continue without search results if search fails
+        }
+      }
+
+      // Update user message with search context if available
+      if (searchContext) {
+        await ChatQuery.updateChat(savedUserMessage.id, { search_context: searchContext });
+        savedUserMessage.search_context = searchContext;
+      }
+
       // Get conversation history for context
       const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
 
@@ -306,6 +335,22 @@ export class ChatService {
       // Add system prompt if available
       if (systemPrompt) {
         openRouterMessages.push({ role: "system", content: systemPrompt });
+      }
+
+      // Add web search context to system prompt if available
+      if (searchContext?.web_search) {
+        const searchFormatted = DuckDuckGoService.formatResultsForAI({
+          success: true,
+          query: searchContext.web_search.query,
+          results: searchContext.web_search.results,
+          abstract: searchContext.web_search.abstract,
+          abstractURL: searchContext.web_search.abstractURL,
+        });
+
+        openRouterMessages.push({
+          role: "system",
+          content: `The following web search results may help answer the user's question:\\n\\n${searchFormatted}\\n\\nUse this information to provide accurate and up-to-date responses. Cite sources when relevant.`,
+        });
       }
 
       // Add conversation history (limit to last 20 messages for context)

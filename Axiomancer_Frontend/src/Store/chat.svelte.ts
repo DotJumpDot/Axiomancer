@@ -371,8 +371,14 @@ export const chatStore = {
   get webSearchEnabled() {
     return webSearchEnabled;
   },
+  set webSearchEnabled(value: boolean) {
+    webSearchEnabled = value;
+  },
   get imageSearchEnabled() {
     return imageSearchEnabled;
+  },
+  set imageSearchEnabled(value: boolean) {
+    imageSearchEnabled = value;
   },
   get currentPromptProfileId() {
     return currentPromptProfileId;
