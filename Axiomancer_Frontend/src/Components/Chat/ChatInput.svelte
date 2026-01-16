@@ -276,6 +276,11 @@
 </div>
 
 <style>
+  :root {
+    --slider-bg-light: rgba(0, 0, 0, 0.15);
+    --slider-bg-dark: rgba(255, 255, 255, 0.3);
+  }
+
   .chat-input-container {
     padding: 16px;
     background: var(--input-container-bg, #1a1a1a);
@@ -561,6 +566,9 @@
     text-align: center;
     outline: none;
     transition: all 0.2s;
+    appearance: textfield;
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
   }
 
   .memory-value-input:hover {
@@ -572,29 +580,44 @@
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
 
+  .memory-value-input::-webkit-outer-spin-button,
+  .memory-value-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .memory-value-input::-moz-number-spin-box {
+    -moz-appearance: none;
+  }
+
   .memory-slider {
     width: 100%;
     height: 6px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--slider-bg-dark); /* Default to dark mode */
     border-radius: 3px;
     outline: none;
     -webkit-appearance: none;
     appearance: none;
     margin-bottom: 12px;
     cursor: pointer;
+    position: relative;
+  }
+
+  :global([data-theme="light"] .memory-slider) {
+    background: var(--slider-bg-light); /* Use light mode background */
   }
 
   .memory-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 6px;
-    background: rgba(255, 255, 255, 0.15);
+    background: inherit; /* Inherit from parent */
     border-radius: 3px;
   }
 
   .memory-slider::-moz-range-track {
     width: 100%;
     height: 6px;
-    background: rgba(255, 255, 255, 0.15);
+    background: inherit; /* Inherit from parent */
     border-radius: 3px;
   }
 
@@ -607,6 +630,8 @@
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s;
+    position: relative;
+    top: -5px; /* Adjusted to center the circle */
   }
 
   .memory-slider::-webkit-slider-thumb:hover {
@@ -621,6 +646,8 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s;
+    position: relative;
+    top: -5px; /* Adjusted to center the circle */
   }
 
   .memory-slider::-moz-range-thumb:hover {
