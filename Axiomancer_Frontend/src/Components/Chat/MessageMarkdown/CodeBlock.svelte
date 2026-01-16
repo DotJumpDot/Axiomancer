@@ -40,48 +40,17 @@
     margin: 8px 0;
     border-radius: 6px;
     overflow: hidden;
-    background: #f5f5f5; /* Grey background by default */
+    background: var(--code-bg, #0d0d0d);
     border: 1px solid var(--border-color, #3d3d3d);
     transition: background 0.2s ease;
-  }
-
-  .code-block-wrapper:hover {
-    background: var(--code-bg, #1e1e1e); /* Dark background on hover */
-  }
-
-  /* .code-block-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background: var(--code-header-bg, #2d2d2d);
-    border-bottom: 1px solid var(--border-color, #3d3d3d);
-  } */
-
-  .code-block-wrapper {
-    margin: 8px 0;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #141414; /* Grey background by default */
-    /* border: 1px solid var(--border-color, #3d3d3d); */
-    transition: background 0.2s ease;
-  }
-
-  .code-block-wrapper:hover {
-    background: var(--code-bg, #1e1e1e); /* Dark background on hover */
   }
 
   .language-label {
     font-size: 12px;
     font-weight: 500;
-    color: #666; /* Dark grey for grey background */
+    color: var(--text-secondary, #888);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    transition: color 0.2s ease;
-  }
-
-  .code-block-wrapper:hover .language-label {
-    color: var(--text-secondary, #888); /* Light for dark background */
   }
 
   .action-btn {
@@ -89,7 +58,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #666; /* Dark grey for grey background */
+    color: var(--text-secondary, #888);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -102,10 +71,6 @@
     color: var(--text-primary, #fff);
   }
 
-  .code-block-wrapper:hover .action-btn {
-    color: var(--text-secondary, #888); /* Light for dark background */
-  }
-
   .code-block {
     margin: 0;
     padding: 12px;
@@ -113,13 +78,8 @@
     font-family: "Consolas", "Monaco", "Courier New", monospace;
     font-size: 13px;
     line-height: 1.5;
-    background: transparent; /* Let wrapper handle background */
-    color: #333; /* Dark text for grey background */
-    transition: color 0.2s ease;
-  }
-
-  .code-block-wrapper:hover .code-block {
-    color: var(--code-text, #d4d4d4); /* Light text for dark background */
+    background: transparent;
+    color: var(--text-primary, #d4d4d4);
   }
 
   .code-block code {

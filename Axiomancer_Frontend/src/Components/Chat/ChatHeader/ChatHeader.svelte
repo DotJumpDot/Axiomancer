@@ -286,8 +286,7 @@
   }
 
   function toggleTheme() {
-    const newTheme = settingsStore.theme === 'light' ? 'dark' : 'light';
-    settingsStore.setTheme(newTheme);
+    settingsStore.toggleThemeMode();
   }
 
   // Ensure reactivity to API key changes
@@ -488,8 +487,8 @@
 
   <div class="header-right">
     <!-- Theme Toggle Button -->
-    <button class="theme-toggle-btn" onclick={toggleTheme} title={settingsStore.theme === 'light' ? t.header.switchToDark : t.header.switchToLight}>
-      {#if settingsStore.theme === 'light'}
+    <button class="theme-toggle-btn" onclick={toggleTheme} title={settingsStore.themeMode === 'light' ? t.header.switchToDark : t.header.switchToLight}>
+      {#if settingsStore.themeMode === 'light'}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>

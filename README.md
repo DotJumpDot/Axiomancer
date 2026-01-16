@@ -73,6 +73,18 @@ Automatically routes conversations to optimal AI models based on:
 - Comprehensive translations for all UI components
 - Persistent language preference per user
 
+### 🎨 **Theme System**
+
+- **7 Theme Variants** - Classic, Monokai, Dracula, Nord, Gruvbox, Solarized, GitHub
+- **Light & Dark Mode** - Each theme variant supports both light and dark modes
+- **Separate Theme & Mode Controls** - Independent theme style and mode selection
+- **System Theme Detection** - Automatically matches OS theme preference (optional)
+- **Theme Toggle Button** - Quick mode switching (light/dark) from header
+- Consistent theming across all components and dialogs
+- Real-time theme switching without page reload
+- Persistent theme preference per user
+- Scalable theme system for easy addition of new themes
+
 ---
 
 ## 🔐 Architecture

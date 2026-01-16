@@ -281,7 +281,7 @@
     position: relative;
     width: 60px;
     height: 23px; /* Reduced height */
-    background-color: #ccc;
+    background-color: var(--border-color, #ccc);
     transition: .4s;
     border-radius: 23px; /* Match reduced height */
     display: flex;

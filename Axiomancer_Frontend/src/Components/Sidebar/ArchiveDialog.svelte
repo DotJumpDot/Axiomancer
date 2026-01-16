@@ -182,7 +182,7 @@
   }
 
   .modal-content {
-    background: var(--modal-bg, #2d2d2d);
+    background: var(--bg-primary, #2d2d2d);
     border-radius: 12px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
     width: 90%;

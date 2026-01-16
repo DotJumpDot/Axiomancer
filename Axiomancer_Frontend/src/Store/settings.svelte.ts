@@ -1,6 +1,31 @@
 // Settings Store - Svelte 5 runes for app settings
+
+// Available theme options
+export const THEME_VARIANTS = [
+  { value: "classic", label: "Classic" },
+  { value: "monokai", label: "Monokai" },
+  { value: "dracula", label: "Dracula" },
+  { value: "nord", label: "Nord" },
+  { value: "gruvbox", label: "Gruvbox" },
+  { value: "solarized", label: "Solarized" },
+  { value: "github", label: "GitHub" },
+] as const;
+
+export const THEME_MODES = [
+  { value: "dark", label: "Dark" },
+  { value: "light", label: "Light" },
+] as const;
+
+export const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "th", label: "ไทย (Thai)" },
+] as const;
+
 // Reactive state using Svelte 5 runes
-let theme = $state<"light" | "dark" | "system">("system");
+let themeVariant = $state<
+  "classic" | "monokai" | "dracula" | "nord" | "gruvbox" | "solarized" | "github"
+>("classic");
+let themeMode = $state<"dark" | "light">("dark");
 let sidebarOpen = $state(true);
 let fontSize = $state<"small" | "medium" | "large">("medium");
 let sendOnEnter = $state(true);
@@ -10,7 +35,8 @@ let language = $state<"en" | "th">("en");
 // Persist settings to localStorage
 function saveSettings() {
   const settings = {
-    theme,
+    themeVariant,
+    themeMode,
     sidebarOpen,
     fontSize,
     sendOnEnter,
@@ -25,7 +51,24 @@ function loadSettings() {
   if (stored) {
     try {
       const settings = JSON.parse(stored);
-      theme = settings.theme ?? "system";
+      // Handle backward compatibility with old combined theme values
+      if (settings.theme) {
+        const oldTheme = settings.theme;
+        if (oldTheme.includes("-")) {
+          const [variant, mode] = oldTheme.split("-");
+          themeVariant = variant;
+          themeMode = mode;
+        } else if (oldTheme === "dark" || oldTheme === "system") {
+          themeVariant = "classic";
+          themeMode = "dark";
+        } else if (oldTheme === "light") {
+          themeVariant = "classic";
+          themeMode = "light";
+        }
+      } else {
+        themeVariant = settings.themeVariant ?? "classic";
+        themeMode = settings.themeMode ?? "dark";
+      }
       sidebarOpen = settings.sidebarOpen ?? true;
       fontSize = settings.fontSize ?? "medium";
       sendOnEnter = settings.sendOnEnter ?? true;
@@ -38,21 +81,34 @@ function loadSettings() {
   applyTheme();
 }
 
-function setTheme(newTheme: "light" | "dark" | "system") {
-  theme = newTheme;
+function setThemeVariant(
+  variant: "classic" | "monokai" | "dracula" | "nord" | "gruvbox" | "solarized" | "github"
+) {
+  themeVariant = variant;
+  applyTheme();
+  saveSettings();
+}
+
+function setThemeMode(mode: "dark" | "light") {
+  themeMode = mode;
+  applyTheme();
+  saveSettings();
+}
+
+function toggleThemeMode() {
+  themeMode = themeMode === "dark" ? "light" : "dark";
   applyTheme();
   saveSettings();
 }
 
 function applyTheme() {
   const root = document.documentElement;
-  let effectiveTheme = theme;
 
-  if (theme === "system") {
-    effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
+  // Set data-theme for light/dark
+  root.setAttribute("data-theme", themeMode);
 
-  root.setAttribute("data-theme", effectiveTheme);
+  // Set data-theme-variant for theme style
+  root.setAttribute("data-theme-variant", themeVariant);
 }
 
 function toggleSidebar() {
@@ -87,8 +143,11 @@ function setLanguage(newLanguage: "en" | "th") {
 
 // Export store object with getters for reactive access
 export const settingsStore = {
-  get theme() {
-    return theme;
+  get themeVariant() {
+    return themeVariant;
+  },
+  get themeMode() {
+    return themeMode;
   },
   get sidebarOpen() {
     return sidebarOpen;
@@ -108,7 +167,12 @@ export const settingsStore = {
 
   loadSettings,
   saveSettings,
-  setTheme,
+  setThemeVariant,
+  setThemeMode,
+  toggleThemeMode,
+  THEME_VARIANTS,
+  THEME_MODES,
+  LANGUAGES,
   toggleSidebar,
   setSidebarOpen,
   setFontSize,

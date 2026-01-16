@@ -34,7 +34,7 @@
   }
 </script>
 
-<div class="chat-layout" data-theme={settingsStore.theme}>
+<div class="chat-layout">
   <!-- Sidebar -->
   <Sidebar onSelectConversation={handleSelectConversation} />
 

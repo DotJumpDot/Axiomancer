@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #000000cc;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -702,13 +702,13 @@
 }
 
 .model-grid:hover {
-  background-color: #202020; /* Slightly changed background color */
-  border-color: #ff6600; /* Highlight border */
+  background-color: var(--hover-bg, #202020);
+  border-color: #ff6600;
 }
 
 .model-grid.selected {
-  background-color: #2e2e2e; /* Slightly changed background color */
-  border-color: #007bff; /* Highlight border */
+  background-color: var(--active-bg, #2e2e2e);
+  border-color: #007bff;
 }
 
 .grid-itemLeft {

@@ -570,7 +570,7 @@
     border-radius: 50%;
     overflow: hidden;
     border: 2px solid var(--border-color, #333);
-    background: var(--bg-tertiary, #2a2a2a);
+    background: var(--input-bg, #2a2a2a);
   }
 
   .profile-image {
@@ -587,7 +587,7 @@
 
   .file-input-label {
     padding: 8px 16px;
-    background: var(--bg-tertiary, #2a2a2a);
+    background: var(--input-bg, #2a2a2a);
     border: 1px solid var(--border-color, #333);
     border-radius: 6px;
     color: var(--text-primary, #fff);
@@ -644,7 +644,7 @@
 
   .form-group input {
     padding: 10px 12px;
-    background: var(--bg-tertiary, #2a2a2a);
+    background: var(--input-bg, #2a2a2a);
     border: 1px solid var(--border-color, #333);
     border-radius: 6px;
     color: var(--text-primary, #fff);
@@ -655,16 +655,16 @@
   .form-group input:focus {
     outline: none;
     border-color: var(--primary-color, #6366f1);
-    background: var(--bg-secondary, #252525);
+    background: var(--input-bg, #252525);
   }
 
   .form-group input::placeholder {
-    color: var(--text-tertiary, #666);
+    color: var(--text-secondary, #666);
   }
 
   /* Account Information */
   .account-info {
-    background: var(--bg-tertiary, #2a2a2a);
+    background: var(--input-bg, #2a2a2a);
     border: 1px solid var(--border-color, #333);
     border-radius: 8px;
     padding: 12px;
@@ -793,7 +793,7 @@
   }
 
   .btn-secondary {
-    background: var(--bg-tertiary, #2a2a2a);
+    background: var(--input-bg, #2a2a2a);
     color: var(--text-primary, #fff);
     border: 1px solid var(--border-color, #333);
   }

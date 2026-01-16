@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { settingsStore } from "@/Store";
+  import { settingsStore, THEME_VARIANTS, THEME_MODES, LANGUAGES } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
 
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
@@ -69,23 +69,42 @@
               <div class="settings-section">
                 <h3>Application</h3>
 
-                <div class="setting-item">
-                  <label for="app-theme">Application Theme</label>
-                  <select id="app-theme">
-                    <option value="dark">Dark</option>
-                    <option value="darker">Darker</option>
-                    <option value="auto">Auto (System)</option>
-                    <option value="light">Light</option>
-                  </select>
+                <div class="setting-item theme-mode-row">
+                  <label>Theme & Mode</label>
+                  <div class="theme-mode-selectors">
+                    <select 
+                      id="theme-variant" 
+                      bind:value={settingsStore.themeVariant}
+                      onchange={(e) => settingsStore.setThemeVariant(e.currentTarget.value as any)}
+                      title="Select theme style"
+                    >
+                      {#each THEME_VARIANTS as theme}
+                        <option value={theme.value}>{theme.label}</option>
+                      {/each}
+                    </select>
+                    <select 
+                      id="theme-mode" 
+                      bind:value={settingsStore.themeMode}
+                      onchange={(e) => settingsStore.setThemeMode(e.currentTarget.value as any)}
+                      title="Select light or dark mode"
+                    >
+                      {#each THEME_MODES as mode}
+                        <option value={mode.value}>{mode.label}</option>
+                      {/each}
+                    </select>
+                  </div>
                 </div>
 
                 <div class="setting-item">
                   <label for="language">Language</label>
-                  <select id="language">
-                    <option value="en" selected>English</option>
-                    <option value="th">ไทย (Thai)</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
+                  <select 
+                    id="language"
+                    bind:value={settingsStore.language}
+                    onchange={(e) => settingsStore.setLanguage(e.currentTarget.value as any)}
+                  >
+                    {#each LANGUAGES as lang}
+                      <option value={lang.value}>{lang.label}</option>
+                    {/each}
                   </select>
                 </div>
 
@@ -488,24 +507,19 @@
     color: var(--text-primary, #fff);
   }
 
-  .tab-pane p {
-    margin: 0;
-    color: var(--text-secondary, #888);
-  }
-
   .settings-section {
     margin-bottom: 32px;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--input-bg, rgba(255, 255, 255, 0.02));
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
     backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .settings-section:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: var(--hover-bg, rgba(255, 255, 255, 0.03));
+    border-color: var(--border-color, rgba(255, 255, 255, 0.08));
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
@@ -515,10 +529,6 @@
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary, #fff);
-    background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     letter-spacing: -0.025em;
     position: relative;
   }
@@ -547,7 +557,7 @@
   }
 
   .setting-item:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--hover-bg, rgba(255, 255, 255, 0.02));
   }
 
   .setting-item:last-child {
@@ -564,7 +574,7 @@
   }
 
   .setting-item:hover label {
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary, #fff);
   }
 
   .checkbox-label {
@@ -578,16 +588,16 @@
   .setting-item input[type="color"] {
     width: 48px;
     height: 36px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    background: var(--input-bg, linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)));
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
   }
 
   .setting-item input[type="color"]:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--border-color, rgba(255, 255, 255, 0.2));
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
@@ -608,8 +618,8 @@
   .setting-item input[type="number"] {
     width: 80px;
     padding: 10px 12px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--input-bg, linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     border-radius: 8px;
     color: var(--text-primary, #fff);
     font-size: 14px;
@@ -623,18 +633,18 @@
     outline: none;
     border-color: var(--primary-color, #6366f1);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(255, 255, 255, 0.02));
+    background: var(--input-bg, linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(255, 255, 255, 0.02)));
   }
 
   .setting-item input[type="number"]:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--border-color, rgba(255, 255, 255, 0.2));
   }
 
   .setting-item select {
     min-width: 140px;
     padding: 10px 14px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--input-bg, linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)));
+    border: 1px solid var(--primary-color, rgba(99, 102, 241, 0.4));
     border-radius: 8px;
     color: var(--text-primary, #fff);
     font-size: 14px;
@@ -653,17 +663,39 @@
   .setting-item select:focus {
     outline: none;
     border-color: var(--primary-color, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(255, 255, 255, 0.02));
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    background: var(--input-bg, linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(255, 255, 255, 0.02)));
   }
 
   .setting-item select:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--primary-color, rgba(99, 102, 241, 0.6));
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
   }
 
   .setting-item select option {
-    background: linear-gradient(135deg, #2d2d2d 0%, #252525 100%);
+    background: var(--bg-secondary, linear-gradient(135deg, #2d2d2d 0%, #252525 100%));
     color: var(--text-primary, #fff);
     padding: 8px;
+  }
+
+  /* Theme and Mode Row */
+  .theme-mode-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .theme-mode-row label {
+    margin-bottom: 12px;
+  }
+
+  .theme-mode-selectors {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .theme-mode-selectors select {
+    flex: 1;
+    min-width: 0;
   }
 </style>
