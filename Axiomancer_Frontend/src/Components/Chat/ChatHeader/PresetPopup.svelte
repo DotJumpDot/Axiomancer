@@ -1,9 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
-  import { aiStore, promptStore, favoriteStore, authStore } from "@/Store";
+  import { aiStore, promptStore, favoriteStore, authStore, settingsStore } from "@/Store";
   import { selectionService } from "@/Service";
-  import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
+  import { formatModelName, formatProviderName, formatContextLength, getTranslations, type LanguageCode } from "@/Function";
   import type { AiModel, UserSelectedModels } from "@/Types";
+
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   // Focus input action
   function focusInput(node: HTMLInputElement | HTMLTextAreaElement) {
@@ -600,27 +602,27 @@
             >
               {selectedPresetId !== null 
                 ? (getPresetDisplayName(userPresets.find(p => p.preset === selectedPresetId)) || `Preset ${selectedPresetId}`) 
-                : 'Configure Preset'}
+                : t.preset.title}
             </h3>
           {/if}
           <div class="header-controls">
             {#if selectedPresetId !== null}
               {#if showDeleteConfirmation === 'confirm'}
                 <div class="delete-buttons">
-                  <button class="delete-preset-btn cancel" onclick={() => showDeleteConfirmation = 'normal'} title="Cancel Delete">
+                  <button class="delete-preset-btn cancel" onclick={() => showDeleteConfirmation = 'normal'} title={t.common.cancel}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                   </button>
-                  <button class="delete-preset-btn confirm" onclick={confirmDeletePreset} title="Confirm Delete">
+                  <button class="delete-preset-btn confirm" onclick={confirmDeletePreset} title={t.preset.delete}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                   </button>
                 </div>
               {:else}
-                <button class="delete-preset-btn normal" onclick={() => showDeleteConfirmation = 'confirm'} title="Delete Preset">
+                <button class="delete-preset-btn normal" onclick={() => showDeleteConfirmation = 'confirm'} title={t.preset.delete}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -630,7 +632,7 @@
                 </button>
               {/if}
             {/if}
-            <button class="new-preset-btn" onclick={createNewPreset} title="Create New Preset">
+            <button class="new-preset-btn" onclick={createNewPreset} title={t.preset.create}>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:black">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -641,7 +643,7 @@
               const preset = userPresets.find(p => p.preset === presetId);
               selectPreset(preset || null);
             }}>
-              <option value={null}>New Preset</option>
+              <option value={null}>{t.preset.create}</option>
               {#each userPresets as preset (preset.preset)}
                 <option value={preset.preset}>
                   {getPresetDisplayName(preset) || `Preset ${preset.preset}`} ({preset.ai_model_ids.length} models)
@@ -666,14 +668,14 @@
             class:active={currentTab === 'models'} 
             onclick={() => switchTab('models')}
           >
-            Models
+            {t.preset.models}
           </button>
           <button 
             class="tab-btn" 
             class:active={currentTab === 'prompt'} 
             onclick={() => switchTab('prompt')}
           >
-            Prompt
+            {t.preset.prompt}
           </button>
         </div>
 
@@ -683,7 +685,7 @@
           <div class="preset-panel">
             <div class="preset-panel-header">
               <div class="header-left">
-                <h4>Select Models</h4>
+                <h4>{t.preset.selectModels}</h4>
                 <span class="model-count">{selectedModels.length} selected</span>
               </div>
               <div class="header-filters">
@@ -693,29 +695,29 @@
                 </label>
                 <label class="filter-toggle">
                   <input type="checkbox" bind:checked={showOnlyFree} />
-                  <span>Free only</span>
+                  <span>{t.modelSelector.onlyFree}</span>
                 </label>
                 <label class="filter-toggle">
                   <input type="checkbox" bind:checked={showOnlyPricing} />
-                  <span>Pricing only</span>
+                  <span>{t.modelSelector.showPricing}</span>
                 </label>
                 
                 <select class="sort-select" bind:value={selectedCapability}>
-                  <option value="none">All</option>
-                  <option value="fast">Fast</option>
-                  <option value="reasoning">Reasoning</option>
-                  <option value="coding">Coding</option>
-                  <option value="vision">Vision</option>
+                  <option value="none">{t.modelSelector.capability} - {t.modelSelector.none}</option>
+                  <option value="fast">{t.modelSelector.fast}</option>
+                  <option value="reasoning">{t.modelSelector.reasoning}</option>
+                  <option value="coding">{t.modelSelector.coding}</option>
+                  <option value="vision">{t.modelSelector.vision}</option>
                 </select>
 
                 <select class="sort-select" bind:value={sortBy}>
-                  <option value="none">Sort by...</option>
-                  <option value="name-a-z">Model Name: A-Z</option>
-                  <option value="name-z-a">Model Name: Z-A</option>
-                  <option value="provider-a-z">Provider: A-Z</option>
-                  <option value="provider-z-a">Provider: Z-A</option>
-                  <option value="price-low-to-high">Price: Low to High</option>
-                  <option value="price-high-to-low">Price: High to Low</option>
+                  <option value="none">{t.modelSelector.sortBy}</option>
+                  <option value="name-a-z">{t.modelSelector.nameAZ}</option>
+                  <option value="name-z-a">{t.modelSelector.nameZA}</option>
+                  <option value="provider-a-z">{t.modelSelector.providerAZ}</option>
+                  <option value="provider-z-a">{t.modelSelector.providerZA}</option>
+                  <option value="price-low-to-high">{t.modelSelector.priceLowToHigh}</option>
+                  <option value="price-high-to-low">{t.modelSelector.priceHighToLow}</option>
                 </select>
               </div>
             </div>
@@ -726,7 +728,7 @@
               </svg>
               <input
                 type="text"
-                placeholder="Search models..."
+                placeholder={t.modelSelector.search}
                 bind:value={searchQuery}
               />
             </div>
@@ -831,8 +833,8 @@
           <!-- Prompt Selection Panel -->
           <div class="preset-panel">
             <div class="preset-panel-header">
-              <h4>Select Prompt</h4>
-              <button class="add-prompt-btn" onclick={createNewPrompt} title="Add New Prompt">
+              <h4>{t.preset.selectPrompt}</h4>
+              <button class="add-prompt-btn" onclick={createNewPrompt} title={t.preset.addPrompt}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -849,10 +851,10 @@
                   value={null}
                 />
                 <div class="prompt-info">
-                  <span class="item-name">Default</span><br>
-                  <span class="item-desc">Standard helpful assistant</span>
+                  <span class="item-name">{t.header.defaultPrompt}</span><br>
+                  <span class="item-desc">{t.header.defaultPromptDesc}</span>
                 </div>
-                <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt('default')} title="Show System Prompt">
+                <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt('default')} title={t.header.systemPrompt}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
@@ -880,14 +882,14 @@
                           type="text"
                           class="edit-input"
                           bind:value={editingPromptName}
-                          placeholder="Prompt name"
+                          placeholder={t.promptEditor.promptName}
                           use:focusInput
                         />
                         <input
                           type="text"
                           class="edit-input"
                           bind:value={editingPromptDescription}
-                          placeholder="Description"
+                          placeholder={t.promptEditor.description}
                         />
                         <div class="edit-actions">
                           <!-- svelte-ignore a11y_consider_explicit_label -->
@@ -937,7 +939,7 @@
                     {/if}
                   </div>
                   {#if editingPromptId !== profile.id}
-                    <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title="Show System Prompt">
+                    <button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title={t.header.systemPrompt}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"></polyline>
                       </svg>
@@ -959,26 +961,26 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
-                            Save
+                            {t.common.save}
                           </button>
                           <button class="cancel-edit-btn" onclick={cancelEditSystemPrompt}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <line x1="18" y1="6" x2="6" y2="18"></line>
                               <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            Cancel
+                            {t.common.cancel}
                           </button>
                         </div>
                       </div>
                     {:else}
                       <div class="system-prompt-header">
-                        <h5>System Prompt</h5>
-                        <button class="edit-system-prompt-btn" onclick={() => startEditSystemPrompt(profile.id)} title="Edit System Prompt">
+                        <h5>{t.header.systemPrompt}</h5>
+                        <button class="edit-system-prompt-btn" onclick={() => startEditSystemPrompt(profile.id)} title={t.promptEditor.editSystemPrompt}>
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                           </svg>
-                          Edit
+                          {t.common.edit}
                         </button>
                       </div>
                       <div class="system-prompt-content">
@@ -994,9 +996,9 @@
       </div>
       
       <div class="preset-popup-footer"> 
-        <button class="cancel-btn" onclick={closePopup}>Cancel</button>
-        <button class="save-btn" onclick={savePreset}>Save Preset</button>
-        <button class="apply-btn" onclick={applyPreset}>Apply Preset</button>
+        <button class="cancel-btn" onclick={closePopup}>{t.common.cancel}</button>
+        <button class="save-btn" onclick={savePreset}>{t.preset.save}</button>
+        <button class="apply-btn" onclick={applyPreset}>{t.preset.apply}</button>
       </div>
     </div>
   </div>

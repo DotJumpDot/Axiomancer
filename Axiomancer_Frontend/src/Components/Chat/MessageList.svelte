@@ -1,8 +1,11 @@
 <script lang="ts">
-  import { chatStore, aiStore } from "@/Store";
+  import { chatStore, aiStore, settingsStore } from "@/Store";
   import ChatMessage from "./ChatMessage.svelte";
-  import { scrollToBottom } from "@/Function";
+  import { scrollToBottom, getTranslations, type LanguageCode } from "@/Function";
   import { onMount } from "svelte";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let messagesContainer: HTMLDivElement | undefined = $state();
 
@@ -50,37 +53,37 @@
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
       </div>
-      <h2>Start a new conversation</h2>
-      <p>Select a model and type your message below to begin</p>
+      <h2>{t.messages.startConversation}</h2>
+      <p>{t.messages.selectModelToBegin}</p>
       <div class="quick-actions">
-        <button class="quick-action" onclick={() => handleQuickAction("Help me code")}>
+        <button class="quick-action" onclick={() => handleQuickAction(t.messages.helpMeCode)}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="16 18 22 12 16 6"></polyline>
             <polyline points="8 6 2 12 8 18"></polyline>
           </svg>
-          Help me code
+          {t.messages.helpMeCode}
         </button>
-        <button class="quick-action" onclick={() => handleQuickAction("Explain a concept")}>
+        <button class="quick-action" onclick={() => handleQuickAction(t.messages.explainConcept)}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          Explain a concept
+          {t.messages.explainConcept}
         </button>
-        <button class="quick-action" onclick={() => handleQuickAction("Write content")}>
+        <button class="quick-action" onclick={() => handleQuickAction(t.messages.writeContent)}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
           </svg>
-          Write content
+          {t.messages.writeContent}
         </button>
-        <button class="quick-action" onclick={() => handleQuickAction("Research a topic")}>
+        <button class="quick-action" onclick={() => handleQuickAction(t.messages.researchTopic)}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          Research a topic
+          {t.messages.researchTopic}
         </button>
       </div>
     </div>

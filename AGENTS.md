@@ -45,6 +45,16 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
 - **Restart dev server** after dependency changes
 - **Update languages Folder** after you change any text in the frontend or add new text
 
+### Internationalization (i18n)
+
+- **Bilingual Support**: Full Thai (TH) and English (EN) translations
+- **Translation Files**: Located in `src/languages/{en,th}/` with JSON format
+- **Key Files**: `chat.json`, `auth.json` for organized translations
+- **Helper Functions**: `getTranslations(lang)` and `t(keyPath, lang)` in `src/Function/i18n.ts`
+- **Usage Pattern**: `let t = $derived(getTranslations(settingsStore.language as LanguageCode))`
+- **Reactive Updates**: UI automatically updates when `settingsStore.language` changes
+- **When Adding UI Text**: Always add corresponding translations to both `en/` and `th/` JSON files
+
 ### Database
 
 - **PostgreSQL** for development
@@ -190,6 +200,11 @@ Axiomancer_Backend/src/
 │   │   ├── favorite_service.ts          # Favorite operations business logic
 │   │   ├── favorite_query.ts            # Database queries for favorites
 │   │   └── favorite_type.ts             # TypeScript interfaces (Favorite, CreateFavoriteRequest, etc.)
+│   ├── selection/                       # User model selection & presets
+│   │   ├── selection_api.ts             # Routes: GET/POST/PUT/DELETE /selections
+│   │   ├── selection_service.ts         # Model selection & preset operations
+│   │   ├── selection_query.ts           # Database queries for selections
+│   │   └── selection_type.ts            # TypeScript interfaces (UserSelectedModels, etc.)
 │   └── user/                            # User account management
 │       ├── user_api.ts                  # Routes: GET/POST/PUT/DELETE /api/users
 │       ├── user_service.ts              # User profile operations
@@ -254,6 +269,7 @@ Follow these naming patterns:
 | Stores            | `lowercase.ts`      | `chat.ts`, `user.ts`                         |
 | Types             | `PascalCase.ts`     | `Chat.ts`, `User.ts`                         |
 | Utils             | `camelCase.ts`      | `apiClient.ts`, `helpers.ts`                 |
+| i18n Files        | `lowercase.json`    | `chat.json`, `auth.json` (in `languages/`)   |
 
 **Rules:**
 
@@ -289,11 +305,26 @@ Follow these naming patterns:
   - `lib/` → Svelte components
   - `store/` → State management (if added)
   - `assets/` → Static assets
+  - `languages/` → i18n translation files (en/, th/)
 - **Import patterns**:
   ```typescript
   import ChatComponent from "./lib/ChatComponent.svelte";
   import { chatStore } from "./store/chat";
+  import { getTranslations, type LanguageCode } from "@/Function";
   ```
+- **Translation patterns**:
+
+  ```typescript
+  // In component script:
+  import { settingsStore } from "@/Store";
+  import { getTranslations, type LanguageCode } from "@/Function";
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
+
+  // In template:
+  <h1>{t.section.key}</h1>
+  <button title={t.section.tooltip}>{t.section.buttonText}</button>
+  ```
+
 - **Function Comments**: Use Better Comments tags sparingly above function names for readability when creating functions. Use `*` for important/key functions, `!` for critical/error-handling functions, or `?` for functions needing review. Keep comments concise and only apply where additional context enhances understanding.
 
 ---

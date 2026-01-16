@@ -66,6 +66,13 @@ Automatically routes conversations to optimal AI models based on:
 - Prioritized display of favorite items in selection interfaces
 - Personalized user experience with saved preferences
 
+### 🌐 **Bilingual Interface**
+
+- Full Thai (TH) and English (EN) language support
+- Real-time language switching without page reload
+- Comprehensive translations for all UI components
+- Persistent language preference per user
+
 ---
 
 ## 🔐 Architecture
@@ -98,13 +105,13 @@ Axiomancer/
 ├── Axiomancer_Backend/     # Elysia API server
 │   ├── src/
 │   │   ├── api/            # Feature modules (auth, chat, ai, search)
-│   │   │   ├── ai/         # AI model management
+│   │   │   ├── ai/         # AI model management & OpenRouter
 │   │   │   ├── auth/       # Authentication & JWT
 │   │   │   ├── chat/       # Message & conversation handling
 │   │   │   ├── favorite/   # User favorites management
 │   │   │   ├── prompt/     # Prompt profile management
 │   │   │   ├── search/     # DuckDuckGo & Pixabay integration
-│   │   │   ├── selection/  # Model selection management
+│   │   │   ├── selection/  # User model selection & presets
 │   │   │   └── user/       # User account management
 │   │   ├── database/       # PostgreSQL connection
 │   │   └── index.ts        # Application entry point
@@ -120,6 +127,7 @@ Axiomancer/
 │   │   ├── Store/          # Svelte 5 state management (runes)
 │   │   ├── Types/          # TypeScript interfaces
 │   │   ├── Function/       # Utilities & helpers
+│   │   ├── languages/      # i18n translations (en/, th/)
 │   │   └── pages/          # Main application pages
 │   └── public/             # Static assets
 │

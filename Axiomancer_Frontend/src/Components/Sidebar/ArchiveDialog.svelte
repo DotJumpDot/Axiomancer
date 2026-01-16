@@ -1,7 +1,10 @@
 <script lang="ts">
-  import { authStore, chatStore } from "@/Store";
-  import { formatRelativeTime, truncate } from "@/Function";
+  import { authStore, chatStore, settingsStore } from "@/Store";
+  import { formatRelativeTime, truncate, getTranslations, type LanguageCode } from "@/Function";
   import type { Conversation } from "@/Types";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   interface Props {
     isOpen: boolean;
@@ -20,7 +23,8 @@
   }
 
   async function handleDeleteArchived(id: string) {
-    if (confirm("Permanently delete this archived conversation?")) {
+    const t = getTranslations(settingsStore.language as LanguageCode);
+    if (confirm(t.archive.deleteConfirm)) {
       await chatStore.deleteConversation(id);
     }
   }
@@ -73,7 +77,7 @@
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <!-- svelte-ignore a11y_consider_explicit_label -->
       <div class="modal-header">
-        <h2>Archived Conversations</h2>
+        <h2>{t.archive.title}</h2>
         <button class="close-btn" onclick={onClose}>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -91,7 +95,7 @@
               <path d="M10 12v6"></path>
               <path d="M14 12v6"></path>
             </svg>
-            <p>No archived conversations</p>
+            <p>{t.archive.empty}</p>
           </div>
         {:else}
           <div class="archived-list">

@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { aiStore, chatStore, promptStore, settingsStore, authStore } from "@/Store";
   import { userService } from "@/Service";
-  import { formatModelName, formatProviderName } from "@/Function";
+  import { formatModelName, formatProviderName, getTranslations, type LanguageCode } from "@/Function";
   import LoginDialog from "@/Components/Auth/LoginDialog.svelte";
   import { ApiKeyDialog } from "@/Components/Auth";
   import PresetPopup from "./PresetPopup.svelte";
@@ -10,6 +10,9 @@
   import PromptEdit from "./PromptEdit.svelte";
   import UserSetting from "./UserSetting.svelte";
   import type { User, AiModel } from "@/Types";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let showModelDropdown = $state(false);
   let showPromptDropdown = $state(false);
@@ -109,9 +112,11 @@
     
     if (selectedPromptId) {
       const prompt = promptStore.profiles.find(p => p.id === selectedPromptId);
-      selectedPromptName = prompt?.name || "Select Prompt";
+      const t = getTranslations(settingsStore.language as LanguageCode);
+      selectedPromptName = prompt?.name || t.header.selectPrompt;
     } else {
-      selectedPromptName = "Select Prompt";
+      const t = getTranslations(settingsStore.language as LanguageCode);
+      selectedPromptName = t.header.selectPrompt;
     }
   }
 
@@ -311,13 +316,13 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
             </svg>
-            Auto
+            {t.header.auto}
           {:else}
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
             </svg>
-            Single
+            {t.header.single}
           {/if}
           <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -330,8 +335,8 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
               </svg>
-              <span class="item-name">Auto-Routing</span>
-              <span class="item-desc">Automatically select best model</span>
+              <span class="item-name">{t.header.autoRouting}</span>
+              <span class="item-desc">{t.header.autoRoutingDesc}</span>
             </button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" class:active-mode={currentMode === 'single'} class:single={currentMode === 'single'} onclick={toggleMode}>
@@ -339,15 +344,15 @@
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
               </svg>
-              <span class="item-name">Single Model</span>
-              <span class="item-desc">Select a specific model</span>
+              <span class="item-name">{t.header.singleModel}</span>
+              <span class="item-desc">{t.header.singleModelDesc}</span>
             </button>
           </div>
         {/if}
       </div>
     {:else}
       <div class="mode-selector-placeholder">
-        <span class="placeholder-text">Login to select mode</span>
+        <span class="placeholder-text">{t.header.loginToSelectMode}</span>
       </div>
     {/if}
 
@@ -363,7 +368,7 @@
           {:else if selectedModelKey}
             <span class="model-name">{formatModelName(selectedModelKey)}</span>
           {:else}
-            Select Model
+            {t.header.selectModel}
           {/if}
           <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -383,7 +388,7 @@
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
           </svg>
-          {selectedPromptName || "Select Prompt"}
+          {selectedPromptName || t.header.selectPrompt}
           <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -398,8 +403,8 @@
               class:selected={!promptStore.selectedProfile}
               onclick={() => selectPrompt(null)}
             >
-              <span class="item-name">Default</span>
-              <span class="item-desc">Standard helpful assistant</span>
+              <span class="item-name">{t.header.defaultPrompt}</span>
+              <span class="item-desc">{t.header.defaultPromptDesc}</span>
             </button>
             <div class="dropdown-divider"></div>
             {#each promptStore.profiles as profile (profile.id)}
@@ -422,7 +427,7 @@
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <div class="system-prompt-display" onclick={(e) => e.stopPropagation()}>
             <div class="system-prompt-header">
-              <h4>System Prompt</h4>
+              <h4>{t.header.systemPrompt}</h4>
               <!-- svelte-ignore a11y_consider_explicit_label -->
               <button class="close-prompt-btn" onclick={toggleSystemPrompt}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -440,12 +445,12 @@
     {/if}
 
     {#if authStore.isAuthenticated && currentMode === 'single'}
-      <button class="prompt-edit-btn" onclick={openPromptEditor} title="Manage prompts">
+      <button class="prompt-edit-btn" onclick={openPromptEditor} title={t.header.managePrompts}>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
         </svg>
-        Manage Prompts
+        {t.header.managePrompts}
       </button>
     {/if}
 
@@ -459,7 +464,7 @@
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        {currentPresetName || "Preset"}
+        {currentPresetName || t.header.preset}
       </button>
     {/if}
 
@@ -467,7 +472,7 @@
     <button 
       class="collapse-btn"
       onclick={() => settingsStore.toggleSidebar()}
-      title={settingsStore.sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+      title={settingsStore.sidebarOpen ? t.header.collapseSidebar : t.header.expandSidebar}
     >
       {#if settingsStore.sidebarOpen}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -483,7 +488,7 @@
 
   <div class="header-right">
     <!-- Theme Toggle Button -->
-    <button class="theme-toggle-btn" onclick={toggleTheme} title={settingsStore.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+    <button class="theme-toggle-btn" onclick={toggleTheme} title={settingsStore.theme === 'light' ? t.header.switchToDark : t.header.switchToLight}>
       {#if settingsStore.theme === 'light'}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="5"></circle>
@@ -543,7 +548,7 @@
           class="api-key-btn" 
           class:needs-api-key={!hasApiKey}
           onclick={openApiKeyDialog} 
-          title={hasApiKey ? "Manage OpenRouter API Key" : ""}
+          title={hasApiKey ? t.header.manageApiKey : ""}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
@@ -551,7 +556,7 @@
         </button>
         {#if !hasApiKey}
           <div class="api-key-tooltip">
-            Add OpenRouter API Key (Required)
+            {t.header.addApiKeyRequired}
           </div>
         {/if}
       </div>
@@ -559,7 +564,7 @@
 
     <!-- Settings Button (in old API key position) -->
     {#if authStore.isAuthenticated}
-      <button class="settings-btn" onclick={openUserSettingDialog} title="User Settings">
+      <button class="settings-btn" onclick={openUserSettingDialog} title={t.header.userSettings}>
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
@@ -597,7 +602,7 @@
       {:else}
         <div class="user-section loading">
           <div class="user-avatar-placeholder"></div>
-          <span class="user-name">Loading...</span>
+          <span class="user-name">{t.common.loading}</span>
         </div>
       {/if}
     {:else}
@@ -606,7 +611,7 @@
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
-        Login
+        {t.common.login}
       </button>
     {/if}
   </div>

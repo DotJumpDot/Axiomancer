@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
-	import { promptStore, authStore, favoriteStore } from "@/Store";
+	import { promptStore, authStore, favoriteStore, settingsStore } from "@/Store";
+	import { getTranslations, type LanguageCode } from "@/Function";
+
+	let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
 
 	// Focus helper used throughout the popup to reduce clicks
@@ -244,15 +247,15 @@
 			<div class="preset-popup-header">
 				<div class="prompt-edit-header">
 					<div>
-						<h3 class="preset-title">Prompt Manager</h3>
+						<h3 class="preset-title">{t.promptEditor.title}</h3>
 						<div class="prompt-meta">{promptStore.profiles.length} saved prompts</div>
 					</div>
-					<button class="add-prompt-btn" onclick={createNewPrompt} title="Add New Prompt">
+					<button class="add-prompt-btn" onclick={createNewPrompt} title={t.preset.addPrompt}>
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<line x1="12" y1="5" x2="12" y2="19"></line>
 							<line x1="5" y1="12" x2="19" y2="12"></line>
 						</svg>
-						Add Prompt
+						{t.preset.addPrompt}
 					</button>
 				</div>
 				{#if errorMessage}
@@ -267,7 +270,7 @@
 				<div class="preset-panel">
 					<div class="preset-panel-header">
 						<div class="header-left">
-							<h4>Prompts</h4>
+							<h4>{t.chat.prompts}</h4>
 							<span class="model-count">{selectedPromptId ? 'Selected' : 'Default selected'}</span>
 						</div>
 					</div>
@@ -280,10 +283,10 @@
 								value={null}
 							/>
 							<div class="prompt-info">
-								<span class="item-name">Default</span><br />
-								<span class="item-desc">Standard helpful assistant</span>
+								<span class="item-name">{t.header.defaultPrompt}</span><br />
+								<span class="item-desc">{t.header.defaultPromptDesc}</span>
 							</div>
-							<button class="show-prompt-label" onclick={() => togglePromptSystemPrompt('default')} title="Show System Prompt">
+							<button class="show-prompt-label" onclick={() => togglePromptSystemPrompt('default')} title={t.header.systemPrompt}>
 								<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<polyline points="6 9 12 15 18 9"></polyline>
 								</svg>
@@ -312,14 +315,14 @@
 												type="text"
 												class="edit-input"
 												bind:value={editingPromptName}
-												placeholder="Prompt name"
-												use:focusInput
-											/>
-											<input
-												type="text"
-												class="edit-input"
-												bind:value={editingPromptDescription}
-												placeholder="Description"
+											placeholder={t.promptEditor.promptName}
+											use:focusInput
+										/>
+										<input
+											type="text"
+											class="edit-input"
+											bind:value={editingPromptDescription}
+											placeholder={t.promptEditor.description}
 											/>
 											<div class="edit-actions">
 												<button class="save-edit-btn" onclick={saveEditPromptInfo} title="Save prompt info">
@@ -348,13 +351,13 @@
 												</svg>
 											</button>
 										</span>
-										<button class="edit-prompt-btn" style="margin-left: 10px;" onclick={(e) => { e.preventDefault(); startEditPromptInfo(profile.id); }} title="Edit Name & Description">
-											<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-												<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-												<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-											</svg>
-										</button>
-										<button class="delete-prompt-btn" style="margin-left: 2px;" onclick={(e) => { e.preventDefault(); deletePrompt(profile.id); }} title="Delete Prompt">
+									<button class="edit-prompt-btn" style="margin-left: 10px;" onclick={(e) => { e.preventDefault(); startEditPromptInfo(profile.id); }} title={t.promptEditor.editInfo}>
+										<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+											<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+										</svg>
+									</button>
+									<button class="delete-prompt-btn" style="margin-left: 2px;" onclick={(e) => { e.preventDefault(); deletePrompt(profile.id); }} title={t.promptEditor.delete}>
 											<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 												<polyline points="3 6 5 6 21 6"></polyline>
 												<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -367,7 +370,7 @@
 									{/if}
 								</div>
 								{#if editingPromptId !== profile.id}
-									<button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title="Show System Prompt">
+								<button class="show-prompt-label" onclick={() => togglePromptSystemPrompt(profile.id)} title={t.header.systemPrompt}>
 										<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 											<polyline points="6 9 12 15 18 9"></polyline>
 										</svg>
@@ -402,13 +405,13 @@
 										</div>
 									{:else}
 										<div class="system-prompt-header">
-											<h5>System Prompt</h5>
-											<button class="edit-system-prompt-btn" onclick={() => startEditSystemPrompt(profile.id)} title="Edit System Prompt">
-												<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-													<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-													<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-												</svg>
-												Edit
+										<h5>{t.header.systemPrompt}</h5>
+										<button class="edit-system-prompt-btn" onclick={() => startEditSystemPrompt(profile.id)} title={t.promptEditor.editSystemPrompt}>
+											<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+												<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+											</svg>
+											{t.common.edit}
 											</button>
 										</div>
 										<div class="system-prompt-content">
@@ -423,8 +426,8 @@
 			</div>
 
 			<div class="preset-popup-footer">
-				<button class="cancel-btn" onclick={closeModal}>Cancel</button>
-				<button class="apply-btn" onclick={applyPrompt}>Apply</button>
+				<button class="cancel-btn" onclick={closeModal}>{t.common.cancel}</button>
+				<button class="apply-btn" onclick={applyPrompt}>{t.promptEditor.apply}</button>
 			</div>
 		</div>
 	</div>

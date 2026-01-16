@@ -1,6 +1,9 @@
 <script lang="ts">
-  import { authStore, userStore } from "@/Store";
+  import { authStore, userStore, settingsStore } from "@/Store";
+  import { getTranslations, type LanguageCode } from "@/Function";
   import type { UpdateUserRequest } from "@/Types";
+
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let isOpen = $state(false);
   let isLoading = $state(false);
@@ -295,7 +298,7 @@
   >
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <h2>User Settings</h2>
+        <h2>{t.userSettings.title}</h2>
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button class="close-btn" onclick={close}>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -335,7 +338,7 @@
 
         <!-- Profile Picture Section -->
         <div class="section">
-          <h3>Profile Picture</h3>
+          <h3>{t.userSettings.profilePicture}</h3>
           <div class="profile-picture-section">
             <div class="profile-picture-preview">
               <img
@@ -353,7 +356,7 @@
                 style="display: none;"
               />
               <label for="profile-picture-input" class="file-input-label">
-                Choose Photo
+                {t.userSettings.chooseFile}
               </label>
               {#if selectedFile}
                 <button 
@@ -361,7 +364,7 @@
                   onclick={handleProfilePictureUpload}
                   disabled={isLoading}
                 >
-                  Upload
+                  {t.userSettings.upload}
                 </button>
               {/if}
             </div>
@@ -370,51 +373,51 @@
 
         <!-- Personal Information Section -->
         <div class="section">
-          <h3>Personal Information</h3>
+          <h3>{t.userSettings.profile}</h3>
           <div class="form-grid">
             <div class="form-group">
-              <label for="firstname">First Name</label>
+              <label for="firstname">{t.userSettings.firstName}</label>
               <input 
                 type="text" 
                 id="firstname"
                 bind:value={formData.firstname}
-                placeholder="Enter first name"
+                placeholder={t.userSettings.firstName}
               />
             </div>
             <div class="form-group">
-              <label for="lastname">Last Name</label>
+              <label for="lastname">{t.userSettings.lastName}</label>
               <input 
                 type="text" 
                 id="lastname"
                 bind:value={formData.lastname}
-                placeholder="Enter last name"
+                placeholder={t.userSettings.lastName}
               />
             </div>
             <div class="form-group">
-              <label for="nickname">Nickname</label>
+              <label for="nickname">{t.userSettings.nickname}</label>
               <input 
                 type="text" 
                 id="nickname"
                 bind:value={formData.nickname}
-                placeholder="Enter nickname"
+                placeholder={t.userSettings.nickname}
               />
             </div>
             <div class="form-group">
-              <label for="email">Email</label>
+              <label for="email">{t.userSettings.email}</label>
               <input 
                 type="email" 
                 id="email"
                 bind:value={formData.email}
-                placeholder="Enter email"
+                placeholder={t.userSettings.email}
               />
             </div>
             <div class="form-group">
-              <label for="tel">Phone</label>
+              <label for="tel">{t.userSettings.phone}</label>
               <input 
                 type="tel" 
                 id="tel"
                 bind:value={formData.tel}
-                placeholder="Enter phone number"
+                placeholder={t.userSettings.phone}
               />
             </div>
           </div>
@@ -422,10 +425,10 @@
 
         <!-- Account Information Section -->
         <div class="section">
-          <h3>Account Information</h3>
+          <h3>{t.userSettings.account}</h3>
           <div class="account-info">
             <div class="info-row">
-              <span class="label">Username:</span>
+              <span class="label">{t.userSettings.username}:</span>
               <span class="value">{userStore.currentUser?.username || "N/A"}</span>
             </div>
             <div class="info-row">
@@ -433,11 +436,11 @@
               <span class="value">{userStore.currentUser?.uuid || "N/A"}</span>
             </div>
             <div class="info-row">
-              <span class="label">Role:</span>
+              <span class="label">{t.userSettings.role}:</span>
               <span class="value">{userStore.currentUser?.role || "N/A"}</span>
             </div>
             <div class="info-row">
-              <span class="label">Member Since:</span>
+              <span class="label">{t.userSettings.createdAt}:</span>
               <span class="value">
                 {userStore.currentUser?.created_at ? new Date(userStore.currentUser.created_at).toLocaleDateString() : "N/A"}
               </span>
@@ -453,7 +456,7 @@
             onclick={resetForm}
             disabled={!hasChanges() || isLoading}
           >
-            Reset
+            {t.common.clear}
           </button>
           <div class="spacer"></div>
           <button 
@@ -461,7 +464,7 @@
             onclick={handleDeleteAccount}
             disabled={isLoading}
           >
-            Delete Account
+            {t.userSettings.deleteAccount}
           </button>
           <button 
             class="btn btn-primary" 

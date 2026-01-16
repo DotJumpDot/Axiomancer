@@ -1,5 +1,9 @@
 <script lang="ts">
   import { chatStore, aiStore, settingsStore } from "@/Store";
+  import { getTranslations, type LanguageCode } from "@/Function";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let textareaRef: HTMLTextAreaElement | undefined = $state();
   let inputValue = $state("");
@@ -31,21 +35,22 @@
 
     // Check if in single mode and model/prompt are selected
     const isAutoRouting = aiStore.autoRoutingEnabled;
+    const t = getTranslations(settingsStore.language as LanguageCode);
     
     if (!isAutoRouting) {
       // Single mode - must have both model and prompt
       if (!chatStore.currentModelKey) {
-        alert("Please select a model for single mode");
+        alert(t.input.selectModelAlert);
         return;
       }
       if (!chatStore.currentPromptProfileId) {
-        alert("Please select a prompt for single mode");
+        alert(t.input.selectPromptAlert);
         return;
       }
     } else {
       // Auto mode - must have model selection
       if (!aiStore.selectedModel) {
-        alert("Please select a model or enable auto-routing");
+        alert(t.input.selectModelOrAutoAlert);
         return;
       }
     }
@@ -84,13 +89,13 @@
       onkeydown={handleKeydown}
       oncompositionstart={() => (isComposing = true)}
       oncompositionend={() => (isComposing = false)}
-      placeholder="Send a message..."
+      placeholder={t.input.placeholder}
       rows="1"
       disabled={chatStore.isSending}
     ></textarea>
 
     <div class="input-actions">
-      <label class="action-btn upload-btn" title="Upload image">
+      <label class="action-btn upload-btn" title={t.input.uploadImage}>
         <input
           type="file"
           accept="image/*"
@@ -108,7 +113,7 @@
         class="action-btn send-btn"
         onclick={handleSend}
         disabled={!inputValue.trim() || chatStore.isSending}
-        title="Send message"
+        title={t.input.sendMessage}
       >
         {#if chatStore.isSending}
           <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -127,9 +132,9 @@
   <div class="input-hints">
     <span class="hint">
       {#if settingsStore.sendOnEnter}
-        <kbd>Enter</kbd> to send, <kbd>Shift+Enter</kbd> for new line
+        <kbd>Enter</kbd> {t.input.enterToSend} <kbd>Shift+Enter</kbd> {t.input.shiftEnterNewLine}
       {:else}
-        <kbd>Ctrl+Enter</kbd> to send
+        <kbd>Ctrl+Enter</kbd> {t.input.ctrlEnterToSend}
       {/if}
     </span>
     <label class="toggle-switch" title="Web Search" style="display: inline-flex; align-items: center; gap: 12px; width: auto;">
@@ -145,7 +150,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
         </svg>
-        Web search enabled
+        {t.input.webSearchEnabled}
       </span>
     </label>
 
@@ -164,7 +169,7 @@
           <circle cx="8.5" cy="8.5" r="1.5"></circle>
           <polyline points="21 15 16 10 5 21"></polyline>
         </svg>
-        Image search enabled
+        {t.input.imageSearchEnabled}
       </span>
     </label>
   </div>

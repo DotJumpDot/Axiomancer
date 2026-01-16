@@ -1,10 +1,13 @@
 <script lang="ts">
   import type { Chat } from "@/Types";
-  import { processMarkdown, formatRole, formatLatency, formatTokens, copyToClipboard } from "@/Function";
+  import { processMarkdown, formatRole, formatLatency, formatTokens, copyToClipboard, getTranslations, type LanguageCode } from "@/Function";
   import { settingsStore } from "@/Store";
   import CodeBlock from "./MessageMarkdown/CodeBlock.svelte";
 
   let { message }: { message: Chat } = $props();
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let copied = $state(false);
 

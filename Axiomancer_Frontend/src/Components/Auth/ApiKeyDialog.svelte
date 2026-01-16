@@ -1,7 +1,11 @@
 <script lang="ts">
   import { userService } from "@/Service";
-  import { authStore } from "@/Store";
+  import { authStore, settingsStore } from "@/Store";
   import { fade, scale } from "svelte/transition";
+  import { getTranslations, type LanguageCode } from "@/Function";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   // Custom transition combining fade and scale
   function dialogTransition(node: Element, options: { duration?: number; start?: number } = {}) {
@@ -73,16 +77,16 @@
     aria-modal="true"
   >
     <div class="api-key-dialog" transition:dialogTransition={{ duration: 100, start: 0.9 }}>
-      <h2>OpenRouter API Key</h2>
+      <h2>{t.apiKey.title}</h2>
       <p class="description">
-        Enter your personal OpenRouter API key to use AI models. 
-        Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">openrouter.ai/keys</a>
+        {t.apiKey.description}
+        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">openrouter.ai/keys</a>
       </p>
 
       <input
         type="password"
         bind:value={apiKey}
-        placeholder="sk-or-v1-..."
+        placeholder={t.apiKey.placeholder}
         class="api-key-input"
       />
 
@@ -91,14 +95,14 @@
       {/if}
 
       <div class="dialog-actions">
-        <button onclick={close} class="btn-secondary" style="background-color: red;">Cancel</button>
+        <button onclick={close} class="btn-secondary" style="background-color: red;">{t.apiKey.cancel}</button>
         <button 
           onclick={saveApiKey} 
           class="btn-primary"
           disabled={isLoading}
           style="background-color: green;"
         >
-          {isLoading ? "Saving..." : "Save"}
+          {isLoading ? t.common.loading : t.apiKey.save}
         </button>
       </div>
     </div>

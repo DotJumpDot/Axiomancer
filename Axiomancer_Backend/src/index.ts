@@ -100,4 +100,5 @@ const app = new Elysia()
   .listen(4100);
 
 console.log(`🦊 Elysia is running at http://localhost:${app.server?.port}`);
+console.log(`🦊 Elysia hosting for ${FRONTEND_BASE_URL}`);
 console.log(`🦊 Elysia swagger at http://localhost:${app.server?.port}/w`);

@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { settingsStore } from "@/Store";
+  import { getTranslations, type LanguageCode } from "@/Function";
+
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
+
   interface Props {
     isOpen: boolean;
     onClose: () => void;
@@ -20,7 +25,7 @@
       <!-- svelte-ignore a11y_consider_explicit_label -->
       <div class="preset-popup-header">
         <div>
-          <h3>Conversation Settings</h3>
+          <h3>{t.conversationSettings.title}</h3>
           <div class="header-controls">
             <button class="close-btn" onclick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -39,14 +44,14 @@
             class:active={activeTab === 'general'}
             onclick={() => setActiveTab('general')}
           >
-            General
+            {t.conversationSettings.general}
           </button>
           <button
             class="tab-btn"
             class:active={activeTab === 'chat'}
             onclick={() => setActiveTab('chat')}
           >
-            Chat
+            {t.conversationSettings.general}
           </button>
           <button
             class="tab-btn"

@@ -1,9 +1,12 @@
 <script lang="ts">
   import { chatStore, settingsStore, authStore, favoriteStore } from "@/Store";
   import type { Conversation } from "@/Types";
-  import { formatRelativeTime, truncate } from "@/Function";
+  import { formatRelativeTime, truncate, getTranslations, type LanguageCode } from "@/Function";
   import ArchiveDialog from "./ArchiveDialog.svelte";
   import ConversationSetting from "./ConversationSetting.svelte";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let { onSelectConversation }: { onSelectConversation?: (id: string) => void } = $props();
   let showArchiveModal = $state(false);
@@ -43,7 +46,8 @@
     e.stopPropagation();
     if (!authStore.currentUser?.uuid) return;
 
-    if (confirm("Delete this conversation permanently?")) {
+    const t = getTranslations(settingsStore.language as LanguageCode);
+    if (confirm(t.sidebar.deleteConfirm)) {
       await chatStore.deleteConversation(id);
     }
   }
@@ -138,7 +142,7 @@
         <line x1="12" y1="5" x2="12" y2="19"></line>
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>
-      New Chat
+      {t.sidebar.newChat}
     </button>
     <button class="toggle-btn" onclick={() => settingsStore.toggleSidebar()}>
       {#if settingsStore.sidebarOpen}
@@ -162,13 +166,13 @@
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
-        <p class="auth-message">Login to save and manage your conversations</p>
-        <p class="auth-submessage">You can still chat without an account</p>
+        <p class="auth-message">{t.sidebar.loginToSave}</p>
+        <p class="auth-submessage">{t.sidebar.canChatWithoutAccount}</p>
       </div>
     {:else if chatStore.isLoading}
-      <div class="loading">Loading conversations...</div>
+      <div class="loading">{t.sidebar.loadingConversations}</div>
     {:else if activeConversations.length === 0}
-      <div class="empty">No conversations yet</div>
+      <div class="empty">{t.sidebar.noConversations}</div>
     {:else}
       {#each activeConversations as conversation (conversation.id)}
         <div
@@ -306,14 +310,14 @@
   </div>
 
   <div class="sidebar-footer">
-    <button class="archive-btn" onclick={openArchiveModal}>
+    <button class="archiveSetting-btn" onclick={openArchiveModal}>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="21 8 21 21 3 21 3 8"></polyline>
         <line x1="1" y1="3" x2="23" y2="3"></line>
         <path d="M10 12v6"></path>
         <path d="M14 12v6"></path>
       </svg>
-      Archive
+      {t.sidebar.archive}
     </button>
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <button class="settings-btn" onclick={openSettingsModal}>
@@ -528,7 +532,7 @@
   }
 
   .action-btn {
-    padding: 4px;
+    padding: 6px;
     background: transparent;
     border: none;
     border-radius: 4px;
@@ -589,7 +593,8 @@
     gap: 8px;
   }
 
-  .archive-btn {
+
+  .archiveSetting-btn {
     flex: 1;
     display: flex;
     align-items: center;
@@ -605,7 +610,7 @@
     transition: all 0.2s;
   }
 
-  .archive-btn:hover {
+  .archiveSetting-btn:hover {
     background: var(--hover-bg, #2d2d2d);
     color: var(--text-primary, #fff);
   }

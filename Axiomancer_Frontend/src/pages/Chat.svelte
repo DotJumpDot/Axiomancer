@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { Sidebar, ChatHeader, MessageList, ChatInput } from "@/Components";
   import { authStore, chatStore, aiStore, promptStore, settingsStore, favoriteStore } from "@/Store";
+  import { getTranslations, type LanguageCode } from "@/Function";
 
   // Initialize stores on mount
   onMount(() => {
@@ -24,6 +25,9 @@
       favoriteStore.loadFavorites(authStore.currentUser.uuid);
     }
   });
+
+  // Reactive translations based on current language
+  let translations = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   function handleSelectConversation(id: string) {
     chatStore.loadConversation(id);

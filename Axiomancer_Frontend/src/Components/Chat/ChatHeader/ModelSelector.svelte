@@ -1,7 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { aiStore, favoriteStore, authStore } from "@/Store";
-  import { formatModelName, formatProviderName, formatContextLength } from "@/Function";
+  import { aiStore, favoriteStore, authStore, settingsStore } from "@/Store";
+  import { formatModelName, formatProviderName, formatContextLength, getTranslations, type LanguageCode } from "@/Function";
+
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let { 
     isOpen = false, 
@@ -103,7 +105,7 @@
   <div class="model-selector-backdrop" onmousedown={closePopup}>
     <div class="model-selector-popup" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()}>
       <div class="model-selector-header">
-        <h3 class="model-selector-title">Select Model</h3>
+        <h3 class="model-selector-title">{t.modelSelector.title}</h3>
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button class="close-btn" onclick={closePopup}>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -123,7 +125,7 @@
             </svg>
             <input
               type="text"
-              placeholder="Search models..."
+              placeholder={t.modelSelector.search}
               bind:value={searchQuery}
             />
           </div>
@@ -131,29 +133,29 @@
           <div class="filters">
             <label class="filter-checkbox">
               <input type="checkbox" bind:checked={showOnlyFree} />
-              <span>Free models only</span>
+              <span>{t.modelSelector.onlyFree}</span>
             </label>
             <label class="filter-checkbox">
               <input type="checkbox" bind:checked={showOnlyPricing} />
-              <span>Priced models only</span>
+              <span>{t.modelSelector.showPricing}</span>
             </label>
 
             <select class="filter-select" bind:value={selectedCapability}>
-              <option value="none">All capabilities</option>
-              <option value="fast">Fast</option>
-              <option value="reasoning">Reasoning</option>
-              <option value="coding">Coding</option>
-              <option value="vision">Vision</option>
+              <option value="none">{t.modelSelector.capability} - {t.modelSelector.none}</option>
+              <option value="fast">{t.modelSelector.fast}</option>
+              <option value="reasoning">{t.modelSelector.reasoning}</option>
+              <option value="coding">{t.modelSelector.coding}</option>
+              <option value="vision">{t.modelSelector.vision}</option>
             </select>
 
             <select class="filter-select" bind:value={sortBy}>
-              <option value="none">No sorting</option>
-              <option value="price-low-to-high">Price: Low to High</option>
-              <option value="price-high-to-low">Price: High to Low</option>
-              <option value="name-a-z">Name: A-Z</option>
-              <option value="name-z-a">Name: Z-A</option>
-              <option value="provider-a-z">Provider: A-Z</option>
-              <option value="provider-z-a">Provider: Z-A</option>
+              <option value="none">{t.modelSelector.sortBy} - {t.modelSelector.none}</option>
+              <option value="price-low-to-high">{t.modelSelector.priceLowToHigh}</option>
+              <option value="price-high-to-low">{t.modelSelector.priceHighToLow}</option>
+              <option value="name-a-z">{t.modelSelector.nameAZ}</option>
+              <option value="name-z-a">{t.modelSelector.nameZA}</option>
+              <option value="provider-a-z">{t.modelSelector.providerAZ}</option>
+              <option value="provider-z-a">{t.modelSelector.providerZA}</option>
             </select>
           </div>
         </div>
@@ -249,7 +251,7 @@
             </div>
           {/each}
           {#if filteredModels.length === 0}
-            <div class="no-models">No models found</div>
+            <div class="no-models">{t.common.search} - {t.modelSelector.none}</div>
           {/if}
         </div>
       </div>

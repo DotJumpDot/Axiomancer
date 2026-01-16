@@ -1,6 +1,10 @@
 <script lang="ts">
-  import { authStore } from "@/Store";
+  import { authStore, settingsStore } from "@/Store";
   import type { LoginRequest, RegisterRequest } from "@/Types";
+  import { getTranslations, type LanguageCode } from "@/Function";
+
+  // Reactive translations
+  let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   // Custom transition combining fade and scale
   function dialogTransition(node: Element, options: { duration?: number; start?: number } = {}) {
