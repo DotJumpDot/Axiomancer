@@ -2,8 +2,8 @@ import { Elysia, t } from "elysia";
 import { PixabayService } from "./pixabay_service";
 
 export const pixabayApi = new Elysia({
-  prefix: "/api/search/pixabay",
-  tags: ["Search - Pixabay"],
+  prefix: "/pixabay",
+  tags: ["Search"],
 })
   // Pixabay Image Search
   .post(

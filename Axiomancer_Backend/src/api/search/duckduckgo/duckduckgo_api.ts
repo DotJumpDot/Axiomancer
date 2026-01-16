@@ -2,8 +2,8 @@ import { Elysia, t } from "elysia";
 import { DuckDuckGoService } from "./duckduckgo_service";
 
 export const duckduckgoApi = new Elysia({
-  prefix: "/api/search/duckduckgo",
-  tags: ["Search - DuckDuckGo"],
+  prefix: "/duckduckgo",
+  tags: ["Search"],
 })
   // DuckDuckGo Web Search
   .post(

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { chatStore, aiStore, settingsStore } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
+  import { slide } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
 
   // Reactive translations
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
@@ -10,6 +12,12 @@
   let isComposing = $state(false);
   let showMemoryTooltip = $state(false);
   let memoryTooltipRef: HTMLDivElement | undefined = $state();
+
+  // Get selected model for capabilities display (single mode only)
+  let selectedModelForCap = $derived.by(() => {
+    if (aiStore.autoRoutingEnabled) return null;
+    return aiStore.enabledModels.find(m => m.model_key === chatStore.currentModelKey) || null;
+  });
 
   function handleInput(e: Event) {
     const target = e.target as HTMLTextAreaElement;
@@ -136,6 +144,7 @@
           type="file"
           accept="image/*"
           onchange={handleFileSelect}
+          disabled={!selectedModelForCap?.capabilities.vision}
           hidden
         />
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -240,7 +249,7 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       {#if showMemoryTooltip}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="memory-tooltip" onclick={(e) => e.stopPropagation()}>
+        <div class="memory-tooltip" onclick={(e) => e.stopPropagation()} transition:slide={{ duration: 200, easing: cubicOut }}>
           <div class="tooltip-header">
             <span class="tooltip-title">{t.input.chatMemory || "Chat memory"}</span>
             <input 
@@ -270,6 +279,63 @@
         </div>
       {/if}
     </div>
+
+    {#if selectedModelForCap}
+      <div class="capabilities" style="margin-left: auto;">
+        <div class="capability-icon fast" class:active={selectedModelForCap.capabilities.fast} title="Fast processing">
+          {#if selectedModelForCap.capabilities.fast}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+            </svg>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3">
+              <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+            </svg>
+          {/if}
+        </div>
+        <div class="capability-icon reasoning" class:active={selectedModelForCap.capabilities.reasoning} title="Advanced reasoning">
+          {#if selectedModelForCap.capabilities.reasoning}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <path d="M12 17h.01"></path>
+            </svg>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <path d="M12 17h.01"></path>
+            </svg>
+          {/if}
+        </div>
+        <div class="capability-icon coding" class:active={selectedModelForCap.capabilities.coding} title="Code generation">
+          {#if selectedModelForCap.capabilities.coding}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16,18 22,12 16,6"></polyline>
+              <polyline points="8,6 2,12 8,18"></polyline>
+            </svg>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3">
+              <polyline points="16,18 22,12 16,6"></polyline>
+              <polyline points="8,6 2,12 8,18"></polyline>
+            </svg>
+          {/if}
+        </div>
+        <div class="capability-icon vision" class:active={selectedModelForCap.capabilities.vision} title="Image understanding">
+          {#if selectedModelForCap.capabilities.vision}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          {/if}
+        </div>
+      </div>
+    {/if}
 
     
   </div>
@@ -526,18 +592,6 @@
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 1000;
-    animation: tooltipFadeIn 0.2s ease-out;
-  }
-
-  @keyframes tooltipFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   .tooltip-header {
@@ -659,5 +713,52 @@
     line-height: 1.4;
     color: var(--text-secondary, #888);
     margin: 0;
+  }
+
+  .capabilities {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .capability-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    cursor: default;
+    transition: all 0.2s;
+    color: var(--text-secondary, #888);
+  }
+
+  .capability-icon.active {
+    color: currentColor;
+  }
+
+  .capability-icon.fast.active {
+    color: #22c55e;
+  }
+
+  .capability-icon.reasoning.active {
+    color: #6366f1;
+  }
+
+  .capability-icon.coding.active {
+    color: #a855f7;
+  }
+
+  .capability-icon.vision.active {
+    color: #ec4899;
+  }
+
+  .upload-btn:has(input:disabled) {
+    pointer-events: none;
+  }
+
+  .upload-btn:has(input:disabled) svg {
+    color: #f06666;
   }
 </style>

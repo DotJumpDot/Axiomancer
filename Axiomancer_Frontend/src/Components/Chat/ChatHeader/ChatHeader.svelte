@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { slide } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import { aiStore, chatStore, promptStore, settingsStore, authStore } from "@/Store";
   import { userService } from "@/Service";
   import { formatModelName, formatProviderName, getTranslations, type LanguageCode } from "@/Function";
@@ -35,7 +37,8 @@
   let apiKeyDialog: any;
   let userSettingDialog: any;
   let languageDropdownRef: HTMLElement;
-  let modeDropdownRef: HTMLElement;
+  // svelte-ignore non_reactive_update
+    let modeDropdownRef: HTMLElement;
   // svelte-ignore non_reactive_update
     let promptDropdownRef: HTMLElement;
   let isInitializing = $state(true);
@@ -333,7 +336,7 @@
         </button>
 
         {#if showModelDropdown}
-          <div class="dropdown-menu">
+          <div class="dropdown-menu" transition:slide={{ duration: 200, easing: cubicOut }}>
             <button class="dropdown-item" class:active-mode={currentMode === 'auto'} onclick={toggleMode}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
@@ -400,7 +403,7 @@
         {#if showPromptDropdown}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <div class="dropdown-menu" onclick={(e) => e.stopPropagation()}>
+          <div class="dropdown-menu" onclick={(e) => e.stopPropagation()} transition:slide={{ duration: 200, easing: cubicOut }}>
             <button
               class="dropdown-item"
               class:selected={!promptStore.selectedProfile}
@@ -428,7 +431,7 @@
         {#if showSystemPrompt}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <div class="system-prompt-display" onclick={(e) => e.stopPropagation()}>
+          <div class="system-prompt-display" onclick={(e) => e.stopPropagation()} transition:slide={{ duration: 200, easing: cubicOut }}>
             <div class="system-prompt-header">
               <h4>{t.header.systemPrompt}</h4>
               <!-- svelte-ignore a11y_consider_explicit_label -->
@@ -531,7 +534,7 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       {#if showLanguageDropdown}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="dropdown-menu2" onclick={(e) => e.stopPropagation()}>
+        <div class="dropdown-menu2" onclick={(e) => e.stopPropagation()} transition:slide={{ duration: 200, easing: cubicOut }}>
           <button class="dropdown-item" class:active-language={settingsStore.language === 'en'} onclick={() => selectLanguage('en')}>
             <span class="item-name">English</span>
             <span class="item-desc">EN</span>

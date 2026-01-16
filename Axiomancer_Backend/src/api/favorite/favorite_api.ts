@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
 import * as favoriteService from "./favorite_service";
 
-export const favoriteApi = new Elysia({ prefix: "/api/favorites" })
+export const favoriteApi = new Elysia({ prefix: "/api/favorites", tags: ["Favorite"] })
   // Get user favorites
   .get("/:userUuid", async ({ params: { userUuid } }) => {
     const favorites = await favoriteService.getOrCreateFavorites(userUuid);
