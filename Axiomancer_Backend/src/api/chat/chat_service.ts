@@ -227,6 +227,7 @@ export class ChatService {
       webSearch?: boolean;
       imageSearch?: boolean;
       autoRouting?: boolean;
+      memoryCount?: number;
     },
     userId?: number
   ): Promise<{
@@ -283,7 +284,7 @@ export class ChatService {
       // Determine routing mode
       const routingMode = options?.autoRouting ? "auto" : "manual";
 
-      // Create user message first
+      // Create user message first (without search_log_uuid initially)
       const userChat: CreateChatRequest = {
         conversation_id: conversationId,
         role: "user",
@@ -291,27 +292,25 @@ export class ChatService {
         model_id: actualModelKey || null,
         prompt_profile_id: promptProfileId || null,
         routing_mode: routingMode,
-        used_web_search: options?.webSearch || false,
-        used_image_search: options?.imageSearch || false,
         respond_error: false,
       };
 
       savedUserMessage = await this.createChat(userChat);
 
-      //! Perform web search if enabled
-      let searchContext: any = null;
+      //! Perform web search and/or image search if enabled
+      let searchContextWeb: any = null;
+      let searchContextPicture: any = null;
+
       if (options?.webSearch) {
         try {
           const searchResponse = await DuckDuckGoService.search(userMessage, 5);
 
           if (searchResponse.success && searchResponse.results.length > 0) {
-            searchContext = {
-              web_search: {
-                query: searchResponse.query,
-                results: searchResponse.results,
-                abstract: searchResponse.abstract,
-                abstractURL: searchResponse.abstractURL,
-              },
+            searchContextWeb = {
+              query: searchResponse.query,
+              results: searchResponse.results,
+              abstract: searchResponse.abstract,
+              abstractURL: searchResponse.abstractURL,
             };
           }
         } catch (searchError) {
@@ -320,11 +319,34 @@ export class ChatService {
         }
       }
 
-      // Update user message with search context if available
-      if (searchContext) {
-        await ChatQuery.updateChat(savedUserMessage.id, { search_context: searchContext });
-        savedUserMessage.search_context = searchContext;
-      }
+      // TODO: Implement Pixabay image search
+      // if (options?.imageSearch) {
+      //   try {
+      //     const imageResponse = await PixabayService.search(userMessage, 5);
+      //     if (imageResponse.success && imageResponse.results.length > 0) {
+      //       searchContextPicture = imageResponse;
+      //     }
+      //   } catch (error) {
+      //     console.error("ImageSearchError : ", error);
+      //   }
+      // }
+
+      // Determine memory count (default to 20 if not specified)
+      const memoryCount = options?.memoryCount ?? 20;
+
+      //* Create search log record
+      const searchLog = await ChatQuery.createSearchLog({
+        chat_id: savedUserMessage.id,
+        memory_chat_include: memoryCount,
+        used_web_search: options?.webSearch || false,
+        used_image_search: options?.imageSearch || false,
+        search_context_web: searchContextWeb,
+        search_context_picture: searchContextPicture,
+      });
+
+      // Update user message with search log UUID
+      await ChatQuery.updateChat(savedUserMessage.id, { search_log_uuid: searchLog.id_uuid });
+      savedUserMessage.search_log_uuid = searchLog.id_uuid;
 
       // Get conversation history for context
       const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
@@ -338,13 +360,13 @@ export class ChatService {
       }
 
       // Add web search context to system prompt if available
-      if (searchContext?.web_search) {
+      if (searchContextWeb) {
         const searchFormatted = DuckDuckGoService.formatResultsForAI({
           success: true,
-          query: searchContext.web_search.query,
-          results: searchContext.web_search.results,
-          abstract: searchContext.web_search.abstract,
-          abstractURL: searchContext.web_search.abstractURL,
+          query: searchContextWeb.query,
+          results: searchContextWeb.results,
+          abstract: searchContextWeb.abstract,
+          abstractURL: searchContextWeb.abstractURL,
         });
 
         openRouterMessages.push({
@@ -353,8 +375,8 @@ export class ChatService {
         });
       }
 
-      // Add conversation history (limit to last 20 messages for context)
-      const recentMessages = previousMessages.slice(-20);
+      // Add conversation history (limit to memoryCount messages for context)
+      const recentMessages = previousMessages.slice(-memoryCount);
       for (const msg of recentMessages) {
         if (msg.role === "user" || msg.role === "assistant") {
           openRouterMessages.push({
@@ -404,8 +426,11 @@ export class ChatService {
       // Update local user message with AI response link
       savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
 
+      // Fetch the complete message with joined search_log data
+      const completeUserMessage = await ChatQuery.getChatById(savedUserMessage.id);
+
       return {
-        userMessage: savedUserMessage,
+        userMessage: completeUserMessage || savedUserMessage,
         aiResponse: chatAiRespond,
       };
     } catch (error) {
@@ -475,9 +500,7 @@ export class ChatService {
         model_id: null,
         prompt_profile_id: null,
         routing_mode: "auto",
-        used_web_search: false,
-        used_image_search: false,
-        search_context: null,
+        search_log_uuid: null,
         chat_ai_respond_id: null,
         respond_error: false,
         created_at: new Date(),
@@ -492,9 +515,7 @@ export class ChatService {
         model_id: modelKey,
         prompt_profile_id: null,
         routing_mode: "auto",
-        used_web_search: false,
-        used_image_search: false,
-        search_context: null,
+        search_log_uuid: null,
         chat_ai_respond_id: null,
         respond_error: false,
         created_at: new Date(),

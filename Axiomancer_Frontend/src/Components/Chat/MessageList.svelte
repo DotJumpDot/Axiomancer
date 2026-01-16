@@ -89,7 +89,7 @@
     </div>
   {:else}
     <div class="messages-list">
-      {#each chatStore.messages as message (message.id)}
+      {#each chatStore.messages as message, index (`${message.id}-${index}`)}
         <ChatMessage {message} />
       {/each}
 

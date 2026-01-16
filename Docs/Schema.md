@@ -103,9 +103,7 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | model_id           | uuid     | Yes      | Foreign key to ai_model.id                 |
 | prompt_profile_id  | uuid     | Yes      | Foreign key to prompt_profile.id           |
 | routing_mode       | str      | No       | Routing mode (auto/manual)                 |
-| used_web_search    | boolean  | No       | Whether web search was used                |
-| used_image_search  | boolean  | No       | Whether image search was used              |
-| search_context     | json     | Yes      | Search results context                     |
+| search_log_uuid    | uuid     | Yes      | Foreign key to search_log.id_uuid          |
 | chat_ai_respond_id | uuid     | Yes      | Foreign key to chat_ai_respond.id          |
 | respond_error      | boolean  | No       | Whether AI response failed (default false) |
 | created_at         | datetime | No       | Record creation timestamp                  |
@@ -113,14 +111,17 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### Search Log
 
-| Column       | Type     | Nullable | Description                          |
-| ------------ | -------- | -------- | ------------------------------------ |
-| id           | uuid     | No       | Primary key, log ID                  |
-| message_id   | uuid     | No       | Foreign key to chat.id               |
-| provider     | str      | No       | Search provider (duckduckgo/pixabay) |
-| query        | str      | No       | Search query                         |
-| result_count | int      | No       | Number of results returned           |
-| created_at   | datetime | No       | Record creation timestamp            |
+| Column                 | Type     | Nullable | Description                                                  |
+| ---------------------- | -------- | -------- | ------------------------------------------------------------ |
+| id_no                  | int      | No       | Primary key, auto-incremented log ID (unique)                |
+| id_uuid                | uuid     | No       | Unique UUID identifier for the log                           |
+| chat_id                | uuid     | No       | Foreign key to chat.id                                       |
+| memory_chat_include    | int      | No       | Number of previous messages included in context (default 20) |
+| used_web_search        | boolean  | No       | Whether web search was used (default false)                  |
+| used_image_search      | boolean  | No       | Whether image search was used (default false)                |
+| search_context_web     | json     | Yes      | Web search results context (DuckDuckGo)                      |
+| search_context_picture | json     | Yes      | Image search results context (Pixabay)                       |
+| created_at             | datetime | No       | Record creation timestamp                                    |
 
 ### Chat AI Respond
 
@@ -277,9 +278,7 @@ CREATE TABLE chat (
     model_id TEXT,
     prompt_profile_id TEXT,
     routing_mode TEXT NOT NULL CHECK (routing_mode IN ('auto', 'manual')),
-    used_web_search BOOLEAN NOT NULL DEFAULT FALSE,
-    used_image_search BOOLEAN NOT NULL DEFAULT FALSE,
-    search_context JSONB,
+    search_log_uuid TEXT,
     chat_ai_respond_id TEXT,
     respond_error BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -287,19 +286,22 @@ CREATE TABLE chat (
     FOREIGN KEY (conversation_id) REFERENCES conversation(id),
     FOREIGN KEY (model_id) REFERENCES ai_model(id),
     FOREIGN KEY (prompt_profile_id) REFERENCES prompt_profile(id),
+    FOREIGN KEY (search_log_uuid) REFERENCES search_log(id_uuid),
     FOREIGN KEY (chat_ai_respond_id) REFERENCES chat_ai_respond(id)
 );
 
 -- Search Log table
 CREATE TABLE search_log (
-    id TEXT PRIMARY KEY,
-    message_id TEXT NOT NULL,
-    provider TEXT NOT NULL CHECK (provider IN ('duckduckgo', 'pixabay')),
-    query TEXT NOT NULL,
-    result_count INTEGER NOT NULL,
+    id_no SERIAL PRIMARY KEY,
+    id_uuid TEXT NOT NULL UNIQUE,
+    chat_id TEXT NOT NULL,
+    memory_chat_include INTEGER NOT NULL DEFAULT 20,
+    used_web_search BOOLEAN NOT NULL DEFAULT FALSE,
+    used_image_search BOOLEAN NOT NULL DEFAULT FALSE,
+    search_context_web JSONB,
+    search_context_picture JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (message_id) REFERENCES chat(id)
+    FOREIGN KEY (chat_id) REFERENCES chat(id)
 );
 
 -- User Selected Models table
@@ -337,7 +339,7 @@ CREATE INDEX idx_chat_model_id ON chat(model_id);
 CREATE INDEX idx_chat_ai_respond_id ON chat(chat_ai_respond_id);
 CREATE INDEX idx_chat_created_at ON chat(created_at);
 CREATE INDEX idx_chat_ai_respond_created_at ON chat_ai_respond(created_at);
-CREATE INDEX idx_search_log_message_id ON search_log(message_id);
+CREATE INDEX idx_search_log_chat_id ON search_log(chat_id);
 CREATE INDEX idx_user_username ON "user"(username);
 CREATE INDEX idx_user_selected_models_user_uuid ON user_selected_models(user_uuid);
 CREATE INDEX idx_user_favorite_user_uuid ON user_favorite(user_uuid);

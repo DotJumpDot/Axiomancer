@@ -47,36 +47,71 @@ chatStore.sendMessage() → chatService.sendMessage(conversationId, {
 const savedUserMessage = await this.createChat(userChat);
 
 // Step 2: Perform web search if enabled
+let searchContextWeb: any = null;
+let searchContextPicture: any = null;
+
 if (options?.webSearch) {
   const searchResponse = await DuckDuckGoService.search(userMessage, 5);
 
   if (searchResponse.success && searchResponse.results.length > 0) {
-    searchContext = {
-      web_search: {
-        query: searchResponse.query,
-        results: searchResponse.results,
-        abstract: searchResponse.abstract,
-        abstractURL: searchResponse.abstractURL,
-      },
+    searchContextWeb = {
+      query: searchResponse.query,
+      results: searchResponse.results,
+      abstract: searchResponse.abstract,
+      abstractURL: searchResponse.abstractURL,
     };
-
-    // Update message with search context
-    await ChatQuery.updateChat(savedUserMessage.id, { search_context: searchContext });
   }
 }
 
+// TODO: Image search integration
+// if (options?.imageSearch) {
+//   const imageResponse = await PixabayService.search(userMessage, 5);
+//   if (imageResponse.success) {
+//     searchContextPicture = imageResponse;
+//   }
+// }
+
+// Determine memory count (default to 20 if not specified)
+const memoryCount = options?.memoryCount ?? 20;
+
+// Create search log record
+const searchLog = await ChatQuery.createSearchLog({
+  chat_id: savedUserMessage.id,
+  memory_chat_include: memoryCount,
+  used_web_search: options?.webSearch || false,
+  used_image_search: options?.imageSearch || false,
+  search_context_web: searchContextWeb,
+  search_context_picture: searchContextPicture,
+});
+
+// Update user message with search log UUID
+await ChatQuery.updateChat(savedUserMessage.id, { search_log_uuid: searchLog.id_uuid });
+
 // Step 3: Add search results to AI prompt
-if (searchContext?.web_search) {
-  const searchFormatted = DuckDuckGoService.formatResultsForAI(searchResponse);
+if (searchContextWeb) {
+  const searchFormatted = DuckDuckGoService.formatResultsForAI({
+    success: true,
+    query: searchContextWeb.query,
+    results: searchContextWeb.results,
+    abstract: searchContextWeb.abstract,
+    abstractURL: searchContextWeb.abstractURL,
+  });
 
   openRouterMessages.push({
     role: "system",
-    content: `The following web search results may help answer the user's question:
-
-${searchFormatted}
-
-Use this information to provide accurate and up-to-date responses. Cite sources when relevant.`,
+    content: `The following web search results may help answer the user's question:\n\n${searchFormatted}\n\nUse this information to provide accurate and up-to-date responses. Cite sources when relevant.`,
   });
+}
+
+// Add conversation history (limit to memoryCount messages for context)
+const recentMessages = previousMessages.slice(-memoryCount);
+for (const msg of recentMessages) {
+  if (msg.role === "user" || msg.role === "assistant") {
+    openRouterMessages.push({
+      role: msg.role,
+      content: msg.content,
+    });
+  }
 }
 
 // Step 4: Send enriched context to OpenRouter AI
@@ -242,19 +277,26 @@ CREATE TABLE chat (
 
 ### For Users
 
-1. **Enable Web Search**:
+1. **Configure Memory Count**:
+
+   - Use the memory count selector (1-100 messages)
+   - Default: 20 messages included in context
+   - Higher values provide more context but use more tokens
+   - Memory indicator shows: "🧠 20 msgs" (if not default)
+
+2. **Enable Web Search**:
 
    - Toggle the "Web Search" switch in the chat input area
    - The switch turns blue when active
    - Blue dot indicator shows "Web search enabled"
 
-2. **Send Message**:
+3. **Send Message**:
 
    - Type your question
    - Press Enter to send
    - If web search is enabled, the AI will automatically search for relevant information
 
-3. **View Search Indicators**:
+4. **View Search Indicators**:
    - AI messages that used web search display a "Web" badge
    - Search results are integrated into the AI's response
    - Sources may be cited in the response
@@ -291,7 +333,9 @@ await chatStore.sendMessage("What is the height of the Eiffel Tower?", "anthropi
 ```json
 {
   "input": {
-    "webSearchEnabled": "Web search enabled"
+    "webSearchEnabled": "Web search enabled",
+    "chatMemory": "Chat Memory",
+    "messagesMemory": "messages"
   },
   "messages": {
     "usedWebSearch": "Used web search"
@@ -304,7 +348,9 @@ await chatStore.sendMessage("What is the height of the Eiffel Tower?", "anthropi
 ```json
 {
   "input": {
-    "webSearchEnabled": "เปิดใช้งานการค้นหาเว็บ"
+    "webSearchEnabled": "เปิดใช้งานการค้นหาเว็บ",
+    "chatMemory": "ความจำการสนทนา",
+    "messagesMemory": "ข้อความ"
   },
   "messages": {
     "usedWebSearch": "ใช้การค้นหาเว็บ"
@@ -372,6 +418,71 @@ try {
 - Each search result: ~100-200 tokens
 - 5 results: ~500-1000 tokens
 - Consider token budget when increasing result count
+
+---
+
+## Memory Count Feature
+
+### Overview
+
+The memory count feature allows users to control how many previous messages are included in the AI's context window when generating responses.
+
+### Configuration
+
+- **Range**: 1-100 messages
+- **Default**: 20 messages
+- **UI Location**: Chat input area (number input with memory icon)
+- **Storage**: Stored in `search_log` table per message
+
+### How It Works
+
+```typescript
+// Get conversation history
+const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+
+// Limit to memoryCount messages for context
+const recentMessages = previousMessages.slice(-memoryCount);
+
+// Add to OpenRouter request
+for (const msg of recentMessages) {
+  openRouterMessages.push({
+    role: msg.role,
+    content: msg.content,
+  });
+}
+```
+
+### Benefits
+
+- **Lower Token Usage**: Fewer messages = lower costs
+- **Focused Context**: More relevant responses for specific topics
+- **Performance**: Faster processing with smaller context
+- **Flexibility**: User controls trade-off between context and efficiency
+
+### UI Indicators
+
+Messages display memory count badge when not using default (20):
+
+```html
+<!-- Only shown if memory_chat_include !== 20 -->
+<span class="meta-item memory">
+  <svg>...</svg>
+  {message.search_log.memory_chat_include} msgs
+</span>
+```
+
+### Database Storage
+
+```sql
+-- Query to see memory usage patterns
+SELECT
+  memory_chat_include,
+  COUNT(*) as usage_count,
+  AVG(ARRAY_LENGTH(search_context_web->'results', 1)) as avg_search_results
+FROM search_log
+GROUP BY memory_chat_include
+ORDER BY usage_count DESC;
+```
 
 ---
 
@@ -461,13 +572,17 @@ try {
 
    ```sql
    SELECT
-     id,
-     content,
-     used_web_search,
-     search_context
-   FROM chat
-   WHERE used_web_search = TRUE
-   ORDER BY created_at DESC
+     c.id,
+     c.content,
+     c.created_at,
+     sl.used_web_search,
+     sl.used_image_search,
+     sl.memory_chat_include,
+     sl.search_context_web
+   FROM chat c
+   INNER JOIN search_log sl ON c.search_log_uuid = sl.id_uuid
+   WHERE sl.used_web_search = TRUE
+   ORDER BY c.created_at DESC
    LIMIT 1;
    ```
 
@@ -534,6 +649,13 @@ For questions or issues, refer to the AGENTS.md guidelines or check the Docs/ fo
 
 ---
 
-**Last Updated**: January 2026  
-**Version**: 1.0.0  
+**Last Updated**: January 16, 2026  
+**Version**: 2.0.0  
 **Status**: ✅ Production Ready
+
+**New in v2.0**:
+
+- Separated search_log table for better analytics
+- Configurable memory count (1-100 messages)
+- Enhanced search context tracking
+- Improved UI indicators for search and memory usage

@@ -8,6 +8,8 @@
   let textareaRef: HTMLTextAreaElement | undefined = $state();
   let inputValue = $state("");
   let isComposing = $state(false);
+  let showMemoryTooltip = $state(false);
+  let memoryTooltipRef: HTMLDivElement | undefined = $state();
 
   function handleInput(e: Event) {
     const target = e.target as HTMLTextAreaElement;
@@ -67,6 +69,7 @@
       promptProfileId: chatStore.currentPromptProfileId || undefined,
       webSearch: chatStore.webSearchEnabled,
       imageSearch: chatStore.imageSearchEnabled,
+      memoryCount: chatStore.memoryCount,
     });
   }
 
@@ -79,6 +82,37 @@
       // TODO: Implement image upload
     }
   }
+
+  function toggleMemoryTooltip() {
+    showMemoryTooltip = !showMemoryTooltip;
+  }
+
+  let isMouseDownInside = $state(false);
+
+  function handleMouseDown(e: MouseEvent) {
+    if (memoryTooltipRef && memoryTooltipRef.contains(e.target as Node)) {
+      isMouseDownInside = true;
+    } else {
+      isMouseDownInside = false;
+    }
+  }
+
+  function handleMouseUp(e: MouseEvent) {
+    if (!isMouseDownInside && memoryTooltipRef && !memoryTooltipRef.contains(e.target as Node)) {
+      showMemoryTooltip = false;
+    }
+  }
+
+  $effect(() => {
+    if (showMemoryTooltip) {
+      document.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousedown', handleMouseDown);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  });
 
 </script>
 
@@ -139,6 +173,9 @@
         <kbd>Ctrl+Enter</kbd> {t.input.ctrlEnterToSend}
       {/if}
     </span>
+
+    
+
     <label class="toggle-switch" title="Web Search" style="display: inline-flex; align-items: center; gap: 12px; width: auto;">
       <input 
         type="checkbox" 
@@ -182,6 +219,59 @@
         {t.input.imageSearchEnabled}
       </span>
     </label>
+
+    <div class="memory-selector-wrapper" bind:this={memoryTooltipRef}>
+      <button 
+        class="memory-button"
+        onclick={(e) => { e.stopPropagation(); toggleMemoryTooltip(); }}
+        title={t.input.chatMemory || "Chat Memory"}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+        <span>{chatStore.memoryCount}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      {#if showMemoryTooltip}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div class="memory-tooltip" onclick={(e) => e.stopPropagation()}>
+          <div class="tooltip-header">
+            <span class="tooltip-title">{t.input.chatMemory || "Chat memory"}</span>
+            <input 
+              type="number" 
+              min="1" 
+              max="100" 
+              value={chatStore.memoryCount}
+              oninput={(e) => chatStore.memoryCount = parseInt((e.target as HTMLInputElement).value) || 1}
+              class="memory-value-input"
+            />
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="100" 
+            value={chatStore.memoryCount}
+            oninput={(e) => chatStore.memoryCount = parseInt((e.target as HTMLInputElement).value)}
+            class="memory-slider"
+          />
+          <p class="tooltip-description">
+            {#if settingsStore.language === "th"}
+              ส่งข้อความ {chatStore.memoryCount} ข้อความล่าสุดจากการสนทนาของคุณในแต่ละคำขอ
+            {:else}
+              Sends the last {chatStore.memoryCount} messages from your conversation each request.
+            {/if}
+          </p>
+        </div>
+      {/if}
+    </div>
+
+    
   </div>
 </div>
 
@@ -382,5 +472,165 @@
 
   .toggle-switch input:checked + .slider svg {
     stroke: rgb(99, 99, 99); /* Stroke color when active */
+  }
+
+  .memory-selector-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .memory-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--input-bg, #2d2d2d);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 6px;
+    color: var(--text-primary, #fff);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .memory-button:hover {
+    background: var(--hover-bg, #3d3d3d);
+    border-color: var(--primary-color, #6366f1);
+  }
+
+  .memory-button svg {
+    color: var(--text-secondary, #888);
+    flex-shrink: 0;
+  }
+
+  .memory-button span {
+    font-weight: 500;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .memory-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    min-width: 280px;
+    padding: 16px;
+    background: var(--bg-secondary, #2d2d2d);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    animation: tooltipFadeIn 0.2s ease-out;
+  }
+
+  @keyframes tooltipFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .tooltip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .tooltip-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: currentColor;
+    opacity: 0.9;
+  }
+
+  .memory-value-input {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-color, #6366f1);
+    background: transparent;
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 6px;
+    padding: 4px 8px;
+    width: 60px;
+    text-align: center;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .memory-value-input:hover {
+    border-color: var(--primary-color, #6366f1);
+  }
+
+  .memory-value-input:focus {
+    border-color: var(--primary-color, #6366f1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+
+  .memory-slider {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .memory-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+
+  .memory-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+
+  .memory-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color, #6366f1);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .memory-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .memory-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color, #6366f1);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .memory-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .tooltip-description {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-secondary, #888);
+    margin: 0;
   }
 </style>

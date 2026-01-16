@@ -22,6 +22,7 @@ let webSearchEnabled = $state(false);
 let imageSearchEnabled = $state(false);
 let currentPromptProfileId = $state<string | null>(null);
 let currentModelKey = $state<string | null>(null);
+let memoryCount = $state(7); // Default to 7 messages
 
 // Streaming state
 let streamingContent = $state("");
@@ -99,6 +100,7 @@ async function loadMessages(conversationId: string) {
             role: "assistant",
             content: chat.ai_content,
             model_id: chat.ai_model_key || chat.model_id,
+            search_log: chat.search_log, // Preserve search_log data
           });
         }
       }
@@ -208,9 +210,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       model_id: modelKey || null,
       prompt_profile_id: options?.promptProfileId || null,
       routing_mode: options?.autoRouting ? "auto" : "manual",
-      used_web_search: webSearchEnabled,
-      used_image_search: imageSearchEnabled,
-      search_context: null,
+      search_log_uuid: null,
       chat_ai_respond_id: null,
       respond_error: false,
       created_at: new Date(),
@@ -226,6 +226,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       autoRouting: options?.autoRouting,
       webSearch: webSearchEnabled,
       imageSearch: imageSearchEnabled,
+      memoryCount: options?.memoryCount ?? memoryCount,
     });
 
     if (response.success && response.data) {
@@ -243,9 +244,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
           model_id: response.data.aiResponse.model_key,
           prompt_profile_id: response.data.userMessage.prompt_profile_id,
           routing_mode: response.data.userMessage.routing_mode,
-          used_web_search: response.data.userMessage.used_web_search,
-          used_image_search: response.data.userMessage.used_image_search,
-          search_context: response.data.userMessage.search_context,
+          search_log_uuid: response.data.userMessage.search_log_uuid,
           chat_ai_respond_id: null,
           respond_error: response.data.userMessage.respond_error,
           created_at: new Date(response.data.aiResponse.created_at),
@@ -253,6 +252,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
           ai_token_usage: response.data.aiResponse.token_usage,
           ai_latency_ms: response.data.aiResponse.latency_ms,
           ai_finish_reason: response.data.aiResponse.finish_reason,
+          search_log: response.data.userMessage.search_log, // Include search_log from user message
         };
         messages = [...messages, aiMessage];
       }
@@ -301,9 +301,7 @@ async function sendAnonymousMessage(
       model_id: null,
       prompt_profile_id: null,
       routing_mode: options?.autoRouting ? "auto" : "manual",
-      used_web_search: webSearchEnabled,
-      used_image_search: imageSearchEnabled,
-      search_context: null,
+      search_log_uuid: null,
       chat_ai_respond_id: null,
       respond_error: false,
       created_at: new Date(),
@@ -391,6 +389,12 @@ export const chatStore = {
   },
   get isStreaming() {
     return isStreaming;
+  },
+  get memoryCount() {
+    return memoryCount;
+  },
+  set memoryCount(value: number) {
+    memoryCount = value;
   },
 
   loadConversations,

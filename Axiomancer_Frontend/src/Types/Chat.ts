@@ -27,9 +27,7 @@ export interface Chat {
   model_id: string | null;
   prompt_profile_id: string | null;
   routing_mode: RoutingMode;
-  used_web_search: boolean;
-  used_image_search: boolean;
-  search_context: SearchContext | null;
+  search_log_uuid: string | null;
   chat_ai_respond_id: string | null;
   respond_error: boolean;
   created_at: Date;
@@ -40,6 +38,14 @@ export interface Chat {
   ai_token_usage?: TokenUsage;
   ai_latency_ms?: number;
   ai_finish_reason?: string;
+  // Joined fields from search_log (when available)
+  search_log?: {
+    memory_chat_include: number;
+    used_web_search: boolean;
+    used_image_search: boolean;
+    search_context_web: any | null;
+    search_context_picture: any | null;
+  };
 }
 
 export interface CreateChatRequest {
@@ -49,9 +55,7 @@ export interface CreateChatRequest {
   model_id?: string;
   prompt_profile_id?: string;
   routing_mode: RoutingMode;
-  used_web_search?: boolean;
-  used_image_search?: boolean;
-  search_context?: SearchContext;
+  search_log_uuid?: string | null;
   chat_ai_respond_id?: string | null;
   respond_error?: boolean;
 }
@@ -62,9 +66,7 @@ export interface UpdateChatRequest {
   model_id?: string | null;
   prompt_profile_id?: string | null;
   routing_mode?: RoutingMode;
-  used_web_search?: boolean;
-  used_image_search?: boolean;
-  search_context?: SearchContext | null;
+  search_log_uuid?: string | null;
   chat_ai_respond_id?: string | null;
   respond_error?: boolean;
 }
@@ -129,6 +131,20 @@ export interface SendMessageOptions {
   autoRouting?: boolean;
   temperature?: number;
   maxTokens?: number;
+  memoryCount?: number;
+}
+
+// Search Log types
+export interface SearchLog {
+  id_no: number;
+  id_uuid: string;
+  chat_id: string;
+  memory_chat_include: number;
+  used_web_search: boolean;
+  used_image_search: boolean;
+  search_context_web: any | null;
+  search_context_picture: any | null;
+  created_at: Date;
 }
 
 // Note: OpenRouterMessage is imported from AiModel.ts

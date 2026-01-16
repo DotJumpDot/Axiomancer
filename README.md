@@ -46,7 +46,9 @@ Automatically routes conversations to optimal AI models based on:
 
 - **Web Search** - DuckDuckGo API for real-time web results
 - **Image Search** - Pixabay API for high-quality image retrieval
+- **Configurable Memory** - Control conversation context (1-100 messages)
 - Search results automatically integrated into conversation context
+- Dedicated search log table for analytics and tracking
 
 ### 🔐 **User Authentication & API Keys**
 

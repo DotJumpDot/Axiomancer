@@ -41,6 +41,11 @@ export class DuckDuckGoService {
 
       const data: DuckDuckGoApiResponse = await response.json();
 
+      // Check if response is valid
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid response from DuckDuckGo API");
+      }
+
       // Parse DuckDuckGo Instant Answer response
       const results: DuckDuckGoResult[] = [];
       let abstract = "";

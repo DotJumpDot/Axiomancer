@@ -8,6 +8,8 @@ import type {
   UpdateConversationRequest,
   ChatAiRespond,
   CreateChatAiRespondRequest,
+  SearchLog,
+  CreateSearchLogRequest,
 } from "./chat_type";
 
 export class ChatQuery {
@@ -170,21 +172,36 @@ export class ChatQuery {
         car.model_key as ai_model_key,
         car.token_usage as ai_token_usage,
         car.latency_ms as ai_latency_ms,
-        car.finish_reason as ai_finish_reason
+        car.finish_reason as ai_finish_reason,
+        sl.memory_chat_include,
+        sl.used_web_search,
+        sl.used_image_search,
+        sl.search_context_web,
+        sl.search_context_picture
       FROM chat c
       LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
+      LEFT JOIN search_log sl ON c.search_log_uuid = sl.id_uuid
       WHERE c.conversation_id = ${conversationId}
       ORDER BY c.created_at ASC
     `;
     return result.map((row) => {
-      const chat = row as unknown as Chat & {
-        ai_content?: string;
-        ai_model_key?: string;
-        ai_token_usage?: any;
-        ai_latency_ms?: number;
-        ai_finish_reason?: string;
-      };
+      const chat: any = { ...row };
       // Include AI response data in the Chat object
+      if (row.memory_chat_include !== null) {
+        chat.search_log = {
+          memory_chat_include: row.memory_chat_include,
+          used_web_search: row.used_web_search,
+          used_image_search: row.used_image_search,
+          search_context_web: row.search_context_web,
+          search_context_picture: row.search_context_picture,
+        };
+      }
+      // Clean up direct properties
+      delete chat.memory_chat_include;
+      delete chat.used_web_search;
+      delete chat.used_image_search;
+      delete chat.search_context_web;
+      delete chat.search_context_picture;
       return chat as Chat;
     });
   }
@@ -192,10 +209,48 @@ export class ChatQuery {
   // Get chat by ID
   static async getChatById(id: string): Promise<Chat | null> {
     const result = await sql`
-      SELECT * FROM chat
-      WHERE id = ${id}
+      SELECT 
+        c.*,
+        car.ai_content,
+        car.model_key as ai_model_key,
+        car.token_usage as ai_token_usage,
+        car.latency_ms as ai_latency_ms,
+        car.finish_reason as ai_finish_reason,
+        sl.memory_chat_include,
+        sl.used_web_search,
+        sl.used_image_search,
+        sl.search_context_web,
+        sl.search_context_picture
+      FROM chat c
+      LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
+      LEFT JOIN search_log sl ON c.search_log_uuid = sl.id_uuid
+      WHERE c.id = ${id}
     `;
-    return result.length > 0 ? (result[0] as unknown as Chat) : null;
+
+    if (result.length === 0) return null;
+
+    const row = result[0];
+    const chat: any = { ...row };
+
+    // Include search_log data if available
+    if (row.memory_chat_include !== null) {
+      chat.search_log = {
+        memory_chat_include: row.memory_chat_include,
+        used_web_search: row.used_web_search,
+        used_image_search: row.used_image_search,
+        search_context_web: row.search_context_web,
+        search_context_picture: row.search_context_picture,
+      };
+    }
+
+    // Clean up direct properties
+    delete chat.memory_chat_include;
+    delete chat.used_web_search;
+    delete chat.used_image_search;
+    delete chat.search_context_web;
+    delete chat.search_context_picture;
+
+    return chat as Chat;
   }
 
   // Create new chat message
@@ -206,13 +261,11 @@ export class ChatQuery {
     const result = await sql`
       INSERT INTO chat (
         id, conversation_id, role, content, model_id, prompt_profile_id,
-        routing_mode, used_web_search, used_image_search, search_context,
-        chat_ai_respond_id, respond_error, created_at, updated_at
+        routing_mode, search_log_uuid, chat_ai_respond_id, respond_error, created_at, updated_at
       ) VALUES (
         ${id}, ${chat.conversation_id}, ${chat.role}, ${chat.content},
         ${chat.model_id || null}, ${chat.prompt_profile_id || null},
-        ${chat.routing_mode}, ${chat.used_web_search || false},
-        ${chat.used_image_search || false}, ${JSON.stringify(chat.search_context) || null},
+        ${chat.routing_mode}, ${chat.search_log_uuid || null},
         ${chat.chat_ai_respond_id || null}, ${chat.respond_error || false},
         ${now}, ${now}
       )
@@ -251,17 +304,9 @@ export class ChatQuery {
       setClause.push(`routing_mode = $${setClause.length + 1}`);
       values.push(updates.routing_mode);
     }
-    if (updates.used_web_search !== undefined) {
-      setClause.push(`used_web_search = $${setClause.length + 1}`);
-      values.push(updates.used_web_search);
-    }
-    if (updates.used_image_search !== undefined) {
-      setClause.push(`used_image_search = $${setClause.length + 1}`);
-      values.push(updates.used_image_search);
-    }
-    if (updates.search_context !== undefined) {
-      setClause.push(`search_context = $${setClause.length + 1}`);
-      values.push(JSON.stringify(updates.search_context));
+    if (updates.search_log_uuid !== undefined) {
+      setClause.push(`search_log_uuid = $${setClause.length + 1}`);
+      values.push(updates.search_log_uuid);
     }
     if (updates.chat_ai_respond_id !== undefined) {
       setClause.push(`chat_ai_respond_id = $${setClause.length + 1}`);
@@ -307,5 +352,49 @@ export class ChatQuery {
       WHERE conversation_id = ${conversationId}
     `;
     return result.count;
+  }
+
+  // ===========================
+  // Search Log queries
+  // ===========================
+
+  //* Create search log record
+  static async createSearchLog(log: CreateSearchLogRequest): Promise<SearchLog> {
+    const id_uuid = crypto.randomUUID();
+    const now = new Date();
+
+    const result = await sql`
+      INSERT INTO search_log (
+        id_uuid, chat_id, memory_chat_include, used_web_search, used_image_search,
+        search_context_web, search_context_picture, created_at
+      ) VALUES (
+        ${id_uuid}, ${log.chat_id}, ${log.memory_chat_include},
+        ${log.used_web_search}, ${log.used_image_search},
+        ${log.search_context_web ? JSON.stringify(log.search_context_web) : null},
+        ${log.search_context_picture ? JSON.stringify(log.search_context_picture) : null},
+        ${now}
+      )
+      RETURNING *
+    `;
+
+    return result[0] as unknown as SearchLog;
+  }
+
+  //* Get search log by UUID
+  static async getSearchLogByUuid(id_uuid: string): Promise<SearchLog | null> {
+    const result = await sql`
+      SELECT * FROM search_log
+      WHERE id_uuid = ${id_uuid}
+    `;
+    return result.length > 0 ? (result[0] as unknown as SearchLog) : null;
+  }
+
+  //* Get search log by chat ID
+  static async getSearchLogByChatId(chatId: string): Promise<SearchLog | null> {
+    const result = await sql`
+      SELECT * FROM search_log
+      WHERE chat_id = ${chatId}
+    `;
+    return result.length > 0 ? (result[0] as unknown as SearchLog) : null;
   }
 }

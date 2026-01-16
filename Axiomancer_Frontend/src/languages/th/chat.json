@@ -80,7 +80,9 @@
     "imageSearchEnabled": "เปิดใช้งานการค้นหารูปภาพ",
     "selectModelAlert": "กรุณาเลือกโมเดลสำหรับโหมดเดี่ยว",
     "selectPromptAlert": "กรุณาเลือกพรอมต์สำหรับโหมดเดี่ยว",
-    "selectModelOrAutoAlert": "กรุณาเลือกโมเดลหรือเปิดใช้งานการเลือกอัตโนมัติ"
+    "selectModelOrAutoAlert": "กรุณาเลือกโมเดลหรือเปิดใช้งานการเลือกอัตโนมัติ",
+    "chatMemory": "ความจำการสนทนา",
+    "messagesMemory": "ข้อความ"
   },
   "apiKey": {
     "title": "คีย์ OpenRouter API",

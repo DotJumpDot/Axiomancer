@@ -293,9 +293,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         model_id: t.Optional(t.String()),
         prompt_profile_id: t.Optional(t.String()),
         routing_mode: t.Optional(t.Union([t.Literal("auto"), t.Literal("manual")])),
-        used_web_search: t.Optional(t.Boolean()),
-        used_image_search: t.Optional(t.Boolean()),
-        search_context: t.Optional(t.Any()),
+        search_log_uuid: t.Optional(t.String()),
       }),
     }
   )
@@ -326,6 +324,8 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           {
             webSearch: body.webSearch,
             imageSearch: body.imageSearch,
+            autoRouting: body.autoRouting,
+            memoryCount: body.memoryCount,
           },
           auth.user.id
         );
@@ -360,6 +360,8 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         prompt_profile_id: t.Optional(t.String()),
         webSearch: t.Optional(t.Boolean()),
         imageSearch: t.Optional(t.Boolean()),
+        autoRouting: t.Optional(t.Boolean()),
+        memoryCount: t.Optional(t.Number()),
       }),
     }
   )

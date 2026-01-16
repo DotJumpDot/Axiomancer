@@ -35,6 +35,7 @@
   let apiKeyDialog: any;
   let userSettingDialog: any;
   let languageDropdownRef: HTMLElement;
+  let modeDropdownRef: HTMLElement;
   // svelte-ignore non_reactive_update
     let promptDropdownRef: HTMLElement;
   let isInitializing = $state(true);
@@ -74,6 +75,9 @@
 
     // Click outside handler for dropdowns
     const handleClickOutside = (event: MouseEvent) => {
+      if (modeDropdownRef && !modeDropdownRef.contains(event.target as Node)) {
+        showModelDropdown = false;
+      }
       if (languageDropdownRef && !languageDropdownRef.contains(event.target as Node)) {
         showLanguageDropdown = false;
       }
@@ -304,7 +308,7 @@
   <div class="header-left">
     <!-- Mode Selector -->
     {#if authStore.isAuthenticated}
-      <div class="dropdown mode-selector">
+      <div class="dropdown mode-selector" bind:this={modeDropdownRef}>
         <button
           class="dropdown-trigger"
           onclick={() => (showModelDropdown = !showModelDropdown)}

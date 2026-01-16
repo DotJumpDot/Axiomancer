@@ -80,7 +80,9 @@
     "imageSearchEnabled": "Image search enabled",
     "selectModelAlert": "Please select a model for single mode",
     "selectPromptAlert": "Please select a prompt for single mode",
-    "selectModelOrAutoAlert": "Please select a model or enable auto-routing"
+    "selectModelOrAutoAlert": "Please select a model or enable auto-routing",
+    "chatMemory": "Chat Memory",
+    "messagesMemory": "messages"
   },
   "apiKey": {
     "title": "OpenRouter API Key",

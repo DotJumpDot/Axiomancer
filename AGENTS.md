@@ -102,13 +102,13 @@ The Axiomancer backend implements the following core entities:
 
 #### **Chat**
 
-| Purpose                       | Details                                                                                                                                                                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Message Storage**           | Stores individual messages (user/assistant/system) within a conversation                                                                                                                                                             |
-| **Routing & Search Metadata** | Tracks which AI model was used, routing mode, and search integrations                                                                                                                                                                |
-| **Performance Metrics**       | Records token usage and response latency                                                                                                                                                                                             |
-| **Fields**                    | id (UUID), conversation_id (FK), role, content, model_id (FK), prompt_profile_id (FK), routing_mode (auto/manual), used_web_search, used_image_search, search_context (JSON), token_usage (JSON), latency_ms, created_at, updated_at |
-| **Relationships**             | Belongs to Conversation; references AiModel and PromptProfile; may have many SearchLog entries                                                                                                                                       |
+| Purpose                       | Details                                                                                                                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Message Storage**           | Stores individual messages (user/assistant/system) within a conversation                                                                                                                                |
+| **Routing & Search Metadata** | Tracks which AI model was used, routing mode, and links to search log                                                                                                                                   |
+| **Performance Metrics**       | Records token usage and response latency via linked AI response                                                                                                                                         |
+| **Fields**                    | id (UUID), conversation_id (FK), role, content, model_id (FK), prompt_profile_id (FK), routing_mode (auto/manual), search_log_uuid (FK), chat_ai_respond_id (FK), respond_error, created_at, updated_at |
+| **Relationships**             | Belongs to Conversation; references AiModel, PromptProfile, SearchLog, and ChatAiRespond                                                                                                                |
 
 #### **AI Model**
 
@@ -131,12 +131,13 @@ The Axiomancer backend implements the following core entities:
 
 #### **Search Log**
 
-| Purpose             | Details                                                                                                |
-| ------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Search Tracking** | Records all search queries (web/image) performed during conversations                                  |
-| **Audit Trail**     | Enables analysis of search patterns and effectiveness                                                  |
-| **Fields**          | id (UUID), message_id (FK), provider (duckduckgo/pixabay), query, result_count, created_at, updated_at |
-| **Relationships**   | References Chat message; many logs per message for multi-source searches                               |
+| Purpose             | Details                                                                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Search Tracking** | Records all search queries (web/image) performed during conversations with configurable memory settings                                                                             |
+| **Memory Control**  | Stores how many previous messages were included in context for each AI request                                                                                                      |
+| **Audit Trail**     | Enables analysis of search patterns, memory usage, and effectiveness                                                                                                                |
+| **Fields**          | id_no (PK int), id_uuid (unique), chat_id (FK), memory_chat_include (int), used_web_search, used_image_search, search_context_web (JSON), search_context_picture (JSON), created_at |
+| **Relationships**   | Linked to Chat message via chat_id; one log per user message                                                                                                                        |
 
 #### **User Favorite**
 

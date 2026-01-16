@@ -39,6 +39,26 @@
 
   // Show reminder for AI messages with code blocks
   const hasCodeInContent = $derived(markdownData.codeBlocks.length > 0);
+
+  // Parse search context (handle both object and string)
+  const webResultsCount = $derived.by(() => {
+    if (!message.search_log?.search_context_web) return 0;
+    
+    const context = message.search_log.search_context_web;
+    let parsed = null;
+    
+    if (typeof context === 'string') {
+      try {
+        parsed = JSON.parse(context);
+      } catch {
+        return 0;
+      }
+    } else {
+      parsed = context;
+    }
+    
+    return parsed?.results?.length || 0;
+  });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -88,16 +108,17 @@
     </div>
   {/if}
 
-  {#if !isUser && (message.used_web_search || message.used_image_search)}
+  {#if !isUser && message.search_log}
     <div class="message-meta">
-      {#if message.used_web_search}
-        {#if message.search_context?.web_search?.results && message.search_context.web_search.results.length > 0}
+      {#if message.search_log.used_web_search}
+        {#if webResultsCount > 0}
           <span class="meta-item search">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
-            Web ({message.search_context.web_search.results.length} results)
+            Web ({webResultsCount} results)
           </span>
         {:else}
           <span class="meta-item search no-results">
@@ -107,18 +128,26 @@
               <line x1="15" y1="9" x2="9" y2="15"></line>
               <line x1="9" y1="9" x2="15" y2="15"></line>
             </svg>
-            Web - No results found
+            Web - No results
           </span>
         {/if}
       {/if}
-      {#if message.used_image_search}
+      {#if message.search_log.used_image_search}
         <span class="meta-item search">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <circle cx="8.5" cy="8.5" r="1.5"></circle>
             <polyline points="21 15 16 10 5 21"></polyline>
           </svg>
-          Image
+          Image search
+        </span>
+      {/if}
+      {#if message.search_log.memory_chat_include !== 20}
+        <span class="meta-item memory">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+          {message.search_log.memory_chat_include} msgs
         </span>
       {/if}
     </div>
@@ -325,6 +354,7 @@
     margin-top: 12px;
     padding-top: 8px;
     border-top: 1px solid var(--border-color, #2d2d2d);
+    flex-wrap: wrap;
   }
 
   .meta-item {
@@ -333,13 +363,23 @@
     gap: 4px;
     font-size: 11px;
     color: var(--text-secondary, #666);
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .meta-item.search {
     color: var(--primary-color, #6366f1);
+    background: rgba(99, 102, 241, 0.1);
   }
 
   .meta-item.search.no-results {
     color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .meta-item.memory {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
   }
 </style>

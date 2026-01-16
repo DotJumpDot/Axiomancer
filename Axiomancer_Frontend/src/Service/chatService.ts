@@ -94,6 +94,7 @@ export const chatService = {
       autoRouting?: boolean;
       webSearch?: boolean;
       imageSearch?: boolean;
+      memoryCount?: number;
     }
   ) {
     return apiClient.post<{ userMessage: Chat; aiResponse?: ChatAiRespond }>(
