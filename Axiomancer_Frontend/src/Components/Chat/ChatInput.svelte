@@ -19,12 +19,12 @@
     return aiStore.enabledModels.find(m => m.model_key === chatStore.currentModelKey) || null;
   });
 
-  // Check if input should be disabled (auto mode requires both preset and decision model)
+  // Check if input should be disabled
   let isInputDisabled = $derived.by(() => {
     if (chatStore.isSending) return true;
     if (aiStore.autoRoutingEnabled) {
-      // In auto mode, require both preset and decision model
-      return !selectionStore.currentPresetName || !selectionStore.currentDecisionModel;
+      // In auto mode, require preset name and selected model
+      return !selectionStore.currentPresetName || !aiStore.selectedModel;
     }
     return false;
   });
@@ -88,10 +88,10 @@
 
     // Get model key based on mode:
     // - Single mode: use chatStore.currentModelKey
-    // - Auto mode: use selectionStore.currentDecisionModel (the decision model)
+    // - Auto mode: use aiStore.selectedModel (the currently selected model)
     const modelKey = !isAutoRouting 
       ? chatStore.currentModelKey 
-      : selectionStore.currentDecisionModel;
+      : aiStore.selectedModel?.model_key || null;
     
     // Get prompt ID based on mode
     const promptId = !isAutoRouting 

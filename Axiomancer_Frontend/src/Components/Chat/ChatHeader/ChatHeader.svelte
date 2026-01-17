@@ -26,6 +26,7 @@
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
   let currentPresetName = $state<string | null>(null);
+  let currentPresetId = $state<number | null>(null);
 
   // Single mode selections
   let selectedModelKey = $state<string | null>(null);
@@ -47,6 +48,7 @@
   // svelte-ignore non_reactive_update
     let promptDropdownRef: HTMLElement;
   let isInitializing = $state(true);
+  let hasLoadedPreset = $state(false);
 
   // Derived state for API key status - defaults to true until we know otherwise
   let hasApiKey = $derived(authStore.currentUser ? !!authStore.currentUser.openrouter_api_key : true);
@@ -76,6 +78,12 @@
       } catch (error) {
         console.error("Failed to load stored user:", error);
       }
+    }
+    
+    // Load preset and decision model if authenticated and in auto mode on initial mount
+    if (authStore.isAuthenticated && authStore.getMode() === 'auto') {
+      await loadAndApplyPreset();
+      hasLoadedPreset = true;
     }
     
     // Mark initialization as complete
@@ -152,26 +160,42 @@
       
       // Only update if different to avoid infinite loops
       if (currentMode !== savedMode) {
+        const previousMode = currentMode;
         currentMode = savedMode;
+        
+        // Only load preset when actually switching to auto mode (not during initialization)
+        if (previousMode !== 'auto' && savedMode === 'auto' && !isInitializing) {
+          loadAndApplyPreset();
+          hasLoadedPreset = true;
+        }
+      }
+      
+      // If we're in auto mode and haven't loaded preset yet, load it now
+      // This handles the case where auth completes after initialization
+      if (savedMode === 'auto' && !hasLoadedPreset) {
+        loadAndApplyPreset();
       }
       
       // Apply to aiStore
-      if (savedMode === 'auto') {
+      if (currentMode === 'auto') {
         aiStore.enableAutoRouting();
-        // Load and apply preset and decision model when switching to auto mode
-        loadAndApplyPresetAndDecisionModel();
       } else {
         aiStore.disableAutoRouting();
       }
     }
   });
 
-  //* Load and apply preset and decision model from localStorage
-  async function loadAndApplyPresetAndDecisionModel() {
+  //* Load and apply preset from localStorage
+  async function loadAndApplyPreset() {
     if (!authStore.currentUser) return;
     
+    // Prevent duplicate loading
+    if (hasLoadedPreset) return;
+    
     const savedPreset = authStore.getPreset();
-    const savedDecisionModel = authStore.getDecisionModel();
+    
+    // Store current preset ID for passing to PresetPopup
+    currentPresetId = savedPreset;
     
     if (savedPreset !== null) {
       try {
@@ -182,34 +206,16 @@
         if (presetData && presetData.user_uuid === authStore.currentUser.uuid) {
           currentPresetName = presetData.preset_name || `Preset ${savedPreset}`;
           
-          // Apply decision model if saved
-          const decisionModelToUse = savedDecisionModel || presetData.decision_model;
-          if (decisionModelToUse) {
-            autoDecidingModelKey = decisionModelToUse;
-            const model = aiStore.enabledModels.find(m => m.model_key === decisionModelToUse);
-            if (model) {
-              autoDecidingModelName = model.display_name;
-              aiStore.selectModelByKey(decisionModelToUse);
-            }
-          }
-          
           // Save to selection store
           selectionStore.setCurrentPreset(
             currentPresetName,
-            decisionModelToUse || null,
             presetData.prompt_id || null
           );
+          
+          hasLoadedPreset = true;
         }
       } catch (error) {
         console.error("Failed to load preset data:", error);
-      }
-    } else if (savedDecisionModel) {
-      // If no preset saved but decision model is saved, apply it
-      autoDecidingModelKey = savedDecisionModel;
-      const model = aiStore.enabledModels.find(m => m.model_key === savedDecisionModel);
-      if (model) {
-        autoDecidingModelName = model.display_name;
-        aiStore.selectModelByKey(savedDecisionModel);
       }
     }
   }
@@ -255,18 +261,27 @@
   }
 
   function toggleMode() {
-    currentMode = currentMode === 'auto' ? 'single' : 'auto';
+    const newMode = currentMode === 'auto' ? 'single' : 'auto';
+    currentMode = newMode;
     
     // Save mode to localStorage
     if (authStore.isAuthenticated) {
-      authStore.saveMode(currentMode);
+      authStore.saveMode(newMode);
     }
     
     // Update aiStore state
-    if (currentMode === 'auto') {
+    if (newMode === 'auto') {
       aiStore.enableAutoRouting();
+      // Reset loaded flag to allow loading preset
+      hasLoadedPreset = false;
+      // Load and apply preset when switching to auto mode
+      loadAndApplyPreset();
     } else {
       aiStore.disableAutoRouting();
+      // Clear preset state when switching to single mode
+      currentPresetName = null;
+      currentPresetId = null;
+      hasLoadedPreset = false;
       // When switching to single mode, ensure selections are initialized
       chatStore.initializeSingleMode();
       selectedModelKey = chatStore.currentModelKey;
@@ -320,29 +335,15 @@
       autoDecidingModelName = model.display_name;
       aiStore.selectModelByKey(modelKey);
     }
-    // Save decision model to localStorage
-    authStore.saveDecisionModel(modelKey);
     // Update selection store to enable input (keep existing prompt ID)
-    selectionStore.setCurrentPreset(currentPresetName, modelKey, selectionStore.currentPromptId);
+    selectionStore.setCurrentPreset(currentPresetName, selectionStore.currentPromptId);
     showAutoModelSelector = false;
   }
 
   function handlePresetApply(event: any) {
-    const { models, prompt, presetName, decisionModel, presetId } = event.detail;
-    console.log('Applying preset:', { models, prompt, presetName, decisionModel, presetId });
+    const { models, prompt, presetName, presetId } = event.detail;
+    console.log('Applying preset:', { models, prompt, presetName, presetId });
     currentPresetName = presetName;
-    
-    // Apply decision model if provided
-    if (decisionModel) {
-      autoDecidingModelKey = decisionModel;
-      const model = aiStore.enabledModels.find(m => m.model_key === decisionModel);
-      if (model) {
-        autoDecidingModelName = model.display_name;
-        aiStore.selectModelByKey(decisionModel);
-      }
-      // Save decision model to localStorage
-      authStore.saveDecisionModel(decisionModel);
-    }
     
     // Save preset to localStorage if presetId is provided
     if (presetId !== undefined && presetId !== null) {
@@ -350,27 +351,15 @@
     }
     
     // Save to selection store for global access (include prompt ID)
-    selectionStore.setCurrentPreset(presetName, decisionModel || null, prompt);
+    selectionStore.setCurrentPreset(presetName, prompt);
     
     closePresetPopup();
   }
 
   function handlePresetSelected(event: any) {
-    const { presetName, decisionModel, presetId } = event.detail;
-    console.log('Preset selected:', presetName, 'Decision model:', decisionModel, 'Preset ID:', presetId);
+    const { presetName, presetId } = event.detail;
+    console.log('Preset selected:', presetName, 'Preset ID:', presetId);
     currentPresetName = presetName;
-    
-    // Apply decision model if provided
-    if (decisionModel) {
-      autoDecidingModelKey = decisionModel;
-      const model = aiStore.enabledModels.find(m => m.model_key === decisionModel);
-      if (model) {
-        autoDecidingModelName = model.display_name;
-        aiStore.selectModelByKey(decisionModel);
-      }
-      // Save decision model to localStorage
-      authStore.saveDecisionModel(decisionModel);
-    }
     
     // Save preset to localStorage if presetId is provided
     if (presetId !== undefined && presetId !== null) {
@@ -378,7 +367,7 @@
     }
     
     // Save to selection store for global access (prompt ID will be set when preset is applied)
-    selectionStore.setCurrentPreset(presetName, decisionModel || null, null);
+    selectionStore.setCurrentPreset(presetName, null);
   }
 
   function openPromptEditor() {
@@ -783,6 +772,7 @@
   <PresetPopup
     isOpen={showPresetPopup}
     onClose={closePresetPopup}
+    currentPresetId={currentPresetId}
     on:apply={handlePresetApply}
     on:presetSelected={handlePresetSelected}
   />

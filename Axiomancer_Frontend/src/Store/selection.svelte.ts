@@ -11,7 +11,6 @@ let error = $state<string | null>(null);
 
 // Current active preset state (for auto mode)
 let currentPresetName = $state<string | null>(null);
-let currentDecisionModel = $state<string | null>(null);
 let currentPromptId = $state<string | null>(null);
 
 async function loadPresetsByUserUUID(userUuid: string) {
@@ -214,19 +213,13 @@ function resetSelection() {
   error = null;
 }
 
-function setCurrentPreset(
-  presetName: string | null,
-  decisionModel: string | null,
-  promptId: string | null = null
-) {
+function setCurrentPreset(presetName: string | null, promptId: string | null = null) {
   currentPresetName = presetName;
-  currentDecisionModel = decisionModel;
   currentPromptId = promptId;
 }
 
 function clearCurrentPreset() {
   currentPresetName = null;
-  currentDecisionModel = null;
   currentPromptId = null;
 }
 
@@ -250,9 +243,6 @@ export const selectionStore = {
   },
   get currentPresetName() {
     return currentPresetName;
-  },
-  get currentDecisionModel() {
-    return currentDecisionModel;
   },
   get currentPromptId() {
     return currentPromptId;

@@ -5,7 +5,6 @@ export interface UserSelectedModels {
   ai_model_ids: string[];
   prompt_id?: string;
   preset_name?: string;
-  decision_model?: string; // Model key for auto-routing decision making
   searchable: boolean;
   created_at: string;
   updated_at: string;
@@ -30,7 +29,6 @@ export interface CreatePresetRequest {
   ai_model_ids: string[];
   prompt_id?: string;
   preset_name?: string;
-  decision_model?: string;
   searchable?: boolean;
   openrouter_api_key: string;
 }
@@ -39,7 +37,6 @@ export interface UpdatePresetRequest {
   ai_model_ids?: string[];
   prompt_id?: string;
   preset_name?: string;
-  decision_model?: string;
   searchable?: boolean;
   openrouter_api_key?: string;
 }

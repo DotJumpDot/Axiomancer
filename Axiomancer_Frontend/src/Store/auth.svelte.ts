@@ -208,7 +208,7 @@ function getSelections(): { modelKey: string | null; promptId: string | null } {
 }
 
 //* Save mode selection to AxmLogin
-function saveMode(mode: 'auto' | 'single') {
+function saveMode(mode: "auto" | "single") {
   const axmLogin = localStorage.getItem("AxmLogin");
   if (axmLogin) {
     try {
@@ -222,17 +222,17 @@ function saveMode(mode: 'auto' | 'single') {
 }
 
 //* Get mode selection from AxmLogin
-function getMode(): 'auto' | 'single' {
+function getMode(): "auto" | "single" {
   const axmLogin = localStorage.getItem("AxmLogin");
   if (axmLogin) {
     try {
       const loginData = JSON.parse(axmLogin);
-      return loginData.mode_last_selected || 'auto';
+      return loginData.mode_last_selected || "auto";
     } catch (error) {
       console.error("Failed to get mode from AxmLogin:", error);
     }
   }
-  return 'auto';
+  return "auto";
 }
 
 //* Save preset selection to AxmLogin
@@ -258,34 +258,6 @@ function getPreset(): number | null {
       return loginData.latest_preset || null;
     } catch (error) {
       console.error("Failed to get preset from AxmLogin:", error);
-    }
-  }
-  return null;
-}
-
-//* Save decision model selection to AxmLogin
-function saveDecisionModel(modelId: string | null) {
-  const axmLogin = localStorage.getItem("AxmLogin");
-  if (axmLogin) {
-    try {
-      const loginData = JSON.parse(axmLogin);
-      loginData.latest_decision_model = modelId;
-      localStorage.setItem("AxmLogin", JSON.stringify(loginData));
-    } catch (error) {
-      console.error("Failed to save decision model to AxmLogin:", error);
-    }
-  }
-}
-
-//* Get decision model selection from AxmLogin
-function getDecisionModel(): string | null {
-  const axmLogin = localStorage.getItem("AxmLogin");
-  if (axmLogin) {
-    try {
-      const loginData = JSON.parse(axmLogin);
-      return loginData.latest_decision_model || null;
-    } catch (error) {
-      console.error("Failed to get decision model from AxmLogin:", error);
     }
   }
   return null;
@@ -321,8 +293,6 @@ export const authStore = {
   getMode,
   savePreset,
   getPreset,
-  saveDecisionModel,
-  getDecisionModel,
 };
 
 export default authStore;

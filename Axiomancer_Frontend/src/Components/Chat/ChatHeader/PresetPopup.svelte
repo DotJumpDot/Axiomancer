@@ -4,49 +4,11 @@
   import { selectionService } from "@/Service";
   import { formatModelName, formatProviderName, formatContextLength, getTranslations, type LanguageCode } from "@/Function";
   import { processMarkdown } from "@/Function/markdown";
+  import { DEFAULT_SYSTEM_PROMPT } from "@/Function/const_template";
   import CodeBlock from "@/Components/Chat/MessageMarkdown/CodeBlock.svelte";
   import type { AiModel, UserSelectedModels } from "@/Types";
 
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
-
-  // * Default Intelligent Model Router system prompt
-  const DEFAULT_SYSTEM_PROMPT = `### System Prompt: The Intelligent Model Router
-
-**Role:** You are a context-aware routing system. Your only job is to analyze the user's input and select the most efficient AI model to handle it. You must output **only** the JSON response containing the selected model and the reasoning. Do not generate the actual answer to the user's query.
-
-**Available Models:**
-1.  **NVIDIA: Nemotron Nano 12B 2 VL (free)**
-    *   **Best for:** Inputs containing images, visual data, or screenshots.
-    *   **Capabilities:** Multimodal (Vision + Language).
-2.  **MiMo-V2-Flash (free)**
-    *   **Best for:** Very long contexts, complex reasoning tasks, and large blocks of text (e.g., >1000 words).
-    *   **Capabilities:** High token limit, fast processing of dense text.
-3.  **Arcee Ai: Trinity Mini (free)**
-    *   **Best for:** Short, simple, and standard queries.
-    *   **Capabilities:** Efficient, lightweight, and fast for everyday tasks.
-
-**Routing Logic (Decision Tree):**
-
-1.  **Check for Visuals:** Does the user's input contain an image, a reference to an image, or data that requires visual analysis?
-    *   **YES** → Select \`NVIDIA: Nemotron Nano 12B 2 VL (free)\`.
-    *   **NO** → Proceed to step 2.
-
-2.  **Check for Length/Complexity:** Is the user's input very long (e.g., a long article, extensive code, or a complex multi-part question exceeding typical conversation length)?
-    *   **YES** → Select \`MiMo-V2-Flash (free)\`.
-    *   **NO** → Proceed to step 3.
-
-3.  **Default Selection:** Is the input short, straightforward, or a standard conversational query?
-    *   **YES** → Select \`Arcee Ai: Trinity Mini (free)\`.
-
-**Output Format:**
-You must strictly output a valid JSON object. Do not include any markdown formatting (like \`\`\`json) unless the system requires it, but raw JSON is preferred.
-
-\`\`\`json
-{
-  "selected_model": "Model Name",
-  "reasoning": "Brief explanation of why this model was chosen (e.g., 'Contains an image' or 'Context is very long')."
-}
-\`\`\``;
 
   // Focus input action
   function focusInput(node: HTMLInputElement | HTMLTextAreaElement) {
@@ -56,12 +18,14 @@ You must strictly output a valid JSON object. Do not include any markdown format
     }
   }
 
-  let { 
-    isOpen = false, 
-    onClose
-  }: { 
-    isOpen?: boolean; 
+  let {
+    isOpen = false,
+    onClose,
+    currentPresetId = null
+  }: {
+    isOpen?: boolean;
     onClose?: () => void;
+    currentPresetId?: number | null;
   } = $props();
 
   const dispatch = createEventDispatcher();
@@ -87,8 +51,16 @@ You must strictly output a valid JSON object. Do not include any markdown format
   
   // Preset management
   let userPresets = $state<UserSelectedModels[]>([]);
-  let selectedPresetId = $state<number | null>(null);
+  // svelte-ignore state_referenced_locally
+    let selectedPresetId = $state<number | null>(currentPresetId || null);
   let isLoadingPresets = $state(false);
+  
+  // Update selectedPresetId when currentPresetId prop changes
+  $effect(() => {
+    if (currentPresetId !== null && selectedPresetId === null) {
+      selectedPresetId = currentPresetId;
+    }
+  });
   let isRenaming = $state(false);
   let renameValue = $state('');
   let errorMessage = $state<string | null>(null);
@@ -111,7 +83,7 @@ You must strictly output a valid JSON object. Do not include any markdown format
 
   // Load user presets on mount
   onMount(async () => {
-    await loadUserPresets(true);
+    await loadUserPresets(true); // Auto-select first preset only on initial mount
   });
 
   // Clear API key error when API key becomes available
@@ -124,7 +96,7 @@ You must strictly output a valid JSON object. Do not include any markdown format
   // Load presets when popup opens and user is authenticated
   $effect(() => {
     if (isOpen && authStore.currentUser?.uuid && userPresets.length === 0) {
-      loadUserPresets(true);
+      loadUserPresets(false); // Don't auto-select when loading for first time in opened popup
     }
   });
 
@@ -137,14 +109,26 @@ You must strictly output a valid JSON object. Do not include any markdown format
       const presets = await selectionService.getPresetsByUserUUID(authStore.currentUser.uuid);
       userPresets = presets;
 
-      // Preserve current selection if it still exists, otherwise default to first preset
+      // Preserve current selection if it still exists
+      // Priority: 1) Previous selection, 2) currentPresetId prop, 3) First preset (if autoSelectFirst)
       let presetToSelect: UserSelectedModels | null = null;
+      
       if (previousSelectedId !== null) {
+        // Preserve previously selected preset
         presetToSelect = presets.find((p) => p.preset === previousSelectedId) || null;
+      } else if (currentPresetId !== null) {
+        // Use currentPresetId prop from ChatHeader (from localStorage)
+        presetToSelect = presets.find((p) => p.preset === currentPresetId) || null;
       }
-      if (!presetToSelect && presets.length > 0 && autoSelectFirst) {
+      
+      // Only auto-select first preset if:
+      // - We don't have a current selection
+      // - autoSelectFirst is true
+      // - No currentPresetId prop was provided
+      if (!presetToSelect && presets.length > 0 && autoSelectFirst && currentPresetId === null && previousSelectedId === null) {
         presetToSelect = presets[0];
       }
+      
       if (presetToSelect) {
         selectPreset(presetToSelect);
       }
@@ -160,11 +144,10 @@ You must strictly output a valid JSON object. Do not include any markdown format
       selectedPresetId = preset.preset;
       selectedModels = [...preset.ai_model_ids];
       selectedPrompt = preset.prompt_id || null;
-      // Dispatch event to update ChatHeader with preset name and decision model (live preview, doesn't close popup)
+      // Dispatch event to update ChatHeader with preset name (live preview, doesn't close popup)
       const presetName = getPresetDisplayName(preset);
       dispatch('presetSelected', {
         presetName: presetName,
-        decisionModel: preset.decision_model || null,
         presetId: preset.preset
       });
     } else {
@@ -172,10 +155,9 @@ You must strictly output a valid JSON object. Do not include any markdown format
       selectedPresetId = null;
       selectedModels = [];
       selectedPrompt = null;
-      // Reset preset name and decision model in ChatHeader when creating new preset
+      // Reset preset name in ChatHeader when creating new preset
       dispatch('presetSelected', {
         presetName: null,
-        decisionModel: null,
         presetId: null
       });
     }
@@ -223,16 +205,12 @@ You must strictly output a valid JSON object. Do not include any markdown format
       return;
     }
 
-    // Get the current deciding model from aiStore
-    const decidingModelKey = aiStore.selectedModel?.model_key || null;
-
     try {
       if (selectedPresetId !== null) {
         // Update existing preset
         await selectionService.updatePreset(selectedPresetId, {
           ai_model_ids: selectedModels,
           prompt_id: selectedPrompt || undefined,
-          decision_model: decidingModelKey || undefined,
           openrouter_api_key: authStore.currentUser.openrouter_api_key,
         });
         successMessage = "✓ Preset updated successfully!";
@@ -244,7 +222,6 @@ You must strictly output a valid JSON object. Do not include any markdown format
           preset_name: getNextAvailablePresetName(),
           ai_model_ids: selectedModels,
           prompt_id: selectedPrompt || undefined,
-          decision_model: decidingModelKey || undefined,
           openrouter_api_key: authStore.currentUser.openrouter_api_key,
         });
         successMessage = "✓ Preset created successfully!";
@@ -270,7 +247,6 @@ You must strictly output a valid JSON object. Do not include any markdown format
       models: selectedModels,
       prompt: selectedPrompt,
       presetName: presetName,
-      decisionModel: currentPreset?.decision_model || null,
       presetId: selectedPresetId
     });
     closePopup();
