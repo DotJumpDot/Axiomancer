@@ -119,6 +119,7 @@ export const chatService = {
       steamSearch?: boolean;
       memoryCount?: number;
     },
+    signal: AbortSignal,
     onChunk: (chunk: string) => void,
     onDone: (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => void,
     onError: (error: string) => void
@@ -148,6 +149,7 @@ export const chatService = {
         method: "POST",
         headers,
         body: JSON.stringify(data),
+        signal: signal, // Add abort signal
       }
     );
 

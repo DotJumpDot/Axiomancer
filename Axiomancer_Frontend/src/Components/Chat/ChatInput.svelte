@@ -40,8 +40,14 @@
   }
 
   async function handleSend() {
+    // If currently sending, stop the stream
+    if (chatStore.isSending) {
+      chatStore.stopStreaming();
+      return;
+    }
+
     const content = inputValue.trim();
-    if (!content || chatStore.isSending) return;
+    if (!content) return;
 
     // Check if in single mode and model/prompt are selected
     const isAutoRouting = aiStore.autoRoutingEnabled;
@@ -157,13 +163,14 @@
 
       <button
         class="action-btn send-btn"
+        class:cancel-btn={chatStore.isSending}
         onclick={handleSend}
-        disabled={!inputValue.trim() || chatStore.isSending}
-        title={t.input.sendMessage}
+        disabled={!chatStore.isSending && !inputValue.trim()}
+        title={chatStore.isSending ? t.input.stopGeneration || "Stop generation" : t.input.sendMessage}
       >
         {#if chatStore.isSending}
-          <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
           </svg>
         {:else}
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -428,7 +435,16 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+.cancel-btn {
+    background: #ef4444 !important;
+    color: white !important;
+  }
 
+  .cancel-btn:hover:not(:disabled) {
+    background: #dc2626 !important;
+  }
+
+  
   .upload-btn {
     cursor: pointer;
   }

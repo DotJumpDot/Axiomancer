@@ -26,11 +26,12 @@ let imageSearchEnabled = $state(false);
 let steamSearchEnabled = $state(false);
 let currentPromptProfileId = $state<string | null>(null);
 let currentModelKey = $state<string | null>(null);
-let memoryCount = $state(7); // Default to 7 messages
+let memoryCount = $state(2); // Default to 7 messages
 
 // Streaming state
 let streamingContent = $state("");
 let isStreaming = $state(true);
+let streamAbortController = $state<AbortController | null>(null);
 
 //* Initialize from AxmLogin for single mode
 function initializeSingleMode() {
@@ -229,6 +230,9 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       // Use streaming mode
       let streamingAiMessage: Chat | null = null;
 
+      // Create AbortController for this stream
+      streamAbortController = new AbortController();
+
       await chatService.sendMessageStream(
         currentConversation!.id,
         {
@@ -241,6 +245,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
           steamSearch: steamSearchEnabled,
           memoryCount: options?.memoryCount ?? memoryCount,
         },
+        streamAbortController.signal,
         // onChunk
         (chunk: string) => {
           if (!streamingAiMessage) {
@@ -275,6 +280,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         },
         // onDone
         (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => {
+          streamAbortController = null;
           // Replace temp user message with actual saved message
           messages = messages.filter((m) => m.id !== userMessage.id);
           messages = [...messages, result.userMessage];
@@ -316,6 +322,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         },
         // onError
         (errorMessage: string) => {
+          streamAbortController = null;
           error = errorMessage;
           // Remove temp message on error
           messages = messages.filter((m) => !m.id.startsWith("temp-"));
@@ -461,6 +468,17 @@ function clearCurrentConversation() {
   messages = [];
 }
 
+//! Stop streaming AI response
+function stopStreaming() {
+  if (streamAbortController) {
+    streamAbortController.abort();
+    streamAbortController = null;
+    isSending = false;
+    // Remove any streaming messages
+    messages = messages.filter((m) => !m.id.startsWith("streaming-"));
+  }
+}
+
 // Export store object with getters for reactive access
 export const chatStore = {
   get conversations() {
@@ -533,6 +551,7 @@ export const chatStore = {
   setModelKey,
   clearCurrentConversation,
   initializeSingleMode,
+  stopStreaming,
 };
 
 export default chatStore;

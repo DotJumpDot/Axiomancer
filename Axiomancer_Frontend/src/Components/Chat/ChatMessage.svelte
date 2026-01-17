@@ -40,6 +40,36 @@
   const isUser = $derived(message.role === "user");
   const markdownData = $derived(processMarkdown(displayContentForError));
 
+  // Process content with streaming cursor injected
+  const processedMarkdownData = $derived.by(() => {
+    if (!isStreaming || markdownData.parts.length === 0) {
+      return markdownData;
+    }
+
+    // Clone the parts array
+    const parts = [...markdownData.parts];
+    const lastPart = parts[parts.length - 1];
+
+    // If the last part is HTML, inject the cursor before closing tags
+    if (lastPart.type === 'html') {
+      let content = lastPart.content;
+      // Find the last closing tag (</p>, </div>, etc.) and inject cursor before it
+      const lastClosingTagMatch = content.match(/(<\/[^>]+>)(\s*)$/);
+      if (lastClosingTagMatch) {
+        const beforeClosing = content.substring(0, lastClosingTagMatch.index);
+        const closingTag = lastClosingTagMatch[1];
+        const trailing = lastClosingTagMatch[2];
+        content = beforeClosing + '<span class="streaming-cursor-blink"> ▋</span>' + closingTag + trailing;
+      } else {
+        // No closing tag found, just append
+        content += '<span class="streaming-cursor-blink"> ▋</span>';
+      }
+      parts[parts.length - 1] = { ...lastPart, content };
+    }
+
+    return { ...markdownData, parts };
+  });
+
   // Show reminder for AI messages with code blocks
   const hasCodeInContent = $derived(markdownData.codeBlocks.length > 0);
 
@@ -88,19 +118,17 @@
   </div>
 
   <div class="message-content">
-    {#each markdownData.parts as part, index (part.id || index)}
-      {#if part.type === 'html' && isStreaming && index === markdownData.parts.length - 1}
-        {@html part.content + '<span class="streaming-cursor-inline">▋</span>'}
-      {:else if part.type === 'html'}
+    {#each processedMarkdownData.parts as part, index (part.id || index)}
+      {#if part.type === 'html'}
         {@html part.content}
       {:else if part.type === 'code'}
-        {#each markdownData.codeBlocks.filter(cb => cb.id === part.id) as codeBlock}
+        {#each processedMarkdownData.codeBlocks.filter(cb => cb.id === part.id) as codeBlock}
           <CodeBlock code={codeBlock.code} language={codeBlock.language} />
         {/each}
       {/if}
     {/each}
-    {#if isStreaming && (markdownData.parts.length === 0 || markdownData.parts[markdownData.parts.length - 1].type !== 'html')}
-      <span class="streaming-cursor-inline">▋</span>
+    {#if isStreaming && processedMarkdownData.parts.length === 0}
+      <span class="streaming-cursor-blink"> ▋</span>
     {/if}
   </div>
 
@@ -246,11 +274,12 @@
     color: var(--text-primary, #fff);
   }
 
-  .message-content :global(p) {
+  .message-content:not(.streaming-content) :global(p) {
+    display: block;
     margin: 0 0 12px;
   }
 
-  .message-content :global(p:last-child) {
+  .message-content:not(.streaming-content) :global(p:last-child) {
     margin-bottom: 0;
   }
 
@@ -395,14 +424,20 @@
     border-left: 3px solid var(--primary-color, #6366f1);
   }
 
-  .streaming-cursor-inline {
+  .streaming-cursor {
     display: inline;
     animation: blink 1s step-end infinite;
-    color: var(--primary-color, #6366f1);
+    color: var(--primary-color, #6366f1) !important;
     font-weight: bold;
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    white-space: nowrap;
+    line-height: inherit;
+  }
+
+  :global(.streaming-cursor-blink) {
+    display: inline;
+    animation: blink 1s step-end infinite;
+    color: #6366f1 !important;
+    font-weight: bold;
+    line-height: inherit;
   }
 
   @keyframes blink {
