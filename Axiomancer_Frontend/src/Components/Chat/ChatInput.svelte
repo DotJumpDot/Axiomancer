@@ -12,11 +12,18 @@
   let isComposing = $state(false);
   let showMemoryTooltip = $state(false);
   let memoryTooltipRef: HTMLDivElement | undefined = $state();
+  let showReasoningTooltip = $state(false);
+  let reasoningTooltipRef: HTMLDivElement | undefined = $state();
 
   // Get selected model for capabilities display (single mode only)
   let selectedModelForCap = $derived.by(() => {
     if (aiStore.autoRoutingEnabled) return null;
     return aiStore.enabledModels.find(m => m.model_key === chatStore.currentModelKey) || null;
+  });
+
+  // Check if current model has reasoning capability
+  let hasReasoningCapability = $derived.by(() => {
+    return selectedModelForCap?.capabilities.reasoning || false;
   });
 
   // Check if input should be disabled
@@ -105,6 +112,7 @@
       imageSearch: chatStore.imageSearchEnabled,
       steamSearch: chatStore.steamSearchEnabled,
       memoryCount: chatStore.memoryCount,
+      reasoningEffort: hasReasoningCapability && chatStore.reasoningEffort !== "disabled" ? chatStore.reasoningEffort : undefined,
     });
   }
 
@@ -120,6 +128,12 @@
 
   function toggleMemoryTooltip() {
     showMemoryTooltip = !showMemoryTooltip;
+    if (showMemoryTooltip) showReasoningTooltip = false; // Close reasoning when opening memory
+  }
+
+  function toggleReasoningTooltip() {
+    showReasoningTooltip = !showReasoningTooltip;
+    if (showReasoningTooltip) showMemoryTooltip = false; // Close memory when opening reasoning
   }
 
   let isMouseDownInside = $state(false);
@@ -145,6 +159,33 @@
       return () => {
         document.removeEventListener('mousedown', handleMouseDown);
         document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  });
+
+  let isReasoningMouseDownInside = $state(false);
+
+  function handleReasoningMouseDown(e: MouseEvent) {
+    if (reasoningTooltipRef && reasoningTooltipRef.contains(e.target as Node)) {
+      isReasoningMouseDownInside = true;
+    } else {
+      isReasoningMouseDownInside = false;
+    }
+  }
+
+  function handleReasoningMouseUp(e: MouseEvent) {
+    if (!isReasoningMouseDownInside && reasoningTooltipRef && !reasoningTooltipRef.contains(e.target as Node)) {
+      showReasoningTooltip = false;
+    }
+  }
+
+  $effect(() => {
+    if (showReasoningTooltip) {
+      document.addEventListener('mousedown', handleReasoningMouseDown);
+      document.addEventListener('mouseup', handleReasoningMouseUp);
+      return () => {
+        document.removeEventListener('mousedown', handleReasoningMouseDown);
+        document.removeEventListener('mouseup', handleReasoningMouseUp);
       };
     }
   });
@@ -283,7 +324,7 @@
             <input 
               type="number" 
               min="1" 
-              max="100" 
+              max="1000" 
               value={chatStore.memoryCount}
               oninput={(e) => chatStore.memoryCount = parseInt((e.target as HTMLInputElement).value) || 1}
               class="memory-value-input"
@@ -292,7 +333,7 @@
           <input 
             type="range" 
             min="1" 
-            max="100" 
+            max="1000" 
             value={chatStore.memoryCount}
             oninput={(e) => chatStore.memoryCount = parseInt((e.target as HTMLInputElement).value)}
             class="memory-slider"
@@ -309,7 +350,82 @@
     </div>
 
     {#if selectedModelForCap}
-      <div class="capabilities" style="margin-left: auto;">
+      <div class="reasoning-selector-wrapper" bind:this={reasoningTooltipRef} style="margin-left: auto;">
+        <button 
+          class="reasoning-button"
+          onclick={(e) => { e.stopPropagation(); toggleReasoningTooltip(); }}
+          title={t.input.reasoningEffort || "Reasoning Effort"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
+          <span>{chatStore.reasoningEffort === "disabled" ? t.input.reasoningDisabled : chatStore.reasoningEffort}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        {#if showReasoningTooltip}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div class="reasoning-tooltip" onclick={(e) => e.stopPropagation()} transition:slide={{ duration: 200, easing: cubicOut }}>
+            <div class="tooltip-header">
+              <span class="tooltip-title">{t.input.reasoningEffort || "Reasoning Effort"}</span>
+            </div>
+            <div class="reasoning-options">
+              {#if !hasReasoningCapability}
+                <button 
+                  class="reasoning-option disabled" 
+                  class:active={chatStore.reasoningEffort === "disabled"}
+                  onclick={() => { chatStore.reasoningEffort = "disabled"; showReasoningTooltip = false; }}
+                >
+                  <span class="option-label">{t.input.reasoningDisabled}</span>
+                  <span class="option-description">Model does not support reasoning</span>
+                </button>
+              {:else}
+                <button 
+                  class="reasoning-option" 
+                  class:active={chatStore.reasoningEffort === "minimal"}
+                  onclick={() => { chatStore.reasoningEffort = "minimal"; showReasoningTooltip = false; }}
+                >
+                  <span class="option-label">{t.input.reasoningMinimal}</span>
+                  <span class="option-description">Basic reasoning with minimal effort</span>
+                </button>
+                <button 
+                  class="reasoning-option" 
+                  class:active={chatStore.reasoningEffort === "low"}
+                  onclick={() => { chatStore.reasoningEffort = "low"; showReasoningTooltip = false; }}
+                >
+                  <span class="option-label">{t.input.reasoningLow}</span>
+                  <span class="option-description">Light reasoning for simple problems</span>
+                </button>
+                <button 
+                  class="reasoning-option" 
+                  class:active={chatStore.reasoningEffort === "medium"}
+                  onclick={() => { chatStore.reasoningEffort = "medium"; showReasoningTooltip = false; }}
+                >
+                  <span class="option-label">{t.input.reasoningMedium}</span>
+                  <span class="option-description">Balanced reasoning for moderate complexity</span>
+                </button>
+                <button 
+                  class="reasoning-option" 
+                  class:active={chatStore.reasoningEffort === "high"}
+                  onclick={() => { chatStore.reasoningEffort = "high"; showReasoningTooltip = false; }}
+                >
+                  <span class="option-label">{t.input.reasoningHigh}</span>
+                  <span class="option-description">Deep reasoning for complex problems</span>
+                </button>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
+    {#if selectedModelForCap}
+      <div class="capabilities">
         <div class="capability-icon fast" class:active={selectedModelForCap.capabilities.fast} title="Fast processing">
           {#if selectedModelForCap.capabilities.fast}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -746,6 +862,119 @@
     line-height: 1.4;
     color: var(--text-secondary, #888);
     margin: 0;
+  }
+
+  .reasoning-selector-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .reasoning-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--input-bg, #2d2d2d);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 6px;
+    color: var(--text-primary, #fff);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    text-transform: capitalize;
+  }
+
+  .reasoning-button:hover {
+    background: var(--hover-bg, #3d3d3d);
+    border-color: var(--primary-color, #6366f1);
+  }
+
+  .reasoning-button svg {
+    color: var(--text-secondary, #888);
+    flex-shrink: 0;
+  }
+
+  .reasoning-button span {
+    font-weight: 500;
+    min-width: 50px;
+    text-align: center;
+  }
+
+  .reasoning-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    min-width: 320px;
+    padding: 12px;
+    background: var(--bg-secondary, #2d2d2d);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+  }
+
+  .reasoning-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .reasoning-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 12px;
+    background: var(--input-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 8px;
+    color: var(--text-primary, #fff);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+
+  .reasoning-option:hover {
+    background: var(--hover-bg, #3d3d3d);
+    border-color: var(--primary-color, #6366f1);
+  }
+
+  .reasoning-option.active {
+    background: var(--primary-color, #6366f1);
+    border-color: var(--primary-color, #6366f1);
+  }
+
+  .reasoning-option.disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  .reasoning-option.disabled:hover {
+    background: var(--input-bg, #1a1a1a);
+    border-color: var(--border-color, #3d3d3d);
+  }
+
+  .reasoning-option.disabled.active {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+  }
+
+  .option-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    text-transform: capitalize;
+  }
+
+  .option-description {
+    font-size: 11px;
+    color: var(--text-secondary, #aaa);
+    line-height: 1.3;
+  }
+
+  .reasoning-option.active .option-description {
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .capabilities {

@@ -23,69 +23,128 @@
 
 ### 🤖 **Multi-AI Chat Interface**
 
-- Interactive text-based conversations with multiple OpenRouter AI models
-- Real-time streaming responses with markdown rendering
-- Persistent conversation history with metadata tracking
+- **Interactive Conversations** - Real-time chat with multiple OpenRouter AI models
+- **Streaming Responses** - Word-by-word AI responses with configurable streaming
+- **Rich Markdown Support** - Full markdown rendering with syntax-highlighted code blocks
+- **Code Block Features** - Copy buttons, language detection, and code safety reminders
+- **Persistent History** - Automatic conversation saving with full metadata tracking
+- **Message Management** - Copy messages, edit conversation titles, archive/unarchive chats
 
-### 🧠 **Intelligent Auto-Routing System**
+### 🧠 **Dual-Mode AI Selection**
 
-Automatically routes conversations to optimal AI models based on:
+#### **Auto-Routing Mode**
 
-- **Content Classification** - Analyzes prompt complexity and type
-- **Prompt Profiles** - User-defined system prompts and routing rules
-- **Model Capabilities** - Reasoning, coding, vision, and speed optimization
-- **Cost Optimization** - Balances performance with token costs
+- **Intelligent Model Selection** - Automatically routes to optimal AI models per message
+- **Preset-Based Routing** - Create custom model pools (presets) for different use cases
+- **Context-Aware** - Analyzes prompt complexity, content type, and required capabilities
+- **Default Router Prompt** - Pre-configured decision tree for visual, technical, long, or short queries
+- **Flexible Configuration** - Combine multiple models in presets for specialized workflows
 
-### 📝 **Prompt Management**
+#### **Single Model Mode**
 
-- Create reusable prompt profiles with custom system prompts
-- Define routing rules and model preferences per profile
-- Apply profiles to conversations for consistent AI behavior
+- **Direct Model Selection** - Choose any enabled AI model for consistent responses
+- **Model Filtering** - Filter by capabilities (fast, reasoning, coding, vision), cost, or provider
+- **Favorites Support** - Quick access to your most-used models
+- **Detailed Model Info** - View pricing, context length, and capabilities before selection
 
-### 🔍 **Integrated Search**
+### 📝 **Advanced Prompt Management**
 
-- **Web Search** - DuckDuckGo API for real-time web results
-- **Image Search** - Pixabay API for high-quality image retrieval
-- **Configurable Memory** - Control conversation context (1-100 messages)
-- Search results automatically integrated into conversation context
-- Dedicated search log table for analytics and tracking
+- **Prompt Profiles** - Create, edit, and manage reusable system prompts
+- **Rich Prompt Editor** - Full-featured editor with markdown preview
+- **Prompt-Preset Integration** - Link prompts to model presets for consistent behavior
+- **Default Templates** - Built-in routing prompt template for custom modifications
+- **Favorites & Search** - Organize prompts with favorites and searchable library
+- **Per-Conversation Prompts** - Apply different prompts to different conversations
+- **System Prompt Preview** - View formatted system prompts with markdown rendering
 
-### 🔐 **User Authentication & API Keys**
+### 🔧 **Model Presets & Configuration**
 
-- Secure JWT-based authentication with refresh tokens
-- Personal OpenRouter API key management per user
-- Profile customization with avatars and preferences
+- **Custom Preset Creation** - Build model pools for specific tasks or workflows
+- **Multi-Model Selection** - Choose multiple models per preset with visual selection
+- **Preset Naming** - Descriptive names for easy identification (e.g., "Coding Team", "Research Agents")
+- **Prompt Association** - Link prompts to presets for complete workflow configurations
+- **Preset Management** - Save, load, edit, and delete presets with persistent storage
+- **Current Preset Tracking** - Visual indicator of active preset in auto-routing mode
+- **Searchable Models** - Toggle model searchability within presets
 
-### 📊 **Performance Analytics**
+### 🔍 **Integrated Search Capabilities**
 
-- Token usage tracking per conversation and model
-- Response latency monitoring
-- Search integration metrics
+- **Web Search** - DuckDuckGo API integration for real-time web results
+- **Image Search** - Pixabay API for high-quality royalty-free images
+- **Configurable Memory** - Adjust conversation context (1-100 previous messages)
+- **Search Context Injection** - Results automatically integrated into AI context
+- **Search Logging** - Dedicated tracking of all search queries and results
+- **Toggle Controls** - Enable/disable search per message with intuitive UI
+- **Performance Metrics** - Track search usage and impact on responses
+
+### 🔐 **Authentication & Security**
+
+- **JWT Authentication** - Secure token-based authentication with refresh tokens
+- **Personal API Keys** - Store OpenRouter API keys per user (encrypted)
+- **Profile Management** - Update profile info, avatar, contact details
+- **Guest Mode** - Chat without account (limited features)
+- **Account Controls** - Secure account deletion and data management
+- **Session Persistence** - Auto-login with stored credentials
+
+### 📊 **Performance Analytics & Tracking**
+
+- **Token Usage** - Track prompt and completion tokens per message
+- **Response Latency** - Monitor AI response times in milliseconds
+- **Model Performance** - Compare performance across different models
+- **Search Analytics** - Track web and image search usage patterns
+- **Memory Consumption** - Monitor conversation context size
+- **Cost Tracking** - Calculate token costs per conversation (per 1K tokens)
 
 ### ⭐ **Favorites System**
 
-- Favorite AI models, prompt profiles, and conversations for quick access
-- Prioritized display of favorite items in selection interfaces
-- Personalized user experience with saved preferences
+- **Multi-Entity Favorites** - Favorite models, prompts, presets, and conversations
+- **Quick Access** - Prioritized display of favorites in all selection interfaces
+- **Persistent Storage** - Favorites synced across sessions per user
+- **Visual Indicators** - Star icons with hover states for easy identification
+- **Inline Management** - Add/remove favorites directly from selection lists
+- **Personalized UX** - Tailored experience based on user preferences
 
-### 🌐 **Bilingual Interface**
+### 🌐 **Bilingual Interface (i18n)**
 
-- Full Thai (TH) and English (EN) language support
-- Real-time language switching without page reload
-- Comprehensive translations for all UI components
-- Persistent language preference per user
+- **Full Thai & English Support** - Complete translations for all UI components
+- **Real-Time Switching** - Change language without page reload
+- **Organized Translation Files** - JSON-based structure (`chat.json`, `auth.json`)
+- **Reactive Updates** - UI instantly reflects language changes
+- **Translation Helper** - `getTranslations()` and `t()` utility functions
+- **Persistent Preference** - Language choice saved per user
+- **Extensible System** - Easy addition of new languages
 
-### 🎨 **Theme System**
+### 🎨 **Advanced Theme System**
 
 - **7 Theme Variants** - Classic, Monokai, Dracula, Nord, Gruvbox, Solarized, GitHub
-- **Light & Dark Mode** - Each theme variant supports both light and dark modes
-- **Separate Theme & Mode Controls** - Independent theme style and mode selection
-- **System Theme Detection** - Automatically matches OS theme preference (optional)
-- **Theme Toggle Button** - Quick mode switching (light/dark) from header
-- Consistent theming across all components and dialogs
-- Real-time theme switching without page reload
-- Persistent theme preference per user
-- Scalable theme system for easy addition of new themes
+- **Light & Dark Modes** - Each variant supports both modes (14 total themes)
+- **Independent Controls** - Separate theme variant and mode selection
+- **Quick Toggle** - Header button for instant light/dark mode switching
+- **System Detection** - Optional OS theme preference detection
+- **Consistent Styling** - Unified theming across all components and dialogs
+- **Instant Updates** - No page reload required for theme changes
+- **Persistent Preference** - Theme and mode saved per user
+- **CSS Variables** - Scalable system using CSS custom properties
+
+### 💬 **Conversation Management**
+
+- **Archive System** - Archive completed conversations, view/restore from archive
+- **Conversation Settings** - Configure auto-scroll, typing indicators, max response length
+- **Title Editing** - Rename conversations for better organization
+- **Conversation Deletion** - Permanent deletion with confirmation
+- **Auto-Routing Toggle** - Enable/disable auto-routing per conversation
+- **Chronological Log** - `chat_log` array tracks message order
+- **Favorites Integration** - Mark important conversations as favorites
+
+### ⚙️ **Customization & Settings**
+
+- **Font Size Control** - Small, medium, large text options
+- **Send on Enter** - Toggle Enter key behavior (send vs. new line)
+- **Streaming Control** - Enable/disable word-by-word AI responses
+- **Sidebar Toggle** - Show/hide sidebar for more screen space
+- **Auto-Scroll** - Automatic scrolling to new messages
+- **Memory Configuration** - Adjust conversation context per message (1-100)
+- **Persistent Settings** - All preferences saved to localStorage
 
 ---
 

@@ -10,6 +10,7 @@
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   let copied = $state(false);
+  let showReasoning = $state(false);
 
   // Check if message is streaming (has temporary ID starting with "streaming-")
   const isStreaming = $derived(message.id.startsWith("streaming-"));
@@ -185,7 +186,25 @@
           Image search
         </span>
       {/if}
-      {#if message.search_log.memory_chat_include !== 20}
+      {#if message.search_log.reasoning_effort && message.search_log.reasoning_effort !== "disabled"}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <span 
+          class="meta-item reasoning" 
+          class:clickable={message.search_log.reasoning_content}
+          onclick={() => message.search_log.reasoning_content && (showReasoning = !showReasoning)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+          Reasoning: {message.search_log.reasoning_effort}
+          {#if message.search_log.reasoning_content}
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate({showReasoning ? '180deg' : '0deg'}); transition: transform 0.2s;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          {/if}
+        </span>
+      {/if}
+      {#if message.search_log.memory_chat_include !== 1000}
         <span class="meta-item memory">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -194,6 +213,24 @@
         </span>
       {/if}
     </div>
+    
+    {#if showReasoning && message.search_log.reasoning_content}
+      <div class="reasoning-content">
+        <div class="reasoning-header">
+          <span class="reasoning-title">🧠 Reasoning Process</span>
+          <!-- svelte-ignore a11y_consider_explicit_label -->
+          <button class="reasoning-close" onclick={() => showReasoning = false}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="reasoning-text">
+          {message.search_log.reasoning_content}
+        </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -437,6 +474,68 @@
   .meta-item.memory {
     color: #f59e0b;
     background: rgba(245, 158, 11, 0.1);
+  }
+
+  .meta-item.reasoning {
+    color: #a855f7;
+    background: rgba(168, 85, 247, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .meta-item.reasoning.clickable {
+    cursor: pointer;
+  }
+
+  .meta-item.reasoning.clickable:hover {
+    background: rgba(168, 85, 247, 0.2);
+  }
+
+  .reasoning-content {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(168, 85, 247, 0.05);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 8px;
+  }
+
+  .reasoning-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .reasoning-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #a855f7;
+  }
+
+  .reasoning-close {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reasoning-close:hover {
+    background: var(--hover-bg, #3d3d3d);
+    color: var(--text-primary, #fff);
+  }
+
+  .reasoning-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary, #fff);
+    white-space: pre-wrap;
+    font-family: "Fira Code", "Consolas", monospace;
   }
 
   .message.streaming {

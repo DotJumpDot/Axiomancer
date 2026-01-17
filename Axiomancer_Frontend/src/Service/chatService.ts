@@ -98,6 +98,7 @@ export const chatService = {
       imageSearch?: boolean;
       steamSearch?: boolean;
       memoryCount?: number;
+      reasoningEffort?: string;
     }
   ) {
     return apiClient.post<{ userMessage: Chat; aiResponse?: ChatAiRespond }>(
@@ -118,6 +119,7 @@ export const chatService = {
       imageSearch?: boolean;
       steamSearch?: boolean;
       memoryCount?: number;
+      reasoningEffort?: string;
     },
     signal: AbortSignal,
     onChunk: (chunk: string) => void,

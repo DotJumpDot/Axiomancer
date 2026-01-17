@@ -327,6 +327,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
             steamSearch: body.steamSearch,
             autoRouting: body.autoRouting,
             memoryCount: body.memoryCount,
+            reasoningEffort: body.reasoningEffort,
           },
           auth.user.id
         );
@@ -364,6 +365,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         steamSearch: t.Optional(t.Boolean()),
         autoRouting: t.Optional(t.Boolean()),
         memoryCount: t.Optional(t.Number()),
+        reasoningEffort: t.Optional(t.String()),
       }),
     }
   )
@@ -398,9 +400,10 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
                 {
                   webSearch: body.webSearch,
                   imageSearch: body.imageSearch,
-                  steamSearch: body.steamSearch,
+                  steamSearch: true, // Always true for streaming endpoint
                   autoRouting: body.autoRouting,
                   memoryCount: body.memoryCount,
+                  reasoningEffort: body.reasoningEffort,
                 },
                 auth.user.id,
                 (chunk) => {
@@ -451,6 +454,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         steamSearch: t.Optional(t.Boolean()),
         autoRouting: t.Optional(t.Boolean()),
         memoryCount: t.Optional(t.Number()),
+        reasoningEffort: t.Optional(t.String()),
       }),
     }
   )

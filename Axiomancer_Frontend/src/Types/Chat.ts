@@ -44,6 +44,8 @@ export interface Chat {
     used_web_search: boolean;
     used_image_search: boolean;
     used_steam: boolean;
+    reasoning_effort: string | null;
+    reasoning_content: string | null;
     search_context_web: any | null;
     search_context_picture: any | null;
   };
@@ -134,6 +136,8 @@ export interface SendMessageOptions {
   temperature?: number;
   maxTokens?: number;
   memoryCount?: number;
+  reasoningEffort?: string;
+  reasoning_content?: string;
 }
 
 // Search Log types
@@ -145,6 +149,8 @@ export interface SearchLog {
   used_web_search: boolean;
   used_image_search: boolean;
   used_steam: boolean;
+  reasoning_effort: string | null;
+  reasoning_content: string | null;
   search_context_web: any | null;
   search_context_picture: any | null;
   created_at: Date;

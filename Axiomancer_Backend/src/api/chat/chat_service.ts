@@ -229,6 +229,7 @@ export class ChatService {
       steamSearch?: boolean;
       autoRouting?: boolean;
       memoryCount?: number;
+      reasoningEffort?: string;
     },
     userId?: number
   ): Promise<{
@@ -345,6 +346,7 @@ export class ChatService {
         used_web_search: options?.webSearch || false,
         used_image_search: options?.imageSearch || false,
         used_steam: options?.steamSearch || false,
+        reasoning_effort: options?.reasoningEffort || null,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
       });
@@ -471,6 +473,13 @@ export class ChatService {
         messages: openRouterMessages,
       };
 
+      // Add reasoning parameter if provided
+      if (options?.reasoningEffort && options.reasoningEffort !== "disabled") {
+        openRouterRequest.reasoning = {
+          effort: options.reasoningEffort,
+        };
+      }
+
       // Call OpenRouter API for actual response
       const startTime = Date.now();
       const aiResponse = await activeClient.chatCompletion(openRouterRequest);
@@ -572,6 +581,7 @@ export class ChatService {
       steamSearch?: boolean;
       autoRouting?: boolean;
       memoryCount?: number;
+      reasoningEffort?: string;
     },
     userId?: number,
     onChunk?: (chunk: string) => void
@@ -675,6 +685,7 @@ export class ChatService {
         used_web_search: options?.webSearch || false,
         used_image_search: options?.imageSearch || false,
         used_steam: options?.steamSearch || false,
+        reasoning_effort: options?.reasoningEffort || null,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
       });
@@ -799,6 +810,13 @@ export class ChatService {
         messages: openRouterMessages,
       };
 
+      // Add reasoning parameter if provided
+      if (options?.reasoningEffort && options.reasoningEffort !== "disabled") {
+        openRouterRequest.reasoning = {
+          effort: options.reasoningEffort,
+        };
+      }
+
       // Send routing info first if available
       if (routingInfo && onChunk) {
         const routingPrefix = `**Model:** ${routingInfo.selectedModel} (\`${actualModelKey}\`)\n**Reason:** ${routingInfo.reasoning}\n\n---\n\n`;
@@ -808,13 +826,31 @@ export class ChatService {
 
       // Stream the response
       const startTime = Date.now();
+      let reasoningContent = "";
       for await (const chunk of activeClient.streamChatCompletion(openRouterRequest)) {
-        fullAiContent += chunk;
-        if (onChunk) {
-          onChunk(chunk);
+        if (chunk.type === "reasoning") {
+          reasoningContent += chunk.data;
+        } else if (chunk.type === "content") {
+          fullAiContent += chunk.data;
+          if (onChunk) {
+            onChunk(chunk.data);
+          }
         }
       }
       const latencyMs = Date.now() - startTime;
+
+      // Log reasoning summary if captured
+      if (reasoningContent) {
+        console.log(
+          `[Chat Service] Captured ${reasoningContent.length} characters of reasoning content`
+        );
+      }
+
+      // Update search log with reasoning content if available
+      if (reasoningContent && searchLog) {
+        await ChatQuery.updateSearchLogReasoningContent(searchLog.id_uuid, reasoningContent);
+        console.log(`[Chat Service] Saved reasoning content to search log ${searchLog.id_uuid}`);
+      }
 
       // Create chat_ai_respond record
       const chatAiRespond = await ChatQuery.createChatAiRespond({

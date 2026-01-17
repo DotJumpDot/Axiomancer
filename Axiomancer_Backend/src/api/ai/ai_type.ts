@@ -60,6 +60,9 @@ export interface OpenRouterRequest {
   top_p?: number;
   frequency_penalty?: number;
   presence_penalty?: number;
+  reasoning?: {
+    effort?: string;
+  };
 }
 
 export interface OpenRouterResponse {

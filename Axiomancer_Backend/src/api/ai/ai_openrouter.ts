@@ -32,7 +32,9 @@ export class OpenRouterClient {
   }
 
   //! Stream chat completion with Server-Sent Events
-  async *streamChatCompletion(request: OpenRouterRequest): AsyncGenerator<string, void, unknown> {
+  async *streamChatCompletion(
+    request: OpenRouterRequest
+  ): AsyncGenerator<{ type: "content" | "reasoning"; data: string }, void, unknown> {
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -74,9 +76,21 @@ export class OpenRouterClient {
           if (trimmed.startsWith("data: ")) {
             try {
               const data = JSON.parse(trimmed.slice(6));
+
+              // Check for reasoning delta (Responses API format)
+              if (data.type === "response.reasoning.delta" && data.delta) {
+                yield { type: "reasoning", data: data.delta };
+              }
+
+              // Check for reasoning in chat completions format (some models include it)
+              if (data.choices?.[0]?.delta?.reasoning) {
+                yield { type: "reasoning", data: data.choices[0].delta.reasoning };
+              }
+
+              // Check for regular content
               const content = data.choices?.[0]?.delta?.content;
               if (content) {
-                yield content;
+                yield { type: "content", data: content };
               }
             } catch (e) {
               // Skip invalid JSON lines

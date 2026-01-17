@@ -177,6 +177,8 @@ export class ChatQuery {
         sl.used_web_search,
         sl.used_image_search,
         sl.used_steam,
+        sl.reasoning_effort,
+        sl.reasoning_content,
         sl.search_context_web,
         sl.search_context_picture
       FROM chat c
@@ -194,6 +196,8 @@ export class ChatQuery {
           used_web_search: row.used_web_search,
           used_image_search: row.used_image_search,
           used_steam: row.used_steam,
+          reasoning_effort: row.reasoning_effort,
+          reasoning_content: row.reasoning_content,
           search_context_web: row.search_context_web,
           search_context_picture: row.search_context_picture,
         };
@@ -203,6 +207,8 @@ export class ChatQuery {
       delete chat.used_web_search;
       delete chat.used_image_search;
       delete chat.used_steam;
+      delete chat.reasoning_effort;
+      delete chat.reasoning_content;
       delete chat.search_context_web;
       delete chat.search_context_picture;
       return chat as Chat;
@@ -223,6 +229,8 @@ export class ChatQuery {
         sl.used_web_search,
         sl.used_image_search,
         sl.used_steam,
+        sl.reasoning_effort,
+        sl.reasoning_content,
         sl.search_context_web,
         sl.search_context_picture
       FROM chat c
@@ -243,6 +251,8 @@ export class ChatQuery {
         used_web_search: row.used_web_search,
         used_image_search: row.used_image_search,
         used_steam: row.used_steam,
+        reasoning_effort: row.reasoning_effort,
+        reasoning_content: row.reasoning_content,
         search_context_web: row.search_context_web,
         search_context_picture: row.search_context_picture,
       };
@@ -253,6 +263,8 @@ export class ChatQuery {
     delete chat.used_web_search;
     delete chat.used_image_search;
     delete chat.used_steam;
+    delete chat.reasoning_effort;
+    delete chat.reasoning_content;
     delete chat.search_context_web;
     delete chat.search_context_picture;
 
@@ -372,10 +384,11 @@ export class ChatQuery {
     const result = await sql`
       INSERT INTO search_log (
         id_uuid, chat_id, memory_chat_include, used_web_search, used_image_search, used_steam,
-        search_context_web, search_context_picture, created_at
+        reasoning_effort, reasoning_content, search_context_web, search_context_picture, created_at
       ) VALUES (
         ${id_uuid}, ${log.chat_id}, ${log.memory_chat_include},
         ${log.used_web_search}, ${log.used_image_search}, ${log.used_steam},
+        ${log.reasoning_effort || null}, ${log.reasoning_content || null},
         ${log.search_context_web ? JSON.stringify(log.search_context_web) : null},
         ${log.search_context_picture ? JSON.stringify(log.search_context_picture) : null},
         ${now}
@@ -402,5 +415,17 @@ export class ChatQuery {
       WHERE chat_id = ${chatId}
     `;
     return result.length > 0 ? (result[0] as unknown as SearchLog) : null;
+  }
+
+  //* Update search log reasoning content
+  static async updateSearchLogReasoningContent(
+    id_uuid: string,
+    reasoningContent: string
+  ): Promise<void> {
+    await sql`
+      UPDATE search_log
+      SET reasoning_content = ${reasoningContent}
+      WHERE id_uuid = ${id_uuid}
+    `;
   }
 }

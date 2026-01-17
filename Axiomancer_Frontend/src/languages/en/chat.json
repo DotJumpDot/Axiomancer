@@ -50,8 +50,8 @@
     "selectPresetFirst": "Select a preset first",
     "decidingModel": "Deciding Model - Routes to preset models",
     "selectPrompt": "Select Prompt",
-    "defaultPrompt": "Default",
-    "defaultPromptDesc": "Standard helpful assistant",
+    "defaultPrompt": "Auto Routing Default Prompt",
+    "defaultPromptDesc": "Use to copy to custom presets",
     "systemPrompt": "System Prompt",
     "managePrompts": "Manage Prompts",
     "preset": "Preset",
@@ -77,6 +77,7 @@
     "selectPresetAndModelFirst": "Select preset and decision model first...",
     "uploadImage": "Upload image",
     "sendMessage": "Send message",
+    "stopGeneration": "Stop generation",
     "enterToSend": "to send",
     "shiftEnterNewLine": "for new line",
     "ctrlEnterToSend": "to send",
@@ -87,7 +88,13 @@
     "selectPromptAlert": "Please select a prompt for single mode",
     "selectModelOrAutoAlert": "Please select a model or enable auto-routing",
     "chatMemory": "Chat Memory",
-    "messagesMemory": "messages"
+    "messagesMemory": "messages",
+    "reasoningEffort": "Reasoning",
+    "reasoningMinimal": "Minimal",
+    "reasoningLow": "Low",
+    "reasoningMedium": "Medium",
+    "reasoningHigh": "High",
+    "reasoningDisabled": "Disabled"
   },
   "apiKey": {
     "title": "OpenRouter API Key",

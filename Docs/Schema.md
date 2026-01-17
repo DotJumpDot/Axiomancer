@@ -120,6 +120,8 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | used_web_search        | boolean  | No       | Whether web search was used (default false)                  |
 | used_image_search      | boolean  | No       | Whether image search was used (default false)                |
 | used_steam             | boolean  | No       | Whether Steam search was used (default false)                |
+| reasoning_effort       | text     | Yes      | Reasoning effort level (minimal/low/medium/high)             |
+| reasoning_content      | text     | Yes      | Reasoning process content from AI models                     |
 | search_context_web     | json     | Yes      | Web search results context (DuckDuckGo)                      |
 | search_context_picture | json     | Yes      | Image search results context (Pixabay)                       |
 | created_at             | datetime | No       | Record creation timestamp                                    |
@@ -300,6 +302,8 @@ CREATE TABLE search_log (
     used_web_search BOOLEAN NOT NULL DEFAULT FALSE,
     used_image_search BOOLEAN NOT NULL DEFAULT FALSE,
     used_steam BOOLEAN NOT NULL DEFAULT FALSE,
+    reasoning_effort TEXT,
+    reasoning_content TEXT,
     search_context_web JSONB,
     search_context_picture JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

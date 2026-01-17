@@ -26,7 +26,8 @@ let imageSearchEnabled = $state(false);
 let steamSearchEnabled = $state(false);
 let currentPromptProfileId = $state<string | null>(null);
 let currentModelKey = $state<string | null>(null);
-let memoryCount = $state(2); // Default to 7 messages
+let memoryCount = $state(1); // Default to 2 messages
+let reasoningEffort = $state<string>("disabled"); // Default reasoning effort
 
 // Streaming state
 let streamingContent = $state("");
@@ -246,6 +247,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
           imageSearch: imageSearchEnabled,
           steamSearch: steamSearchEnabled,
           memoryCount: options?.memoryCount ?? memoryCount,
+          reasoningEffort: options?.reasoningEffort || reasoningEffort,
         },
         streamAbortController.signal,
         // onChunk
@@ -355,6 +357,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         imageSearch: imageSearchEnabled,
         steamSearch: steamSearchEnabled,
         memoryCount: options?.memoryCount ?? memoryCount,
+        reasoningEffort: options?.reasoningEffort || reasoningEffort,
       });
 
       if (response.success && response.data) {
@@ -549,6 +552,12 @@ export const chatStore = {
   },
   set memoryCount(value: number) {
     memoryCount = value;
+  },
+  get reasoningEffort() {
+    return reasoningEffort;
+  },
+  set reasoningEffort(value: string) {
+    reasoningEffort = value;
   },
 
   loadConversations,
