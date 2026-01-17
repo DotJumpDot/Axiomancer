@@ -11,6 +11,9 @@
 
   let copied = $state(false);
 
+  // Check if message is streaming (has temporary ID starting with "streaming-")
+  const isStreaming = $derived(message.id.startsWith("streaming-"));
+
   // Check if message has an error
   const hasError = $derived(message.respond_error === true);
 
@@ -62,7 +65,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError}>
+<div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError} class:streaming={isStreaming}>
   <div class="message-header">
     <span class="role">{formatRole(message.role)}</span>
     {#if !isUser && (message.ai_model_key || message.model_id)}
@@ -85,8 +88,10 @@
   </div>
 
   <div class="message-content">
-    {#each markdownData.parts as part}
-      {#if part.type === 'html'}
+    {#each markdownData.parts as part, index (part.id || index)}
+      {#if part.type === 'html' && isStreaming && index === markdownData.parts.length - 1}
+        {@html part.content + '<span class="streaming-cursor-inline">▋</span>'}
+      {:else if part.type === 'html'}
         {@html part.content}
       {:else if part.type === 'code'}
         {#each markdownData.codeBlocks.filter(cb => cb.id === part.id) as codeBlock}
@@ -94,6 +99,9 @@
         {/each}
       {/if}
     {/each}
+    {#if isStreaming && (markdownData.parts.length === 0 || markdownData.parts[markdownData.parts.length - 1].type !== 'html')}
+      <span class="streaming-cursor-inline">▋</span>
+    {/if}
   </div>
 
   {#if !isUser && hasError}
@@ -381,5 +389,28 @@
   .meta-item.memory {
     color: #f59e0b;
     background: rgba(245, 158, 11, 0.1);
+  }
+
+  .message.streaming {
+    border-left: 3px solid var(--primary-color, #6366f1);
+  }
+
+  .streaming-cursor-inline {
+    display: inline;
+    animation: blink 1s step-end infinite;
+    color: var(--primary-color, #6366f1);
+    font-weight: bold;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    white-space: nowrap;
+  }
+
+  @keyframes blink {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
   }
 </style>

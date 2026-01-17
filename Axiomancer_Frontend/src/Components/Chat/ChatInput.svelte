@@ -77,6 +77,7 @@
       promptProfileId: chatStore.currentPromptProfileId || undefined,
       webSearch: chatStore.webSearchEnabled,
       imageSearch: chatStore.imageSearchEnabled,
+      steamSearch: chatStore.steamSearchEnabled,
       memoryCount: chatStore.memoryCount,
     });
   }
@@ -228,7 +229,7 @@
         {t.input.imageSearchEnabled}
       </span>
     </label>
-
+    
     <div class="memory-selector-wrapper" bind:this={memoryTooltipRef}>
       <button 
         class="memory-button"

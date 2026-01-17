@@ -54,6 +54,7 @@ export interface Chat {
     memory_chat_include: number;
     used_web_search: boolean;
     used_image_search: boolean;
+    used_steam: boolean;
     search_context_web: any | null;
     search_context_picture: any | null;
   };
@@ -125,6 +126,7 @@ export interface SearchLog {
   memory_chat_include: number;
   used_web_search: boolean;
   used_image_search: boolean;
+  used_steam: boolean;
   search_context_web: any | null;
   search_context_picture: any | null;
   created_at: Date;
@@ -135,6 +137,7 @@ export interface CreateSearchLogRequest {
   memory_chat_include: number;
   used_web_search: boolean;
   used_image_search: boolean;
+  used_steam: boolean;
   search_context_web?: any | null;
   search_context_picture?: any | null;
 }

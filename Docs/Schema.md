@@ -119,6 +119,7 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | memory_chat_include    | int      | No       | Number of previous messages included in context (default 20) |
 | used_web_search        | boolean  | No       | Whether web search was used (default false)                  |
 | used_image_search      | boolean  | No       | Whether image search was used (default false)                |
+| used_steam             | boolean  | No       | Whether Steam search was used (default false)                |
 | search_context_web     | json     | Yes      | Web search results context (DuckDuckGo)                      |
 | search_context_picture | json     | Yes      | Image search results context (Pixabay)                       |
 | created_at             | datetime | No       | Record creation timestamp                                    |
@@ -298,6 +299,7 @@ CREATE TABLE search_log (
     memory_chat_include INTEGER NOT NULL DEFAULT 20,
     used_web_search BOOLEAN NOT NULL DEFAULT FALSE,
     used_image_search BOOLEAN NOT NULL DEFAULT FALSE,
+    used_steam BOOLEAN NOT NULL DEFAULT FALSE,
     search_context_web JSONB,
     search_context_picture JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

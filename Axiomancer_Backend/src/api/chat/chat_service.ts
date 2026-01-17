@@ -226,6 +226,7 @@ export class ChatService {
     options?: {
       webSearch?: boolean;
       imageSearch?: boolean;
+      steamSearch?: boolean;
       autoRouting?: boolean;
       memoryCount?: number;
     },
@@ -340,6 +341,7 @@ export class ChatService {
         memory_chat_include: memoryCount,
         used_web_search: options?.webSearch || false,
         used_image_search: options?.imageSearch || false,
+        used_steam: options?.steamSearch || false,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
       });
@@ -458,6 +460,238 @@ export class ChatService {
           });
 
           // Update local user message
+          savedUserMessage.chat_ai_respond_id = errorRespond.id;
+          savedUserMessage.respond_error = true;
+
+          return {
+            userMessage: savedUserMessage,
+            aiResponse: errorRespond,
+          };
+        } catch (dbError) {
+          console.error("Error saving error message to database:", dbError);
+        }
+      }
+
+      throw error instanceof Error ? error : new Error("Failed to send message");
+    }
+  }
+
+  //! Send message with streaming response
+  static async sendMessageStream(
+    conversationId: string,
+    userMessage: string,
+    modelKey?: string,
+    promptProfileId?: string,
+    options?: {
+      webSearch?: boolean;
+      imageSearch?: boolean;
+      steamSearch?: boolean;
+      autoRouting?: boolean;
+      memoryCount?: number;
+    },
+    userId?: number,
+    onChunk?: (chunk: string) => void
+  ): Promise<{
+    userMessage: Chat;
+    aiResponse?: ChatAiRespond;
+  }> {
+    let savedUserMessage: Chat | null = null;
+    let fullAiContent = "";
+
+    try {
+      // Validate conversation exists
+      const conversation = await ChatQuery.getConversationById(conversationId);
+      if (!conversation) {
+        throw new Error("Conversation not found");
+      }
+
+      // Get user's OpenRouter API key if user is authenticated
+      let userApiKey: string | undefined;
+      if (userId) {
+        const user = await getUserById(userId);
+        if (user?.openrouter_api_key) {
+          try {
+            userApiKey = decryptApiKey(user.openrouter_api_key);
+          } catch (error) {
+            console.error("Error decrypting user API key:", error);
+          }
+        }
+      }
+
+      // Determine which OpenRouter client to use
+      const activeClient = userApiKey ? new OpenRouterClient(userApiKey) : openRouterClient;
+
+      if (!activeClient) {
+        throw new Error("OpenRouter API key not configured. Please add your API key in settings.");
+      }
+
+      // Get the AI model details if modelKey provided
+      let actualModelKey = modelKey;
+      if (modelKey) {
+        const aiModel = await getAiModelByModelKey(modelKey);
+        if (aiModel) {
+          actualModelKey = aiModel.model_key;
+        }
+      }
+
+      // Get prompt profile if provided
+      let systemPrompt: string | undefined;
+      if (promptProfileId) {
+        const promptProfile = await getPromptProfileById(promptProfileId);
+        if (promptProfile) {
+          systemPrompt = promptProfile.system_prompt;
+        }
+      }
+
+      // Determine routing mode
+      const routingMode = options?.autoRouting ? "auto" : "manual";
+
+      // Create user message first
+      const userChat: CreateChatRequest = {
+        conversation_id: conversationId,
+        role: "user",
+        content: userMessage,
+        model_id: actualModelKey || null,
+        prompt_profile_id: promptProfileId || null,
+        routing_mode: routingMode,
+        respond_error: false,
+      };
+
+      savedUserMessage = await this.createChat(userChat);
+
+      // Perform web search if enabled
+      let searchContextWeb: any = null;
+      let searchContextPicture: any = null;
+
+      if (options?.webSearch) {
+        try {
+          const searchResponse = await DuckDuckGoService.search(userMessage, 5);
+
+          if (searchResponse.success && searchResponse.results.length > 0) {
+            searchContextWeb = {
+              query: searchResponse.query,
+              results: searchResponse.results,
+              abstract: searchResponse.abstract,
+              abstractURL: searchResponse.abstractURL,
+            };
+          }
+        } catch (searchError) {
+          console.error("SearchError : ", searchError);
+        }
+      }
+
+      // Create search log record
+      const memoryCount = options?.memoryCount ?? 20;
+      const searchLog = await ChatQuery.createSearchLog({
+        chat_id: savedUserMessage.id,
+        memory_chat_include: memoryCount,
+        used_web_search: options?.webSearch || false,
+        used_image_search: options?.imageSearch || false,
+        used_steam: options?.steamSearch || false,
+        search_context_web: searchContextWeb,
+        search_context_picture: searchContextPicture,
+      });
+
+      // Update user message with search log UUID
+      await ChatQuery.updateChat(savedUserMessage.id, { search_log_uuid: searchLog.id_uuid });
+      savedUserMessage.search_log_uuid = searchLog.id_uuid;
+
+      // Get conversation history for context
+      const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+
+      // Build messages array for OpenRouter
+      const openRouterMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+
+      if (systemPrompt) {
+        openRouterMessages.push({ role: "system", content: systemPrompt });
+      }
+
+      if (searchContextWeb) {
+        const searchFormatted = DuckDuckGoService.formatResultsForAI({
+          success: true,
+          query: searchContextWeb.query,
+          results: searchContextWeb.results,
+          abstract: searchContextWeb.abstract,
+          abstractURL: searchContextWeb.abstractURL,
+        });
+
+        openRouterMessages.push({
+          role: "system",
+          content: `The following web search results may help answer the user's question:\n\n${searchFormatted}\n\nUse this information to provide accurate and up-to-date responses. Cite sources when relevant.`,
+        });
+      }
+
+      const recentMessages = previousMessages.slice(-memoryCount);
+      for (const msg of recentMessages) {
+        if (msg.role === "user" || msg.role === "assistant") {
+          openRouterMessages.push({
+            role: msg.role,
+            content: msg.content,
+          });
+        }
+      }
+
+      // Prepare OpenRouter request
+      const openRouterRequest: OpenRouterRequest = {
+        model: actualModelKey || "anthropic/claude-3-haiku",
+        messages: openRouterMessages,
+      };
+
+      // Stream the response
+      const startTime = Date.now();
+      for await (const chunk of activeClient.streamChatCompletion(openRouterRequest)) {
+        fullAiContent += chunk;
+        if (onChunk) {
+          onChunk(chunk);
+        }
+      }
+      const latencyMs = Date.now() - startTime;
+
+      // Create chat_ai_respond record
+      const chatAiRespond = await ChatQuery.createChatAiRespond({
+        ai_content: fullAiContent,
+        model_key: actualModelKey || null,
+        token_usage: null, // Token usage not available in streaming mode
+        latency_ms: latencyMs,
+        finish_reason: "stop",
+      });
+
+      // Update user message to link to AI response
+      await ChatQuery.updateChat(savedUserMessage.id, {
+        chat_ai_respond_id: chatAiRespond.id,
+        respond_error: false,
+      });
+
+      savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
+
+      const completeUserMessage = await ChatQuery.getChatById(savedUserMessage.id);
+
+      return {
+        userMessage: completeUserMessage || savedUserMessage,
+        aiResponse: chatAiRespond,
+      };
+    } catch (error) {
+      console.error("Error sending message with stream:", error);
+
+      if (savedUserMessage) {
+        try {
+          const errorContent = `Error: ${
+            error instanceof Error ? error.message : "Failed to get AI response"
+          }`;
+
+          const errorRespond = await ChatQuery.createChatAiRespond({
+            ai_content: errorContent,
+            model_key: modelKey || null,
+            token_usage: null,
+            latency_ms: null,
+            finish_reason: "error",
+          });
+
+          await ChatQuery.updateChat(savedUserMessage.id, {
+            chat_ai_respond_id: errorRespond.id,
+            respond_error: true,
+          });
+
           savedUserMessage.chat_ai_respond_id = errorRespond.id;
           savedUserMessage.respond_error = true;
 

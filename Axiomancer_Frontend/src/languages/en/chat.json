@@ -78,6 +78,7 @@
     "ctrlEnterToSend": "to send",
     "webSearchEnabled": "Web search enabled",
     "imageSearchEnabled": "Image search enabled",
+    "steamSearchEnabled": "Steam search enabled",
     "selectModelAlert": "Please select a model for single mode",
     "selectPromptAlert": "Please select a prompt for single mode",
     "selectModelOrAutoAlert": "Please select a model or enable auto-routing",
@@ -220,9 +221,18 @@
   "conversationSettings": {
     "title": "Conversation Settings",
     "general": "General",
+    "chat": "Chat",
+    "conversation": "Conversation",
     "appearance": "Appearance",
     "advanced": "Advanced",
-    "close": "Close"
+    "close": "Close",
+    "streamResponses": "Stream AI responses (word-by-word)",
+    "autoScroll": "Auto-scroll to new messages",
+    "typingIndicators": "Show typing indicators",
+    "maxResponseLength": "Max Response Length",
+    "webSearch": "Web Search",
+    "imageSearch": "Image Search",
+    "steamSearch": "Steam Search"
   },
   "notification": {
     "success": "Success",

@@ -6,8 +6,11 @@ import type {
   ChatMessage,
   SendMessageOptions,
   OpenRouterMessage,
+  ChatAiRespond,
 } from "@/Types";
+
 import authStore from "./auth.svelte";
+import settingsStore from "./settings.svelte";
 
 // Reactive state using Svelte 5 runes
 let conversations = $state<Conversation[]>([]);
@@ -20,13 +23,14 @@ let error = $state<string | null>(null);
 // Chat options state
 let webSearchEnabled = $state(false);
 let imageSearchEnabled = $state(false);
+let steamSearchEnabled = $state(false);
 let currentPromptProfileId = $state<string | null>(null);
 let currentModelKey = $state<string | null>(null);
 let memoryCount = $state(7); // Default to 7 messages
 
 // Streaming state
 let streamingContent = $state("");
-let isStreaming = $state(false);
+let isStreaming = $state(true);
 
 //* Initialize from AxmLogin for single mode
 function initializeSingleMode() {
@@ -218,56 +222,163 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
     };
     messages = [...messages, userMessage];
 
-    // Send message to backend API
-    const response = await chatService.sendMessage(currentConversation!.id, {
-      message: content,
-      model_key: modelKey,
-      prompt_profile_id: options?.promptProfileId,
-      autoRouting: options?.autoRouting,
-      webSearch: webSearchEnabled,
-      imageSearch: imageSearchEnabled,
-      memoryCount: options?.memoryCount ?? memoryCount,
-    });
+    // Check if streaming is enabled
+    const useStreaming = settingsStore.streamResponses;
 
-    if (response.success && response.data) {
-      // Replace temp message with actual saved message
-      messages = messages.filter((m) => m.id !== userMessage.id);
-      messages = [...messages, response.data.userMessage];
+    if (useStreaming) {
+      // Use streaming mode
+      let streamingAiMessage: Chat | null = null;
 
-      // Add AI response if available (ChatAiRespond type)
-      if (response.data.aiResponse) {
-        const aiMessage: Chat = {
-          id: response.data.aiResponse.id,
-          conversation_id: currentConversation!.id,
-          role: "assistant",
-          content: response.data.aiResponse.ai_content,
-          model_id: response.data.aiResponse.model_key,
-          prompt_profile_id: response.data.userMessage.prompt_profile_id,
-          routing_mode: response.data.userMessage.routing_mode,
-          search_log_uuid: response.data.userMessage.search_log_uuid,
-          chat_ai_respond_id: null,
-          respond_error: response.data.userMessage.respond_error,
-          created_at: new Date(response.data.aiResponse.created_at),
-          updated_at: new Date(response.data.aiResponse.updated_at),
-          ai_token_usage: response.data.aiResponse.token_usage,
-          ai_latency_ms: response.data.aiResponse.latency_ms,
-          ai_finish_reason: response.data.aiResponse.finish_reason,
-          search_log: response.data.userMessage.search_log, // Include search_log from user message
-        };
-        messages = [...messages, aiMessage];
+      await chatService.sendMessageStream(
+        currentConversation!.id,
+        {
+          message: content,
+          model_key: modelKey,
+          prompt_profile_id: options?.promptProfileId,
+          autoRouting: options?.autoRouting,
+          webSearch: webSearchEnabled,
+          imageSearch: imageSearchEnabled,
+          steamSearch: steamSearchEnabled,
+          memoryCount: options?.memoryCount ?? memoryCount,
+        },
+        // onChunk
+        (chunk: string) => {
+          if (!streamingAiMessage) {
+            // Create streaming message on first chunk
+            streamingAiMessage = {
+              id: `streaming-${Date.now()}`,
+              conversation_id: currentConversation!.id,
+              role: "assistant",
+              content: chunk,
+              model_id: modelKey || null,
+              prompt_profile_id: options?.promptProfileId || null,
+              routing_mode: options?.autoRouting ? "auto" : "manual",
+              search_log_uuid: null,
+              chat_ai_respond_id: null,
+              respond_error: false,
+              created_at: new Date(),
+              updated_at: new Date(),
+            };
+            messages = [...messages, streamingAiMessage];
+          } else {
+            // Update streaming message content - create new object reference for reactivity
+            streamingAiMessage = {
+              ...streamingAiMessage,
+              content: streamingAiMessage.content + chunk,
+              updated_at: new Date(),
+            };
+            // Replace the streaming message in the array with the new object
+            messages = messages.map((m) =>
+              m.id === streamingAiMessage.id ? streamingAiMessage : m
+            );
+          }
+        },
+        // onDone
+        (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => {
+          // Replace temp user message with actual saved message
+          messages = messages.filter((m) => m.id !== userMessage.id);
+          messages = [...messages, result.userMessage];
+
+          // Replace streaming message with actual AI response
+          if (streamingAiMessage && result.aiResponse) {
+            messages = messages.filter((m) => m.id !== streamingAiMessage!.id);
+            const aiMessage: Chat = {
+              id: result.aiResponse.id,
+              conversation_id: currentConversation!.id,
+              role: "assistant",
+              content: result.aiResponse.ai_content,
+              model_id: result.aiResponse.model_key,
+              prompt_profile_id: result.userMessage.prompt_profile_id,
+              routing_mode: result.userMessage.routing_mode,
+              search_log_uuid: result.userMessage.search_log_uuid,
+              chat_ai_respond_id: null,
+              respond_error: result.userMessage.respond_error,
+              created_at: new Date(result.aiResponse.created_at),
+              updated_at: new Date(result.aiResponse.updated_at),
+              ai_token_usage: result.aiResponse.token_usage,
+              ai_latency_ms: result.aiResponse.latency_ms,
+              ai_finish_reason: result.aiResponse.finish_reason,
+              search_log: result.userMessage.search_log,
+            };
+            messages = [...messages, aiMessage];
+          }
+
+          // Update conversation title if it's the first message
+          if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
+            const newTitle = generateConversationTitle(content);
+            chatService.updateConversation(currentConversation.id, { title: newTitle }).then(() => {
+              currentConversation = { ...currentConversation!, title: newTitle };
+              conversations = conversations.map((c) =>
+                c.id === currentConversation!.id ? { ...c, title: newTitle } : c
+              );
+            });
+          }
+        },
+        // onError
+        (errorMessage: string) => {
+          error = errorMessage;
+          // Remove temp message on error
+          messages = messages.filter((m) => !m.id.startsWith("temp-"));
+          if (streamingAiMessage) {
+            messages = messages.filter((m) => m.id !== streamingAiMessage!.id);
+          }
+        }
+      );
+
+      return userMessage;
+    } else {
+      // Use non-streaming mode (original behavior)
+      const response = await chatService.sendMessage(currentConversation!.id, {
+        message: content,
+        model_key: modelKey,
+        prompt_profile_id: options?.promptProfileId,
+        autoRouting: options?.autoRouting,
+        webSearch: webSearchEnabled,
+        imageSearch: imageSearchEnabled,
+        steamSearch: steamSearchEnabled,
+        memoryCount: options?.memoryCount ?? memoryCount,
+      });
+
+      if (response.success && response.data) {
+        // Replace temp message with actual saved message
+        messages = messages.filter((m) => m.id !== userMessage.id);
+        messages = [...messages, response.data.userMessage];
+
+        // Add AI response if available (ChatAiRespond type)
+        if (response.data.aiResponse) {
+          const aiMessage: Chat = {
+            id: response.data.aiResponse.id,
+            conversation_id: currentConversation!.id,
+            role: "assistant",
+            content: response.data.aiResponse.ai_content,
+            model_id: response.data.aiResponse.model_key,
+            prompt_profile_id: response.data.userMessage.prompt_profile_id,
+            routing_mode: response.data.userMessage.routing_mode,
+            search_log_uuid: response.data.userMessage.search_log_uuid,
+            chat_ai_respond_id: null,
+            respond_error: response.data.userMessage.respond_error,
+            created_at: new Date(response.data.aiResponse.created_at),
+            updated_at: new Date(response.data.aiResponse.updated_at),
+            ai_token_usage: response.data.aiResponse.token_usage,
+            ai_latency_ms: response.data.aiResponse.latency_ms,
+            ai_finish_reason: response.data.aiResponse.finish_reason,
+            search_log: response.data.userMessage.search_log, // Include search_log from user message
+          };
+          messages = [...messages, aiMessage];
+        }
+
+        // Update conversation title if it's the first message
+        if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
+          const newTitle = generateConversationTitle(content);
+          await chatService.updateConversation(currentConversation.id, { title: newTitle });
+          currentConversation = { ...currentConversation, title: newTitle };
+          conversations = conversations.map((c) =>
+            c.id === currentConversation!.id ? { ...c, title: newTitle } : c
+          );
+        }
+
+        return response.data.userMessage;
       }
-
-      // Update conversation title if it's the first message
-      if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
-        const newTitle = generateConversationTitle(content);
-        await chatService.updateConversation(currentConversation.id, { title: newTitle });
-        currentConversation = { ...currentConversation, title: newTitle };
-        conversations = conversations.map((c) =>
-          c.id === currentConversation!.id ? { ...c, title: newTitle } : c
-        );
-      }
-
-      return response.data.userMessage;
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to send message";
@@ -331,6 +442,10 @@ function setImageSearchEnabled(enabled: boolean) {
   imageSearchEnabled = enabled;
 }
 
+function setSteamSearchEnabled(enabled: boolean) {
+  steamSearchEnabled = enabled;
+}
+
 function setPromptProfileId(id: string | null) {
   currentPromptProfileId = id;
   saveSingleModeSelections();
@@ -378,6 +493,12 @@ export const chatStore = {
   set imageSearchEnabled(value: boolean) {
     imageSearchEnabled = value;
   },
+  get steamSearchEnabled() {
+    return steamSearchEnabled;
+  },
+  set steamSearchEnabled(value: boolean) {
+    steamSearchEnabled = value;
+  },
   get currentPromptProfileId() {
     return currentPromptProfileId;
   },
@@ -407,6 +528,7 @@ export const chatStore = {
   sendMessage,
   setWebSearchEnabled,
   setImageSearchEnabled,
+  setSteamSearchEnabled,
   setPromptProfileId,
   setModelKey,
   clearCurrentConversation,

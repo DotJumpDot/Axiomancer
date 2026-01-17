@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { settingsStore, THEME_VARIANTS, THEME_MODES, LANGUAGES } from "@/Store";
+  import { settingsStore, chatStore, THEME_VARIANTS, THEME_MODES, LANGUAGES } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
 
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
@@ -51,14 +51,14 @@
             class:active={activeTab === 'chat'}
             onclick={() => setActiveTab('chat')}
           >
-            {t.conversationSettings.general}
+            {t.conversationSettings.chat}
           </button>
           <button
             class="tab-btn"
             class:active={activeTab === 'conversation'}
             onclick={() => setActiveTab('conversation')}
           >
-            Conversation
+            {t.conversationSettings.conversation}
           </button>
         </div>
 
@@ -70,6 +70,7 @@
                 <h3>Application</h3>
 
                 <div class="setting-item theme-mode-row">
+                  <!-- svelte-ignore a11y_label_has_associated_control -->
                   <label>Theme & Mode</label>
                   <div class="theme-mode-selectors">
                     <select 
@@ -233,19 +234,31 @@
                 <div class="setting-item">
                   <label class="checkbox-label">
                     <input type="checkbox" id="auto-scroll" checked>
-                    Auto-scroll to new messages
+                    {t.conversationSettings.autoScroll}
                   </label>
                 </div>
 
                 <div class="setting-item">
                   <label class="checkbox-label">
                     <input type="checkbox" id="typing-indicators">
-                    Show typing indicators
+                    {t.conversationSettings.typingIndicators}
                   </label>
                 </div>
 
                 <div class="setting-item">
-                  <label for="max-tokens">Max Response Length</label>
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="stream-responses"
+                      checked={settingsStore.streamResponses}
+                      onchange={(e) => settingsStore.setStreamResponses((e.target as HTMLInputElement).checked)}
+                    >
+                    {t.conversationSettings.streamResponses}
+                  </label>
+                </div>
+
+                <div class="setting-item">
+                  <label for="max-tokens">{t.conversationSettings.maxResponseLength}</label>
                   <select id="max-tokens">
                     <option value="500">Short (500 tokens)</option>
                     <option value="1000" selected>Medium (1000 tokens)</option>

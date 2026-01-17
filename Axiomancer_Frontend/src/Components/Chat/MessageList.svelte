@@ -93,7 +93,7 @@
         <ChatMessage {message} />
       {/each}
 
-      {#if chatStore.isSending}
+      {#if chatStore.isSending && !chatStore.messages.some(m => m.id.startsWith("streaming-"))}
         <div class="typing-indicator">
           <span></span>
           <span></span>

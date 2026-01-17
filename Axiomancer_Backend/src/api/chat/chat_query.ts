@@ -166,7 +166,7 @@ export class ChatQuery {
   // Chat queries
   static async getChatsByConversationId(conversationId: string): Promise<Chat[]> {
     const result = await sql`
-      SELECT 
+      SELECT
         c.*,
         car.ai_content,
         car.model_key as ai_model_key,
@@ -176,6 +176,7 @@ export class ChatQuery {
         sl.memory_chat_include,
         sl.used_web_search,
         sl.used_image_search,
+        sl.used_steam,
         sl.search_context_web,
         sl.search_context_picture
       FROM chat c
@@ -192,6 +193,7 @@ export class ChatQuery {
           memory_chat_include: row.memory_chat_include,
           used_web_search: row.used_web_search,
           used_image_search: row.used_image_search,
+          used_steam: row.used_steam,
           search_context_web: row.search_context_web,
           search_context_picture: row.search_context_picture,
         };
@@ -200,6 +202,7 @@ export class ChatQuery {
       delete chat.memory_chat_include;
       delete chat.used_web_search;
       delete chat.used_image_search;
+      delete chat.used_steam;
       delete chat.search_context_web;
       delete chat.search_context_picture;
       return chat as Chat;
@@ -209,7 +212,7 @@ export class ChatQuery {
   // Get chat by ID
   static async getChatById(id: string): Promise<Chat | null> {
     const result = await sql`
-      SELECT 
+      SELECT
         c.*,
         car.ai_content,
         car.model_key as ai_model_key,
@@ -219,6 +222,7 @@ export class ChatQuery {
         sl.memory_chat_include,
         sl.used_web_search,
         sl.used_image_search,
+        sl.used_steam,
         sl.search_context_web,
         sl.search_context_picture
       FROM chat c
@@ -238,6 +242,7 @@ export class ChatQuery {
         memory_chat_include: row.memory_chat_include,
         used_web_search: row.used_web_search,
         used_image_search: row.used_image_search,
+        used_steam: row.used_steam,
         search_context_web: row.search_context_web,
         search_context_picture: row.search_context_picture,
       };
@@ -247,6 +252,7 @@ export class ChatQuery {
     delete chat.memory_chat_include;
     delete chat.used_web_search;
     delete chat.used_image_search;
+    delete chat.used_steam;
     delete chat.search_context_web;
     delete chat.search_context_picture;
 
@@ -365,11 +371,11 @@ export class ChatQuery {
 
     const result = await sql`
       INSERT INTO search_log (
-        id_uuid, chat_id, memory_chat_include, used_web_search, used_image_search,
+        id_uuid, chat_id, memory_chat_include, used_web_search, used_image_search, used_steam,
         search_context_web, search_context_picture, created_at
       ) VALUES (
         ${id_uuid}, ${log.chat_id}, ${log.memory_chat_include},
-        ${log.used_web_search}, ${log.used_image_search},
+        ${log.used_web_search}, ${log.used_image_search}, ${log.used_steam},
         ${log.search_context_web ? JSON.stringify(log.search_context_web) : null},
         ${log.search_context_picture ? JSON.stringify(log.search_context_picture) : null},
         ${now}

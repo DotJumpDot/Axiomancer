@@ -78,6 +78,7 @@
     "ctrlEnterToSend": "เพื่อส่ง",
     "webSearchEnabled": "เปิดใช้งานการค้นหาเว็บ",
     "imageSearchEnabled": "เปิดใช้งานการค้นหารูปภาพ",
+    "steamSearchEnabled": "เปิดใช้งานการค้นหา Steam",
     "selectModelAlert": "กรุณาเลือกโมเดลสำหรับโหมดเดี่ยว",
     "selectPromptAlert": "กรุณาเลือกพรอมต์สำหรับโหมดเดี่ยว",
     "selectModelOrAutoAlert": "กรุณาเลือกโมเดลหรือเปิดใช้งานการเลือกอัตโนมัติ",
@@ -220,9 +221,18 @@
   "conversationSettings": {
     "title": "การตั้งค่าการสนทนา",
     "general": "ทั่วไป",
+    "chat": "แชท",
+    "conversation": "การสนทนา",
     "appearance": "รูปลักษณ์",
     "advanced": "ขั้นสูง",
-    "close": "ปิด"
+    "close": "ปิด",
+    "streamResponses": "สตรีมการตอบกลับ AI (ทีละคำ)",
+    "autoScroll": "เลื่อนอัตโนมัติไปยังข้อความใหม่",
+    "typingIndicators": "แสดงตัวบ่งชี้การพิมพ์",
+    "maxResponseLength": "ความยาวการตอบกลับสูงสุด",
+    "webSearch": "การค้นหาเว็บ",
+    "imageSearch": "การค้นหารูปภาพ",
+    "steamSearch": "การค้นหา Steam"
   },
   "notification": {
     "success": "สำเร็จ",

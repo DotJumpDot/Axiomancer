@@ -11,6 +11,8 @@ import type {
   OpenRouterMessage,
 } from "@/Types";
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "http://localhost:4100";
+
 const CHAT_ENDPOINTS = {
   conversations: "/api/conversations",
   messages: (conversationId: string) => `/api/conversations/${conversationId}/messages`,
@@ -94,6 +96,7 @@ export const chatService = {
       autoRouting?: boolean;
       webSearch?: boolean;
       imageSearch?: boolean;
+      steamSearch?: boolean;
       memoryCount?: number;
     }
   ) {
@@ -101,6 +104,97 @@ export const chatService = {
       `${CHAT_ENDPOINTS.conversations}/${conversationId}/send`,
       data
     );
+  },
+
+  // Send message with streaming response
+  async sendMessageStream(
+    conversationId: string,
+    data: {
+      message: string;
+      model_key?: string;
+      prompt_profile_id?: string;
+      autoRouting?: boolean;
+      webSearch?: boolean;
+      imageSearch?: boolean;
+      steamSearch?: boolean;
+      memoryCount?: number;
+    },
+    onChunk: (chunk: string) => void,
+    onDone: (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => void,
+    onError: (error: string) => void
+  ) {
+    // Get auth token from localStorage
+    const axmLogin = localStorage.getItem("AxmLogin");
+    let authToken = null;
+    if (axmLogin) {
+      try {
+        const loginData = JSON.parse(axmLogin);
+        authToken = loginData.token;
+      } catch (e) {
+        console.warn("Failed to parse auth token for streaming");
+      }
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}${CHAT_ENDPOINTS.conversations}/${conversationId}/send-stream`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to start streaming: ${response.status} ${errorText}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Response body is not readable");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(trimmed.slice(6));
+              if (data.chunk) {
+                onChunk(data.chunk);
+              } else if (data.done) {
+                onDone(data.result);
+              } else if (data.error) {
+                onError(data.error);
+              }
+            } catch (e) {
+              console.warn("Failed to parse SSE line:", trimmed);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   },
 
   // Send anonymous message to AI (no conversation required)

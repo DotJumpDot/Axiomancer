@@ -324,6 +324,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
           {
             webSearch: body.webSearch,
             imageSearch: body.imageSearch,
+            steamSearch: body.steamSearch,
             autoRouting: body.autoRouting,
             memoryCount: body.memoryCount,
           },
@@ -360,6 +361,94 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         prompt_profile_id: t.Optional(t.String()),
         webSearch: t.Optional(t.Boolean()),
         imageSearch: t.Optional(t.Boolean()),
+        steamSearch: t.Optional(t.Boolean()),
+        autoRouting: t.Optional(t.Boolean()),
+        memoryCount: t.Optional(t.Number()),
+      }),
+    }
+  )
+
+  // Send message with streaming response
+  .post(
+    "/conversations/:id/send-stream",
+    async (context: any) => {
+      const { params, body, auth } = context;
+
+      try {
+        // Only authenticated users can use streaming
+        if (!auth?.user) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Authentication required for streaming",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        // Create a streaming response
+        const stream = new ReadableStream({
+          async start(controller) {
+            try {
+              const generator = await ChatService.sendMessageStream(
+                params.id,
+                body.message,
+                body.model_key,
+                body.prompt_profile_id,
+                {
+                  webSearch: body.webSearch,
+                  imageSearch: body.imageSearch,
+                  steamSearch: body.steamSearch,
+                  autoRouting: body.autoRouting,
+                  memoryCount: body.memoryCount,
+                },
+                auth.user.id,
+                (chunk) => {
+                  // Send each chunk to the client
+                  controller.enqueue(`data: ${JSON.stringify({ chunk })}\n\n`);
+                }
+              );
+
+              // Send final result
+              controller.enqueue(`data: ${JSON.stringify({ done: true, result: generator })}\n\n`);
+              controller.close();
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : "Streaming failed";
+              controller.enqueue(`data: ${JSON.stringify({ error: errorMessage })}\n\n`);
+              controller.close();
+            }
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        });
+      } catch (error) {
+        console.error("[Chat API] POST /api/conversations/:id/send-stream: Error:", error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to start streaming",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    },
+    {
+      body: t.Object({
+        message: t.String(),
+        model_key: t.Optional(t.String()),
+        prompt_profile_id: t.Optional(t.String()),
+        webSearch: t.Optional(t.Boolean()),
+        imageSearch: t.Optional(t.Boolean()),
+        steamSearch: t.Optional(t.Boolean()),
         autoRouting: t.Optional(t.Boolean()),
         memoryCount: t.Optional(t.Number()),
       }),
