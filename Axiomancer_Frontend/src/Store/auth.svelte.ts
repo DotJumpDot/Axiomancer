@@ -235,6 +235,62 @@ function getMode(): 'auto' | 'single' {
   return 'auto';
 }
 
+//* Save preset selection to AxmLogin
+function savePreset(preset: number | null) {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      loginData.latest_preset = preset;
+      localStorage.setItem("AxmLogin", JSON.stringify(loginData));
+    } catch (error) {
+      console.error("Failed to save preset to AxmLogin:", error);
+    }
+  }
+}
+
+//* Get preset selection from AxmLogin
+function getPreset(): number | null {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      return loginData.latest_preset || null;
+    } catch (error) {
+      console.error("Failed to get preset from AxmLogin:", error);
+    }
+  }
+  return null;
+}
+
+//* Save decision model selection to AxmLogin
+function saveDecisionModel(modelId: string | null) {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      loginData.latest_decision_model = modelId;
+      localStorage.setItem("AxmLogin", JSON.stringify(loginData));
+    } catch (error) {
+      console.error("Failed to save decision model to AxmLogin:", error);
+    }
+  }
+}
+
+//* Get decision model selection from AxmLogin
+function getDecisionModel(): string | null {
+  const axmLogin = localStorage.getItem("AxmLogin");
+  if (axmLogin) {
+    try {
+      const loginData = JSON.parse(axmLogin);
+      return loginData.latest_decision_model || null;
+    } catch (error) {
+      console.error("Failed to get decision model from AxmLogin:", error);
+    }
+  }
+  return null;
+}
+
 // Export store object with getters for reactive access
 export const authStore = {
   get isAuthenticated() {
@@ -263,6 +319,10 @@ export const authStore = {
   getSelections,
   saveMode,
   getMode,
+  savePreset,
+  getPreset,
+  saveDecisionModel,
+  getDecisionModel,
 };
 
 export default authStore;

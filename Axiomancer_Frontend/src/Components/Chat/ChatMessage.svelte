@@ -98,7 +98,14 @@
 <div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError} class:streaming={isStreaming}>
   <div class="message-header">
     <span class="role">{formatRole(message.role)}</span>
-    {#if !isUser && (message.ai_model_key || message.model_id)}
+    {#if !isUser && message.routing_mode === "auto" && message.model_id && message.ai_model_key}
+      <span class="model-badge decision" title="Decision model used for routing">
+        Decision: {message.model_id}
+      </span>
+      <span class="model-badge active" title="Active model responding">
+        Active: {message.ai_model_key}
+      </span>
+    {:else if !isUser && (message.ai_model_key || message.model_id)}
       <span class="model-badge">{message.ai_model_key || message.model_id}</span>
     {/if}
     <div class="message-actions">
@@ -237,6 +244,18 @@
     background: var(--badge-bg, #3d3d3d);
     border-radius: 4px;
     color: var(--text-secondary, #888);
+  }
+
+  .model-badge.decision {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary-color, #6366f1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+
+  .model-badge.active {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .message-actions {

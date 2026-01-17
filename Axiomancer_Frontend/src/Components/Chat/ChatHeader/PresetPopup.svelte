@@ -3,9 +3,50 @@
   import { aiStore, promptStore, favoriteStore, authStore, settingsStore } from "@/Store";
   import { selectionService } from "@/Service";
   import { formatModelName, formatProviderName, formatContextLength, getTranslations, type LanguageCode } from "@/Function";
+  import { processMarkdown } from "@/Function/markdown";
+  import CodeBlock from "@/Components/Chat/MessageMarkdown/CodeBlock.svelte";
   import type { AiModel, UserSelectedModels } from "@/Types";
 
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
+
+  // * Default Intelligent Model Router system prompt
+  const DEFAULT_SYSTEM_PROMPT = `### System Prompt: The Intelligent Model Router
+
+**Role:** You are a context-aware routing system. Your only job is to analyze the user's input and select the most efficient AI model to handle it. You must output **only** the JSON response containing the selected model and the reasoning. Do not generate the actual answer to the user's query.
+
+**Available Models:**
+1.  **NVIDIA: Nemotron Nano 12B 2 VL (free)**
+    *   **Best for:** Inputs containing images, visual data, or screenshots.
+    *   **Capabilities:** Multimodal (Vision + Language).
+2.  **MiMo-V2-Flash (free)**
+    *   **Best for:** Very long contexts, complex reasoning tasks, and large blocks of text (e.g., >1000 words).
+    *   **Capabilities:** High token limit, fast processing of dense text.
+3.  **Arcee Ai: Trinity Mini (free)**
+    *   **Best for:** Short, simple, and standard queries.
+    *   **Capabilities:** Efficient, lightweight, and fast for everyday tasks.
+
+**Routing Logic (Decision Tree):**
+
+1.  **Check for Visuals:** Does the user's input contain an image, a reference to an image, or data that requires visual analysis?
+    *   **YES** → Select \`NVIDIA: Nemotron Nano 12B 2 VL (free)\`.
+    *   **NO** → Proceed to step 2.
+
+2.  **Check for Length/Complexity:** Is the user's input very long (e.g., a long article, extensive code, or a complex multi-part question exceeding typical conversation length)?
+    *   **YES** → Select \`MiMo-V2-Flash (free)\`.
+    *   **NO** → Proceed to step 3.
+
+3.  **Default Selection:** Is the input short, straightforward, or a standard conversational query?
+    *   **YES** → Select \`Arcee Ai: Trinity Mini (free)\`.
+
+**Output Format:**
+You must strictly output a valid JSON object. Do not include any markdown formatting (like \`\`\`json) unless the system requires it, but raw JSON is preferred.
+
+\`\`\`json
+{
+  "selected_model": "Model Name",
+  "reasoning": "Brief explanation of why this model was chosen (e.g., 'Contains an image' or 'Context is very long')."
+}
+\`\`\``;
 
   // Focus input action
   function focusInput(node: HTMLInputElement | HTMLTextAreaElement) {
@@ -119,11 +160,24 @@
       selectedPresetId = preset.preset;
       selectedModels = [...preset.ai_model_ids];
       selectedPrompt = preset.prompt_id || null;
+      // Dispatch event to update ChatHeader with preset name and decision model (live preview, doesn't close popup)
+      const presetName = getPresetDisplayName(preset);
+      dispatch('presetSelected', {
+        presetName: presetName,
+        decisionModel: preset.decision_model || null,
+        presetId: preset.preset
+      });
     } else {
       // New preset
       selectedPresetId = null;
       selectedModels = [];
       selectedPrompt = null;
+      // Reset preset name and decision model in ChatHeader when creating new preset
+      dispatch('presetSelected', {
+        presetName: null,
+        decisionModel: null,
+        presetId: null
+      });
     }
   }
 
@@ -169,12 +223,16 @@
       return;
     }
 
+    // Get the current deciding model from aiStore
+    const decidingModelKey = aiStore.selectedModel?.model_key || null;
+
     try {
       if (selectedPresetId !== null) {
         // Update existing preset
         await selectionService.updatePreset(selectedPresetId, {
           ai_model_ids: selectedModels,
           prompt_id: selectedPrompt || undefined,
+          decision_model: decidingModelKey || undefined,
           openrouter_api_key: authStore.currentUser.openrouter_api_key,
         });
         successMessage = "✓ Preset updated successfully!";
@@ -186,6 +244,7 @@
           preset_name: getNextAvailablePresetName(),
           ai_model_ids: selectedModels,
           prompt_id: selectedPrompt || undefined,
+          decision_model: decidingModelKey || undefined,
           openrouter_api_key: authStore.currentUser.openrouter_api_key,
         });
         successMessage = "✓ Preset created successfully!";
@@ -210,7 +269,9 @@
     dispatch('apply', {
       models: selectedModels,
       prompt: selectedPrompt,
-      presetName: presetName
+      presetName: presetName,
+      decisionModel: currentPreset?.decision_model || null,
+      presetId: selectedPresetId
     });
     closePopup();
   }
@@ -340,9 +401,9 @@
 
     try {
       const newPrompt = await promptStore.createProfile({
-        name: getNextAvailablePromptName(),
-        description: "Description for explain prompt title",
-        system_prompt: "You are an expert programmer. Provide clear, efficient code solutions.",
+        name: "Intelligent Model Router",
+        description: "Automatically routes user queries to the most suitable AI model based on content analysis",
+        system_prompt: DEFAULT_SYSTEM_PROMPT,
       });
       
       if (newPrompt) {
@@ -863,7 +924,13 @@
               {#if showPromptSystemPrompt === 'default'}
                 <div class="individual-system-prompt">
                   <div class="system-prompt-content">
-                    <pre>You are a helpful assistant.</pre>
+                    {#each processMarkdown(DEFAULT_SYSTEM_PROMPT).parts as part}
+                      {#if part.type === 'html'}
+                        <div class="md-content">{@html part.content}</div>
+                      {:else if part.type === 'code'}
+                        <CodeBlock code={part.content} language={part.id?.split('-')[2] || 'text'} />
+                      {/if}
+                    {/each}
                   </div>
                 </div>
               {/if}
@@ -953,7 +1020,7 @@
                         <textarea
                           class="edit-textarea"
                           bind:value={editingSystemPromptValue}
-                          rows="6"
+                          rows="20"
                           use:focusInput
                         ></textarea>
                         <div class="edit-actions">
@@ -984,7 +1051,13 @@
                         </button>
                       </div>
                       <div class="system-prompt-content">
-                        <pre>{profile.system_prompt}</pre>
+                        {#each processMarkdown(profile.system_prompt).parts as part}
+                          {#if part.type === 'html'}
+                            <div class="md-content">{@html part.content}</div>
+                          {:else if part.type === 'code'}
+                            <CodeBlock code={part.content} language={part.id?.split('-')[2] || 'text'} />
+                          {/if}
+                        {/each}
                       </div>
                     {/if}
                   </div>

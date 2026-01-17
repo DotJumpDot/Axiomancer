@@ -46,6 +46,9 @@
     "singleModel": "โมเดลเดียว",
     "singleModelDesc": "เลือกโมเดลที่ต้องการ",
     "selectModel": "เลือกโมเดล",
+    "selectDecidingModel": "เลือกโมเดลตัดสินใจ",
+    "selectPresetFirst": "เลือกพรีเซ็ตก่อน",
+    "decidingModel": "โมเดลตัดสินใจ - กำหนดเส้นทางไปยังโมเดลในพรีเซ็ต",
     "selectPrompt": "เลือกพรอมต์",
     "defaultPrompt": "ค่าเริ่มต้น",
     "defaultPromptDesc": "ผู้ช่วยมาตรฐาน",
@@ -71,6 +74,7 @@
   },
   "input": {
     "placeholder": "ส่งข้อความ...",
+    "selectPresetAndModelFirst": "เลือกพรีเซ็ตและโมเดลตัดสินใจก่อน...",
     "uploadImage": "อัปโหลดรูปภาพ",
     "sendMessage": "ส่งข้อความ",
     "enterToSend": "เพื่อส่ง",

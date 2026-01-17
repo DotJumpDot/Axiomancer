@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chatStore, aiStore, settingsStore } from "@/Store";
+  import { chatStore, aiStore, settingsStore, selectionStore } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -17,6 +17,16 @@
   let selectedModelForCap = $derived.by(() => {
     if (aiStore.autoRoutingEnabled) return null;
     return aiStore.enabledModels.find(m => m.model_key === chatStore.currentModelKey) || null;
+  });
+
+  // Check if input should be disabled (auto mode requires both preset and decision model)
+  let isInputDisabled = $derived.by(() => {
+    if (chatStore.isSending) return true;
+    if (aiStore.autoRoutingEnabled) {
+      // In auto mode, require both preset and decision model
+      return !selectionStore.currentPresetName || !selectionStore.currentDecisionModel;
+    }
+    return false;
   });
 
   function handleInput(e: Event) {
@@ -76,11 +86,21 @@
       textareaRef.style.height = "auto";
     }
 
-    const modelKey = !isAutoRouting ? chatStore.currentModelKey : aiStore.selectedModel?.model_key;
+    // Get model key based on mode:
+    // - Single mode: use chatStore.currentModelKey
+    // - Auto mode: use selectionStore.currentDecisionModel (the decision model)
+    const modelKey = !isAutoRouting 
+      ? chatStore.currentModelKey 
+      : selectionStore.currentDecisionModel;
+    
+    // Get prompt ID based on mode
+    const promptId = !isAutoRouting 
+      ? chatStore.currentPromptProfileId 
+      : selectionStore.currentPromptId;
     
     await chatStore.sendMessage(content, modelKey || "auto", {
       autoRouting: isAutoRouting,
-      promptProfileId: chatStore.currentPromptProfileId || undefined,
+      promptProfileId: promptId || undefined,
       webSearch: chatStore.webSearchEnabled,
       imageSearch: chatStore.imageSearchEnabled,
       steamSearch: chatStore.steamSearchEnabled,
@@ -140,9 +160,9 @@
       onkeydown={handleKeydown}
       oncompositionstart={() => (isComposing = true)}
       oncompositionend={() => (isComposing = false)}
-      placeholder={t.input.placeholder}
+      placeholder={isInputDisabled && aiStore.autoRoutingEnabled ? (t.input.selectPresetAndModelFirst || "Select preset and decision model first") : t.input.placeholder}
       rows="1"
-      disabled={chatStore.isSending}
+      disabled={isInputDisabled}
     ></textarea>
 
     <div class="input-actions">

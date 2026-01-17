@@ -1,6 +1,6 @@
 import { ChatQuery } from "./chat_query";
 import { openRouterClient, OpenRouterClient } from "@/api/ai/ai_openrouter";
-import { getAiModelByModelKey } from "@/api/ai/ai_query";
+import { getAiModelByModelKey, getAiModels } from "@/api/ai/ai_query";
 import { getPromptProfileById } from "@/api/prompt/prompt_query";
 import { getUserById } from "@/api/user/user_query";
 import { decryptApiKey } from "@/api/user/user_service";
@@ -285,12 +285,15 @@ export class ChatService {
       // Determine routing mode
       const routingMode = options?.autoRouting ? "auto" : "manual";
 
+      // Store the decision model (the model used for routing in auto mode)
+      const decisionModelKey = actualModelKey;
+
       // Create user message first (without search_log_uuid initially)
       const userChat: CreateChatRequest = {
         conversation_id: conversationId,
         role: "user",
         content: userMessage,
-        model_id: actualModelKey || null,
+        model_id: decisionModelKey || null,
         prompt_profile_id: promptProfileId || null,
         routing_mode: routingMode,
         respond_error: false,
@@ -356,8 +359,8 @@ export class ChatService {
       // Build messages array for OpenRouter (excluding the just-added user message)
       const openRouterMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
 
-      // Add system prompt if available
-      if (systemPrompt) {
+      // Add system prompt if available (but NOT in auto-routing mode - routing prompt is only for decision)
+      if (systemPrompt && !options?.autoRouting) {
         openRouterMessages.push({ role: "system", content: systemPrompt });
       }
 
@@ -388,19 +391,100 @@ export class ChatService {
         }
       }
 
-      // Prepare OpenRouter request
+      //* Auto-routing logic: Use decision model to select the best model
+      let routingInfo: { selectedModel: string; reasoning: string } | null = null;
+
+      if (options?.autoRouting && promptProfileId) {
+        try {
+          // Build decision messages with routing prompt
+          const decisionMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+
+          // Add system prompt from prompt profile
+          if (systemPrompt) {
+            decisionMessages.push({ role: "system", content: systemPrompt });
+          }
+
+          // Add user message for decision
+          decisionMessages.push({ role: "user", content: userMessage });
+
+          // Call decision model
+          const decisionRequest: OpenRouterRequest = {
+            model: actualModelKey || "anthropic/claude-3-haiku",
+            messages: decisionMessages,
+          };
+
+          const decisionResponse = await activeClient.chatCompletion(decisionRequest);
+          const decisionContent = decisionResponse.choices[0]?.message?.content || "";
+
+          // Try to parse JSON response
+          try {
+            // Remove markdown code blocks if present
+            const cleanedContent = decisionContent.replace(/```json\s*|\s*```/g, "").trim();
+            const parsedDecision = JSON.parse(cleanedContent);
+
+            if (parsedDecision.selected_model && parsedDecision.reasoning) {
+              routingInfo = {
+                selectedModel: parsedDecision.selected_model,
+                reasoning: parsedDecision.reasoning,
+              };
+
+              // Update actualModelKey to the selected model's model_key
+              // Need to find the model by display name with improved matching
+              const allModels = await getAiModels();
+
+              // Try exact match first
+              let selectedModel = allModels.find(
+                (m: any) => m.display_name === parsedDecision.selected_model
+              );
+
+              // If no exact match, try case-insensitive partial match
+              if (!selectedModel) {
+                const searchLower = parsedDecision.selected_model.toLowerCase();
+                selectedModel = allModels.find((m: any) => {
+                  const displayLower = m.display_name.toLowerCase();
+                  // Remove " (free)" suffix for better matching
+                  const cleanSearch = searchLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  const cleanDisplay = displayLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  return cleanDisplay === cleanSearch || displayLower.includes(cleanSearch);
+                });
+              }
+
+              if (selectedModel) {
+                actualModelKey = selectedModel.model_key;
+              } else {
+                console.warn(`Could not find model for: ${parsedDecision.selected_model}`);
+              }
+            }
+          } catch (parseError) {
+            console.error("Failed to parse decision model response:", parseError);
+            // Continue with original model if parsing fails
+          }
+        } catch (decisionError) {
+          console.error("Error in auto-routing decision:", decisionError);
+          // Continue with original model if decision fails
+        }
+      }
+
+      // Prepare OpenRouter request for actual response
       const openRouterRequest: OpenRouterRequest = {
         model: actualModelKey || "anthropic/claude-3-haiku",
         messages: openRouterMessages,
       };
 
-      // Call OpenRouter API
+      // Call OpenRouter API for actual response
       const startTime = Date.now();
       const aiResponse = await activeClient.chatCompletion(openRouterRequest);
       const latencyMs = Date.now() - startTime;
 
       // Extract AI response content
-      const aiContent = aiResponse.choices[0]?.message?.content || "No response generated";
+      let aiContent = aiResponse.choices[0]?.message?.content || "No response generated";
+
+      // Prepend routing info if available
+      if (routingInfo) {
+        const routingPrefix = `**Model:** ${routingInfo.selectedModel} (\`${actualModelKey}\`)\n**Reason:** ${routingInfo.reasoning}\n\n---\n\n`;
+        aiContent = routingPrefix + aiContent;
+      }
+
       const tokenUsage = aiResponse.usage;
       const finishReason = aiResponse.choices[0]?.finish_reason;
 
@@ -546,12 +630,15 @@ export class ChatService {
       // Determine routing mode
       const routingMode = options?.autoRouting ? "auto" : "manual";
 
+      // Store the decision model (the model used for routing in auto mode)
+      const decisionModelKey = actualModelKey;
+
       // Create user message first
       const userChat: CreateChatRequest = {
         conversation_id: conversationId,
         role: "user",
         content: userMessage,
-        model_id: actualModelKey || null,
+        model_id: decisionModelKey || null,
         prompt_profile_id: promptProfileId || null,
         routing_mode: routingMode,
         respond_error: false,
@@ -602,7 +689,8 @@ export class ChatService {
       // Build messages array for OpenRouter
       const openRouterMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
 
-      if (systemPrompt) {
+      // Add system prompt if available (but NOT in auto-routing mode - routing prompt is only for decision)
+      if (systemPrompt && !options?.autoRouting) {
         openRouterMessages.push({ role: "system", content: systemPrompt });
       }
 
@@ -631,11 +719,92 @@ export class ChatService {
         }
       }
 
-      // Prepare OpenRouter request
+      //* Auto-routing logic for streaming: Use decision model to select the best model
+      let routingInfo: { selectedModel: string; reasoning: string } | null = null;
+
+      if (options?.autoRouting && promptProfileId) {
+        try {
+          // Build decision messages with routing prompt
+          const decisionMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+
+          // Add system prompt from prompt profile
+          if (systemPrompt) {
+            decisionMessages.push({ role: "system", content: systemPrompt });
+          }
+
+          // Add user message for decision
+          decisionMessages.push({ role: "user", content: userMessage });
+
+          // Call decision model (non-streaming)
+          const decisionRequest: OpenRouterRequest = {
+            model: actualModelKey || "anthropic/claude-3-haiku",
+            messages: decisionMessages,
+          };
+
+          const decisionResponse = await activeClient.chatCompletion(decisionRequest);
+          const decisionContent = decisionResponse.choices[0]?.message?.content || "";
+
+          // Try to parse JSON response
+          try {
+            // Remove markdown code blocks if present
+            const cleanedContent = decisionContent.replace(/```json\s*|\s*```/g, "").trim();
+            const parsedDecision = JSON.parse(cleanedContent);
+
+            if (parsedDecision.selected_model && parsedDecision.reasoning) {
+              routingInfo = {
+                selectedModel: parsedDecision.selected_model,
+                reasoning: parsedDecision.reasoning,
+              };
+
+              // Update actualModelKey to the selected model's model_key
+              // Need to find the model by display name with improved matching
+              const allModels = await getAiModels();
+
+              // Try exact match first
+              let selectedModel = allModels.find(
+                (m: any) => m.display_name === parsedDecision.selected_model
+              );
+
+              // If no exact match, try case-insensitive partial match
+              if (!selectedModel) {
+                const searchLower = parsedDecision.selected_model.toLowerCase();
+                selectedModel = allModels.find((m: any) => {
+                  const displayLower = m.display_name.toLowerCase();
+                  // Remove " (free)" suffix for better matching
+                  const cleanSearch = searchLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  const cleanDisplay = displayLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  return cleanDisplay === cleanSearch || displayLower.includes(cleanSearch);
+                });
+              }
+
+              if (selectedModel) {
+                actualModelKey = selectedModel.model_key;
+              } else {
+                console.warn(`Could not find model for: ${parsedDecision.selected_model}`);
+              }
+            }
+          } catch (parseError) {
+            console.error("Failed to parse decision model response:", parseError);
+            // Continue with original model if parsing fails
+          }
+        } catch (decisionError) {
+          console.error("Error in auto-routing decision:", decisionError);
+          // Continue with original model if decision fails
+        }
+      }
+
+      // Prepare OpenRouter request for actual streaming response
       const openRouterRequest: OpenRouterRequest = {
         model: actualModelKey || "anthropic/claude-3-haiku",
         messages: openRouterMessages,
       };
+
+      // Send routing info first if available
+      if (routingInfo && onChunk) {
+        const routingPrefix = `**Model:** ${routingInfo.selectedModel} (\`${actualModelKey}\`)\n**Reason:** ${routingInfo.reasoning}\n\n---\n\n`;
+        onChunk(routingPrefix);
+        fullAiContent += routingPrefix;
+      }
 
       // Stream the response
       const startTime = Date.now();

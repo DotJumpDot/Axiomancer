@@ -139,15 +139,16 @@ This document describes the complete database schema for the Axiomancer AI chat 
 
 ### User Selected Models
 
-| Column       | Type     | Nullable | Description                                |
-| ------------ | -------- | -------- | ------------------------------------------ |
-| preset       | int      | No       | Auto-incrementing preset number (reusable) |
-| user_uuid    | str      | No       | Foreign key to user.uuid                   |
-| ai_model_ids | text[]   | No       | Array of AI model IDs                      |
-| prompt_id    | uuid     | Yes      | Foreign key to prompt_profile.id           |
-| searchable   | boolean  | No       | Whether this preset is searchable          |
-| created_at   | datetime | No       | Record creation timestamp                  |
-| updated_at   | datetime | No       | Record last update timestamp               |
+| Column         | Type     | Nullable | Description                                |
+| -------------- | -------- | -------- | ------------------------------------------ |
+| preset         | int      | No       | Auto-incrementing preset number (reusable) |
+| user_uuid      | str      | No       | Foreign key to user.uuid                   |
+| ai_model_ids   | text[]   | No       | Array of AI model IDs                      |
+| prompt_id      | uuid     | Yes      | Foreign key to prompt_profile.id           |
+| decision_model | text     | Yes      | Model key for auto-routing decision making |
+| searchable     | boolean  | No       | Whether this preset is searchable          |
+| created_at     | datetime | No       | Record creation timestamp                  |
+| updated_at     | datetime | No       | Record last update timestamp               |
 
 ### User Favorite
 
@@ -313,6 +314,7 @@ CREATE TABLE user_selected_models (
     preset_name TEXT,
     ai_model_ids TEXT[] NOT NULL,
     prompt_id TEXT,
+    decision_model TEXT,
     searchable BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

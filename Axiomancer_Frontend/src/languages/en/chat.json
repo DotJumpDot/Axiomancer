@@ -46,6 +46,9 @@
     "singleModel": "Single Model",
     "singleModelDesc": "Select a specific model",
     "selectModel": "Select Model",
+    "selectDecidingModel": "Select Deciding Model",
+    "selectPresetFirst": "Select a preset first",
+    "decidingModel": "Deciding Model - Routes to preset models",
     "selectPrompt": "Select Prompt",
     "defaultPrompt": "Default",
     "defaultPromptDesc": "Standard helpful assistant",
@@ -71,6 +74,7 @@
   },
   "input": {
     "placeholder": "Send a message...",
+    "selectPresetAndModelFirst": "Select preset and decision model first...",
     "uploadImage": "Upload image",
     "sendMessage": "Send message",
     "enterToSend": "to send",

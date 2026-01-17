@@ -8,7 +8,7 @@ import type {
 // Get all presets for a specific user
 export async function getSelectionsByUserUUID(user_uuid: string): Promise<UserSelectedModels[]> {
   const result = await sql`
-    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at
+    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at
     FROM user_selected_models
     WHERE user_uuid = ${user_uuid}
     ORDER BY preset ASC
@@ -21,7 +21,7 @@ export async function getSelectionByUserUUID(
   user_uuid: string
 ): Promise<UserSelectedModels | null> {
   const result = await sql`
-    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at
+    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at
     FROM user_selected_models
     WHERE user_uuid = ${user_uuid}
     ORDER BY preset ASC
@@ -33,7 +33,7 @@ export async function getSelectionByUserUUID(
 
 export async function getSelectionByPreset(preset: number): Promise<UserSelectedModels | null> {
   const result = await sql`
-    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at
+    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at
     FROM user_selected_models
     WHERE preset = ${preset}
   `;
@@ -43,7 +43,7 @@ export async function getSelectionByPreset(preset: number): Promise<UserSelected
 
 export async function getAllSelections(): Promise<UserSelectedModels[]> {
   const result = await sql`
-    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at
+    SELECT preset, user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at
     FROM user_selected_models
     ORDER BY created_at DESC
   `;
@@ -52,11 +52,11 @@ export async function getAllSelections(): Promise<UserSelectedModels[]> {
 
 export async function createSelection(data: CreateSelectionRequest): Promise<UserSelectedModels> {
   const result = await sql`
-    INSERT INTO user_selected_models (user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at)
+    INSERT INTO user_selected_models (user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at)
     VALUES (${data.user_uuid}, ${data.ai_model_ids}, ${data.prompt_id || null}, ${
-    data.preset_name || null
-  }, ${data.searchable ?? true}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    RETURNING preset, user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at
+      data.preset_name || null
+    }, ${data.decision_model || null}, ${data.searchable ?? true}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING preset, user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at
   `;
   return result[0] as unknown as UserSelectedModels;
 }
@@ -80,6 +80,10 @@ export async function updateSelection(
     setParts.push(`preset_name = $${values.length + 1}`);
     values.push(data.preset_name);
   }
+  if (data.decision_model !== undefined) {
+    setParts.push(`decision_model = $${values.length + 1}`);
+    values.push(data.decision_model);
+  }
   if (data.searchable !== undefined) {
     setParts.push(`searchable = $${values.length + 1}`);
     values.push(data.searchable);
@@ -91,7 +95,7 @@ export async function updateSelection(
 
   const query = `UPDATE user_selected_models SET ${setParts.join(", ")} WHERE preset = $${
     values.length + 1
-  } RETURNING preset, user_uuid, ai_model_ids, prompt_id, preset_name, searchable, created_at, updated_at`;
+  } RETURNING preset, user_uuid, ai_model_ids, prompt_id, preset_name, decision_model, searchable, created_at, updated_at`;
 
   const result = await sql.unsafe(query, [...values, preset]);
 

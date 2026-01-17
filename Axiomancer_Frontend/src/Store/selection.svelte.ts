@@ -9,6 +9,11 @@ let presets = $state<UserSelectedModels[]>([]); // User's presets
 let isLoading = $state(false);
 let error = $state<string | null>(null);
 
+// Current active preset state (for auto mode)
+let currentPresetName = $state<string | null>(null);
+let currentDecisionModel = $state<string | null>(null);
+let currentPromptId = $state<string | null>(null);
+
 async function loadPresetsByUserUUID(userUuid: string) {
   try {
     isLoading = true;
@@ -61,7 +66,12 @@ async function loadAllSelections() {
   }
 }
 
-async function createSelection(userUuid: string, aiModelIds: string[], promptId?: string, searchable = true) {
+async function createSelection(
+  userUuid: string,
+  aiModelIds: string[],
+  promptId?: string,
+  searchable = true
+) {
   try {
     isLoading = true;
     error = null;
@@ -98,7 +108,12 @@ async function createPreset(data: CreatePresetRequest) {
   }
 }
 
-async function updateSelection(preset: number, aiModelIds?: string[], promptId?: string, searchable?: boolean) {
+async function updateSelection(
+  preset: number,
+  aiModelIds?: string[],
+  promptId?: string,
+  searchable?: boolean
+) {
   try {
     isLoading = true;
     error = null;
@@ -134,7 +149,12 @@ async function updatePreset(preset: number, data: UpdatePresetRequest, userUuid?
   }
 }
 
-async function upsertSelection(userUuid: string, aiModelIds: string[], promptId?: string, searchable = true) {
+async function upsertSelection(
+  userUuid: string,
+  aiModelIds: string[],
+  promptId?: string,
+  searchable = true
+) {
   try {
     isLoading = true;
     error = null;
@@ -194,6 +214,22 @@ function resetSelection() {
   error = null;
 }
 
+function setCurrentPreset(
+  presetName: string | null,
+  decisionModel: string | null,
+  promptId: string | null = null
+) {
+  currentPresetName = presetName;
+  currentDecisionModel = decisionModel;
+  currentPromptId = promptId;
+}
+
+function clearCurrentPreset() {
+  currentPresetName = null;
+  currentDecisionModel = null;
+  currentPromptId = null;
+}
+
 // Export store state and functions
 export const selectionStore = {
   // State
@@ -212,6 +248,15 @@ export const selectionStore = {
   get error() {
     return error;
   },
+  get currentPresetName() {
+    return currentPresetName;
+  },
+  get currentDecisionModel() {
+    return currentDecisionModel;
+  },
+  get currentPromptId() {
+    return currentPromptId;
+  },
 
   // Methods
   loadPresetsByUserUUID,
@@ -227,4 +272,6 @@ export const selectionStore = {
   deleteSelectionByUserUUID,
   clearError,
   resetSelection,
+  setCurrentPreset,
+  clearCurrentPreset,
 };

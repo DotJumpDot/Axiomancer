@@ -217,3 +217,39 @@
   color: var(--primary-color, #6366f1);
   border-color: var(--primary-color, #6366f1);
 }
+
+/* Deciding Model Button (Auto Mode) */
+.dropdown-trigger.deciding-model {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  border-color: transparent;
+  color: white;
+  font-weight: 500;
+}
+
+.dropdown-trigger.deciding-model:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a569bd, #9b59b6);
+  border-color: transparent;
+}
+
+.dropdown-trigger.deciding-model:disabled {
+  background: linear-gradient(135deg, #6c5a7c, #5a4a6a);
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dropdown-trigger.deciding-model svg {
+  stroke: white;
+}
+
+.dropdown-trigger.deciding-model:disabled svg {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+.dropdown-trigger.deciding-model .chevron {
+  stroke: rgba(255, 255, 255, 0.8);
+}
+
+.dropdown-trigger.deciding-model:disabled .chevron {
+  stroke: rgba(255, 255, 255, 0.3);
+}

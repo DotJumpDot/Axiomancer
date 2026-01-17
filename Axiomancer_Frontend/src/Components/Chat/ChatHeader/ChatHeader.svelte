@@ -2,8 +2,8 @@
   import { onMount, onDestroy } from "svelte";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { aiStore, chatStore, promptStore, settingsStore, authStore } from "@/Store";
-  import { userService } from "@/Service";
+  import { aiStore, chatStore, promptStore, settingsStore, authStore, selectionStore } from "@/Store";
+  import { userService, selectionService } from "@/Service";
   import { formatModelName, formatProviderName, getTranslations, type LanguageCode } from "@/Function";
   import LoginDialog from "@/Components/Auth/LoginDialog.svelte";
   import { ApiKeyDialog } from "@/Components/Auth";
@@ -33,6 +33,11 @@
   let selectedPromptId = $state<string | null>(null);
   let selectedPromptName = $state<string>("");
 
+  // Auto mode selections
+  let autoDecidingModelKey = $state<string | null>(null);
+  let autoDecidingModelName = $state<string>("");
+  let showAutoModelSelector = $state(false);
+
   let loginDialog: any;
   let apiKeyDialog: any;
   let userSettingDialog: any;
@@ -51,6 +56,12 @@
     chatStore.initializeSingleMode();
     selectedModelKey = chatStore.currentModelKey;
     selectedPromptId = chatStore.currentPromptProfileId;
+    
+    // Initialize auto mode deciding model from aiStore
+    if (aiStore.selectedModel) {
+      autoDecidingModelKey = aiStore.selectedModel.model_key;
+      autoDecidingModelName = aiStore.selectedModel.display_name;
+    }
     
     const axmLogin = localStorage.getItem("AxmLogin");
     if (axmLogin) {
@@ -125,6 +136,12 @@
       const t = getTranslations(settingsStore.language as LanguageCode);
       selectedPromptName = t.header.selectPrompt;
     }
+    
+    // Update auto mode deciding model name
+    if (autoDecidingModelKey) {
+      const model = aiStore.enabledModels.find(m => m.model_key === autoDecidingModelKey);
+      autoDecidingModelName = model?.display_name || autoDecidingModelKey;
+    }
   }
 
   // Initialize mode when user becomes authenticated
@@ -141,11 +158,61 @@
       // Apply to aiStore
       if (savedMode === 'auto') {
         aiStore.enableAutoRouting();
+        // Load and apply preset and decision model when switching to auto mode
+        loadAndApplyPresetAndDecisionModel();
       } else {
         aiStore.disableAutoRouting();
       }
     }
   });
+
+  //* Load and apply preset and decision model from localStorage
+  async function loadAndApplyPresetAndDecisionModel() {
+    if (!authStore.currentUser) return;
+    
+    const savedPreset = authStore.getPreset();
+    const savedDecisionModel = authStore.getDecisionModel();
+    
+    if (savedPreset !== null) {
+      try {
+        // Get preset data from backend
+        const presetData = await selectionService.getSelectionByPreset(savedPreset);
+        
+        // Only apply if the preset belongs to the current user
+        if (presetData && presetData.user_uuid === authStore.currentUser.uuid) {
+          currentPresetName = presetData.preset_name || `Preset ${savedPreset}`;
+          
+          // Apply decision model if saved
+          const decisionModelToUse = savedDecisionModel || presetData.decision_model;
+          if (decisionModelToUse) {
+            autoDecidingModelKey = decisionModelToUse;
+            const model = aiStore.enabledModels.find(m => m.model_key === decisionModelToUse);
+            if (model) {
+              autoDecidingModelName = model.display_name;
+              aiStore.selectModelByKey(decisionModelToUse);
+            }
+          }
+          
+          // Save to selection store
+          selectionStore.setCurrentPreset(
+            currentPresetName,
+            decisionModelToUse || null,
+            presetData.prompt_id || null
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load preset data:", error);
+      }
+    } else if (savedDecisionModel) {
+      // If no preset saved but decision model is saved, apply it
+      autoDecidingModelKey = savedDecisionModel;
+      const model = aiStore.enabledModels.find(m => m.model_key === savedDecisionModel);
+      if (model) {
+        autoDecidingModelName = model.display_name;
+        aiStore.selectModelByKey(savedDecisionModel);
+      }
+    }
+  }
 
   // Keep currentMode in sync with aiStore (but don't override localStorage)
   $effect(() => {
@@ -245,11 +312,73 @@
     showModelSelector = false;
   }
 
+  function handleAutoModelSelect(event: any) {
+    const modelKey = event.detail;
+    autoDecidingModelKey = modelKey;
+    const model = aiStore.enabledModels.find(m => m.model_key === modelKey);
+    if (model) {
+      autoDecidingModelName = model.display_name;
+      aiStore.selectModelByKey(modelKey);
+    }
+    // Save decision model to localStorage
+    authStore.saveDecisionModel(modelKey);
+    // Update selection store to enable input (keep existing prompt ID)
+    selectionStore.setCurrentPreset(currentPresetName, modelKey, selectionStore.currentPromptId);
+    showAutoModelSelector = false;
+  }
+
   function handlePresetApply(event: any) {
-    const { models, prompt, presetName } = event.detail;
-    console.log('Applying preset:', { models, prompt, presetName });
+    const { models, prompt, presetName, decisionModel, presetId } = event.detail;
+    console.log('Applying preset:', { models, prompt, presetName, decisionModel, presetId });
     currentPresetName = presetName;
+    
+    // Apply decision model if provided
+    if (decisionModel) {
+      autoDecidingModelKey = decisionModel;
+      const model = aiStore.enabledModels.find(m => m.model_key === decisionModel);
+      if (model) {
+        autoDecidingModelName = model.display_name;
+        aiStore.selectModelByKey(decisionModel);
+      }
+      // Save decision model to localStorage
+      authStore.saveDecisionModel(decisionModel);
+    }
+    
+    // Save preset to localStorage if presetId is provided
+    if (presetId !== undefined && presetId !== null) {
+      authStore.savePreset(presetId);
+    }
+    
+    // Save to selection store for global access (include prompt ID)
+    selectionStore.setCurrentPreset(presetName, decisionModel || null, prompt);
+    
     closePresetPopup();
+  }
+
+  function handlePresetSelected(event: any) {
+    const { presetName, decisionModel, presetId } = event.detail;
+    console.log('Preset selected:', presetName, 'Decision model:', decisionModel, 'Preset ID:', presetId);
+    currentPresetName = presetName;
+    
+    // Apply decision model if provided
+    if (decisionModel) {
+      autoDecidingModelKey = decisionModel;
+      const model = aiStore.enabledModels.find(m => m.model_key === decisionModel);
+      if (model) {
+        autoDecidingModelName = model.display_name;
+        aiStore.selectModelByKey(decisionModel);
+      }
+      // Save decision model to localStorage
+      authStore.saveDecisionModel(decisionModel);
+    }
+    
+    // Save preset to localStorage if presetId is provided
+    if (presetId !== undefined && presetId !== null) {
+      authStore.savePreset(presetId);
+    }
+    
+    // Save to selection store for global access (prompt ID will be set when preset is applied)
+    selectionStore.setCurrentPreset(presetName, decisionModel || null, null);
   }
 
   function openPromptEditor() {
@@ -359,6 +488,33 @@
     {:else}
       <div class="mode-selector-placeholder">
         <span class="placeholder-text">{t.header.loginToSelectMode}</span>
+      </div>
+    {/if}
+
+    <!-- Auto Mode Deciding Model Selector (only show in auto mode) -->
+    {#if authStore.isAuthenticated && currentMode === 'auto'}
+      <div class="dropdown model-selector">
+        <button
+          class="dropdown-trigger deciding-model"
+          onclick={() => (showAutoModelSelector = true)}
+          disabled={!currentPresetName}
+          title={!currentPresetName ? (t.header.selectPresetFirst || "Select a preset first") : (t.header.decidingModel || "Deciding Model")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+          </svg>
+          {#if autoDecidingModelName && autoDecidingModelName !== autoDecidingModelKey}
+            <span class="model-name">{autoDecidingModelName}</span>
+          {:else if autoDecidingModelKey}
+            <span class="model-name">{formatModelName(autoDecidingModelKey)}</span>
+          {:else}
+            {t.header.selectDecidingModel || "Select Deciding Model"}
+          {/if}
+          <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
       </div>
     {/if}
 
@@ -628,17 +784,24 @@
     isOpen={showPresetPopup}
     onClose={closePresetPopup}
     on:apply={handlePresetApply}
+    on:presetSelected={handlePresetSelected}
   />
   <PromptEdit
     isOpen={showPromptEditor}
     onClose={closePromptEditor}
     on:select={handlePromptSelect}
   />
-  <!-- Model Selector Modal -->
+  <!-- Model Selector Modal (Single Mode) -->
   <ModelSelector
     isOpen={showModelSelector}
     onClose={() => showModelSelector = false}
     on:select={handleModelSelect}
+  />
+  <!-- Model Selector Modal (Auto Mode - Deciding Model) -->
+  <ModelSelector
+    isOpen={showAutoModelSelector}
+    onClose={() => showAutoModelSelector = false}
+    on:select={handleAutoModelSelect}
   />
   <!-- Login Dialog -->
   <LoginDialog bind:this={loginDialog} />

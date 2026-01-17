@@ -104,7 +104,9 @@ async function loadMessages(conversationId: string) {
             id: chat.chat_ai_respond_id,
             role: "assistant",
             content: chat.ai_content,
-            model_id: chat.ai_model_key || chat.model_id,
+            // Preserve both model_id (decision model) and ai_model_key (active model)
+            model_id: chat.model_id,
+            ai_model_key: chat.ai_model_key,
             search_log: chat.search_log, // Preserve search_log data
           });
         }
@@ -249,6 +251,13 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         // onChunk
         (chunk: string) => {
           if (!streamingAiMessage) {
+            // Extract ai_model_key from routing prefix if present (format: **Model:** Name (`model_key`))
+            let extractedAiModelKey: string | null = null;
+            const routingMatch = chunk.match(/\*\*Model:\*\*[^`]*`([^`]+)`/);
+            if (routingMatch) {
+              extractedAiModelKey = routingMatch[1];
+            }
+
             // Create streaming message on first chunk
             streamingAiMessage = {
               id: `streaming-${Date.now()}`,
@@ -256,6 +265,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
               role: "assistant",
               content: chunk,
               model_id: modelKey || null,
+              ai_model_key: extractedAiModelKey,
               prompt_profile_id: options?.promptProfileId || null,
               routing_mode: options?.autoRouting ? "auto" : "manual",
               search_log_uuid: null,
@@ -293,7 +303,8 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
               conversation_id: currentConversation!.id,
               role: "assistant",
               content: result.aiResponse.ai_content,
-              model_id: result.aiResponse.model_key,
+              model_id: result.userMessage.model_id,
+              ai_model_key: result.aiResponse.model_key,
               prompt_profile_id: result.userMessage.prompt_profile_id,
               routing_mode: result.userMessage.routing_mode,
               search_log_uuid: result.userMessage.search_log_uuid,
@@ -358,7 +369,8 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
             conversation_id: currentConversation!.id,
             role: "assistant",
             content: response.data.aiResponse.ai_content,
-            model_id: response.data.aiResponse.model_key,
+            model_id: response.data.userMessage.model_id,
+            ai_model_key: response.data.aiResponse.model_key,
             prompt_profile_id: response.data.userMessage.prompt_profile_id,
             routing_mode: response.data.userMessage.routing_mode,
             search_log_uuid: response.data.userMessage.search_log_uuid,
@@ -474,7 +486,7 @@ async function stopStreaming() {
     streamAbortController.abort();
     streamAbortController = null;
     isSending = false;
-    
+
     // Reload messages from database to show saved user message and partial AI response
     if (currentConversation) {
       await loadMessages(currentConversation.id);
