@@ -424,13 +424,6 @@
     border-left: 3px solid var(--primary-color, #6366f1);
   }
 
-  .streaming-cursor {
-    display: inline;
-    animation: blink 1s step-end infinite;
-    color: var(--primary-color, #6366f1) !important;
-    font-weight: bold;
-    line-height: inherit;
-  }
 
   :global(.streaming-cursor-blink) {
     display: inline;

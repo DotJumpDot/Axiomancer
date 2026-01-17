@@ -469,13 +469,16 @@ function clearCurrentConversation() {
 }
 
 //! Stop streaming AI response
-function stopStreaming() {
+async function stopStreaming() {
   if (streamAbortController) {
     streamAbortController.abort();
     streamAbortController = null;
     isSending = false;
-    // Remove any streaming messages
-    messages = messages.filter((m) => !m.id.startsWith("streaming-"));
+    
+    // Reload messages from database to show saved user message and partial AI response
+    if (currentConversation) {
+      await loadMessages(currentConversation.id);
+    }
   }
 }
 

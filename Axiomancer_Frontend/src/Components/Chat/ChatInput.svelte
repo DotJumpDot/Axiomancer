@@ -512,10 +512,6 @@
     color: var(--hint-color, #4dc8f8); /* Ensure hint changes to light blue when switch is enabled */
   }
 
-  .spinner {
-    animation: spin 1s linear infinite;
-  }
-
   @keyframes spin {
     from {
       transform: rotate(0deg);
