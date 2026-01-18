@@ -1,6 +1,10 @@
 import { ChatQuery } from "./chat_query";
 import { openRouterClient, OpenRouterClient } from "@/api/ai/ai_openrouter";
-import { getAiModelByModelKey, getAiModels } from "@/api/ai/ai_query";
+import {
+  getAiModelByModelKey,
+  getAiModels,
+  getOrCreateAiModel,
+} from "@/api/ai/ai_query";
 import { getPromptProfileById } from "@/api/prompt/prompt_query";
 import { getUserById } from "@/api/user/user_query";
 import { decryptApiKey } from "@/api/user/user_service";
@@ -39,7 +43,7 @@ export class ChatService {
   static async createConversation(
     conversation: CreateConversationRequest,
     userUuid?: string,
-    autoRouting?: boolean
+    autoRouting?: boolean,
   ): Promise<Conversation> {
     try {
       // Validate required fields
@@ -48,18 +52,25 @@ export class ChatService {
       }
 
       // Single mode defaults to auto_routing = false, auto mode = true
-      const effectiveAutoRouting = autoRouting ?? conversation.auto_routing_enabled ?? false;
+      const effectiveAutoRouting =
+        autoRouting ?? conversation.auto_routing_enabled ?? false;
 
-      return await ChatQuery.createConversation(conversation, userUuid, effectiveAutoRouting);
+      return await ChatQuery.createConversation(
+        conversation,
+        userUuid,
+        effectiveAutoRouting,
+      );
     } catch (error) {
       console.error("Error creating conversation:", error);
-      throw error instanceof Error ? error : new Error("Failed to create conversation");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to create conversation");
     }
   }
 
   static async updateConversation(
     id: string,
-    updates: UpdateConversationRequest
+    updates: UpdateConversationRequest,
   ): Promise<Conversation | null> {
     try {
       // Validate conversation exists
@@ -76,7 +87,9 @@ export class ChatService {
       return await ChatQuery.updateConversation(id, updates);
     } catch (error) {
       console.error("Error updating conversation:", error);
-      throw error instanceof Error ? error : new Error("Failed to update conversation");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to update conversation");
     }
   }
 
@@ -95,17 +108,24 @@ export class ChatService {
     }
   }
 
-  static async archiveConversation(id: string, archived: boolean): Promise<Conversation | null> {
+  static async archiveConversation(
+    id: string,
+    archived: boolean,
+  ): Promise<Conversation | null> {
     try {
       return await this.updateConversation(id, { archived });
     } catch (error) {
       console.error("Error archiving conversation:", error);
-      throw error instanceof Error ? error : new Error("Failed to archive conversation");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to archive conversation");
     }
   }
 
   // Chat message management
-  static async getChatsByConversationId(conversationId: string): Promise<Chat[]> {
+  static async getChatsByConversationId(
+    conversationId: string,
+  ): Promise<Chat[]> {
     try {
       // Validate conversation exists
       const conversation = await ChatQuery.getConversationById(conversationId);
@@ -116,7 +136,9 @@ export class ChatService {
       return await ChatQuery.getChatsByConversationId(conversationId);
     } catch (error) {
       console.error("Error getting chats:", error);
-      throw error instanceof Error ? error : new Error("Failed to retrieve chat messages");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to retrieve chat messages");
     }
   }
 
@@ -132,7 +154,9 @@ export class ChatService {
   static async createChat(chat: CreateChatRequest): Promise<Chat> {
     try {
       // Validate conversation exists
-      const conversation = await ChatQuery.getConversationById(chat.conversation_id);
+      const conversation = await ChatQuery.getConversationById(
+        chat.conversation_id,
+      );
       if (!conversation) {
         throw new Error("Conversation not found");
       }
@@ -144,17 +168,24 @@ export class ChatService {
 
       // Validate role
       if (!["user", "assistant", "system"].includes(chat.role)) {
-        throw new Error("Invalid chat role. Must be 'user', 'assistant', or 'system'");
+        throw new Error(
+          "Invalid chat role. Must be 'user', 'assistant', or 'system'",
+        );
       }
 
       return await ChatQuery.createChat(chat);
     } catch (error) {
       console.error("Error creating chat:", error);
-      throw error instanceof Error ? error : new Error("Failed to create chat message");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to create chat message");
     }
   }
 
-  static async updateChat(id: string, updates: UpdateChatRequest): Promise<Chat | null> {
+  static async updateChat(
+    id: string,
+    updates: UpdateChatRequest,
+  ): Promise<Chat | null> {
     try {
       // Validate chat exists
       const existing = await ChatQuery.getChatById(id);
@@ -163,8 +194,13 @@ export class ChatService {
       }
 
       // Validate role if provided
-      if (updates.role !== undefined && !["user", "assistant", "system"].includes(updates.role)) {
-        throw new Error("Invalid chat role. Must be 'user', 'assistant', or 'system'");
+      if (
+        updates.role !== undefined &&
+        !["user", "assistant", "system"].includes(updates.role)
+      ) {
+        throw new Error(
+          "Invalid chat role. Must be 'user', 'assistant', or 'system'",
+        );
       }
 
       // Validate content if provided
@@ -175,7 +211,9 @@ export class ChatService {
       return await ChatQuery.updateChat(id, updates);
     } catch (error) {
       console.error("Error updating chat:", error);
-      throw error instanceof Error ? error : new Error("Failed to update chat message");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to update chat message");
     }
   }
 
@@ -231,7 +269,7 @@ export class ChatService {
       memoryCount?: number;
       reasoningEffort?: string;
     },
-    userId?: number
+    userId?: number,
   ): Promise<{
     userMessage: Chat;
     aiResponse?: ChatAiRespond;
@@ -259,19 +297,23 @@ export class ChatService {
       }
 
       // Determine which OpenRouter client to use
-      const activeClient = userApiKey ? new OpenRouterClient(userApiKey) : openRouterClient;
+      const activeClient = userApiKey
+        ? new OpenRouterClient(userApiKey)
+        : openRouterClient;
 
       if (!activeClient) {
-        throw new Error("OpenRouter API key not configured. Please add your API key in settings.");
+        throw new Error(
+          "OpenRouter API key not configured. Please add your API key in settings.",
+        );
       }
 
-      // Get the AI model details if modelKey provided
+      // Get the AI model details if modelKey provided - auto-create if missing
       let actualModelKey = modelKey;
+      let modelId: string | null = null;
       if (modelKey) {
-        const aiModel = await getAiModelByModelKey(modelKey);
-        if (aiModel) {
-          actualModelKey = aiModel.model_key;
-        }
+        const aiModel = await getOrCreateAiModel(modelKey);
+        actualModelKey = aiModel.model_key;
+        modelId = aiModel.id;
       }
 
       // Get prompt profile if provided
@@ -294,7 +336,7 @@ export class ChatService {
         conversation_id: conversationId,
         role: "user",
         content: userMessage,
-        model_id: decisionModelKey || null,
+        model_id: modelId || null,
         prompt_profile_id: promptProfileId || null,
         routing_mode: routingMode,
         respond_error: false,
@@ -352,14 +394,20 @@ export class ChatService {
       });
 
       // Update user message with search log UUID
-      await ChatQuery.updateChat(savedUserMessage.id, { search_log_uuid: searchLog.id_uuid });
+      await ChatQuery.updateChat(savedUserMessage.id, {
+        search_log_uuid: searchLog.id_uuid,
+      });
       savedUserMessage.search_log_uuid = searchLog.id_uuid;
 
       // Get conversation history for context
-      const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+      const previousMessages =
+        await ChatQuery.getChatsByConversationId(conversationId);
 
       // Build messages array for OpenRouter (excluding the just-added user message)
-      const openRouterMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+      const openRouterMessages: {
+        role: "user" | "assistant" | "system";
+        content: string;
+      }[] = [];
 
       // Add system prompt if available (but NOT in auto-routing mode - routing prompt is only for decision)
       if (systemPrompt && !options?.autoRouting) {
@@ -394,12 +442,16 @@ export class ChatService {
       }
 
       //* Auto-routing logic: Use decision model to select the best model
-      let routingInfo: { selectedModel: string; reasoning: string } | null = null;
+      let routingInfo: { selectedModel: string; reasoning: string } | null =
+        null;
 
       if (options?.autoRouting && promptProfileId) {
         try {
           // Build decision messages with routing prompt
-          const decisionMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+          const decisionMessages: {
+            role: "user" | "assistant" | "system";
+            content: string;
+          }[] = [];
 
           // Add system prompt from prompt profile
           if (systemPrompt) {
@@ -415,13 +467,17 @@ export class ChatService {
             messages: decisionMessages,
           };
 
-          const decisionResponse = await activeClient.chatCompletion(decisionRequest);
-          const decisionContent = decisionResponse.choices[0]?.message?.content || "";
+          const decisionResponse =
+            await activeClient.chatCompletion(decisionRequest);
+          const decisionContent =
+            decisionResponse.choices[0]?.message?.content || "";
 
           // Try to parse JSON response
           try {
             // Remove markdown code blocks if present
-            const cleanedContent = decisionContent.replace(/```json\s*|\s*```/g, "").trim();
+            const cleanedContent = decisionContent
+              .replace(/```json\s*|\s*```/g, "")
+              .trim();
             const parsedDecision = JSON.parse(cleanedContent);
 
             if (parsedDecision.selected_model && parsedDecision.reasoning) {
@@ -436,7 +492,7 @@ export class ChatService {
 
               // Try exact match first
               let selectedModel = allModels.find(
-                (m: any) => m.display_name === parsedDecision.selected_model
+                (m: any) => m.display_name === parsedDecision.selected_model,
               );
 
               // If no exact match, try case-insensitive partial match
@@ -445,20 +501,32 @@ export class ChatService {
                 selectedModel = allModels.find((m: any) => {
                   const displayLower = m.display_name.toLowerCase();
                   // Remove " (free)" suffix for better matching
-                  const cleanSearch = searchLower.replace(/\s*\(free\)\s*$/i, "").trim();
-                  const cleanDisplay = displayLower.replace(/\s*\(free\)\s*$/i, "").trim();
-                  return cleanDisplay === cleanSearch || displayLower.includes(cleanSearch);
+                  const cleanSearch = searchLower
+                    .replace(/\s*\(free\)\s*$/i, "")
+                    .trim();
+                  const cleanDisplay = displayLower
+                    .replace(/\s*\(free\)\s*$/i, "")
+                    .trim();
+                  return (
+                    cleanDisplay === cleanSearch ||
+                    displayLower.includes(cleanSearch)
+                  );
                 });
               }
 
               if (selectedModel) {
                 actualModelKey = selectedModel.model_key;
               } else {
-                console.warn(`Could not find model for: ${parsedDecision.selected_model}`);
+                console.warn(
+                  `Could not find model for: ${parsedDecision.selected_model}`,
+                );
               }
             }
           } catch (parseError) {
-            console.error("Failed to parse decision model response:", parseError);
+            console.error(
+              "Failed to parse decision model response:",
+              parseError,
+            );
             // Continue with original model if parsing fails
           }
         } catch (decisionError) {
@@ -486,7 +554,8 @@ export class ChatService {
       const latencyMs = Date.now() - startTime;
 
       // Extract AI response content
-      let aiContent = aiResponse.choices[0]?.message?.content || "No response generated";
+      let aiContent =
+        aiResponse.choices[0]?.message?.content || "No response generated";
 
       // Prepend routing info if available
       if (routingInfo) {
@@ -522,7 +591,9 @@ export class ChatService {
       savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
 
       // Fetch the complete message with joined search_log data
-      const completeUserMessage = await ChatQuery.getChatById(savedUserMessage.id);
+      const completeUserMessage = await ChatQuery.getChatById(
+        savedUserMessage.id,
+      );
 
       return {
         userMessage: completeUserMessage || savedUserMessage,
@@ -565,7 +636,9 @@ export class ChatService {
         }
       }
 
-      throw error instanceof Error ? error : new Error("Failed to send message");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to send message");
     }
   }
 
@@ -584,7 +657,7 @@ export class ChatService {
       reasoningEffort?: string;
     },
     userId?: number,
-    onChunk?: (chunk: string) => void
+    onChunk?: (chunk: string) => void,
   ): Promise<{
     userMessage: Chat;
     aiResponse?: ChatAiRespond;
@@ -613,19 +686,23 @@ export class ChatService {
       }
 
       // Determine which OpenRouter client to use
-      const activeClient = userApiKey ? new OpenRouterClient(userApiKey) : openRouterClient;
+      const activeClient = userApiKey
+        ? new OpenRouterClient(userApiKey)
+        : openRouterClient;
 
       if (!activeClient) {
-        throw new Error("OpenRouter API key not configured. Please add your API key in settings.");
+        throw new Error(
+          "OpenRouter API key not configured. Please add your API key in settings.",
+        );
       }
 
-      // Get the AI model details if modelKey provided
+      // Get the AI model details if modelKey provided - auto-create if missing
       let actualModelKey = modelKey;
+      let modelId: string | null = null;
       if (modelKey) {
-        const aiModel = await getAiModelByModelKey(modelKey);
-        if (aiModel) {
-          actualModelKey = aiModel.model_key;
-        }
+        const aiModel = await getOrCreateAiModel(modelKey);
+        actualModelKey = aiModel.model_key;
+        modelId = aiModel.id;
       }
 
       // Get prompt profile if provided
@@ -648,7 +725,7 @@ export class ChatService {
         conversation_id: conversationId,
         role: "user",
         content: userMessage,
-        model_id: decisionModelKey || null,
+        model_id: modelId || null,
         prompt_profile_id: promptProfileId || null,
         routing_mode: routingMode,
         respond_error: false,
@@ -691,14 +768,20 @@ export class ChatService {
       });
 
       // Update user message with search log UUID
-      await ChatQuery.updateChat(savedUserMessage.id, { search_log_uuid: searchLog.id_uuid });
+      await ChatQuery.updateChat(savedUserMessage.id, {
+        search_log_uuid: searchLog.id_uuid,
+      });
       savedUserMessage.search_log_uuid = searchLog.id_uuid;
 
       // Get conversation history for context
-      const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+      const previousMessages =
+        await ChatQuery.getChatsByConversationId(conversationId);
 
       // Build messages array for OpenRouter
-      const openRouterMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+      const openRouterMessages: {
+        role: "user" | "assistant" | "system";
+        content: string;
+      }[] = [];
 
       // Add system prompt if available (but NOT in auto-routing mode - routing prompt is only for decision)
       if (systemPrompt && !options?.autoRouting) {
@@ -731,12 +814,16 @@ export class ChatService {
       }
 
       //* Auto-routing logic for streaming: Use decision model to select the best model
-      let routingInfo: { selectedModel: string; reasoning: string } | null = null;
+      let routingInfo: { selectedModel: string; reasoning: string } | null =
+        null;
 
       if (options?.autoRouting && promptProfileId) {
         try {
           // Build decision messages with routing prompt
-          const decisionMessages: { role: "user" | "assistant" | "system"; content: string }[] = [];
+          const decisionMessages: {
+            role: "user" | "assistant" | "system";
+            content: string;
+          }[] = [];
 
           // Add system prompt from prompt profile
           if (systemPrompt) {
@@ -752,13 +839,17 @@ export class ChatService {
             messages: decisionMessages,
           };
 
-          const decisionResponse = await activeClient.chatCompletion(decisionRequest);
-          const decisionContent = decisionResponse.choices[0]?.message?.content || "";
+          const decisionResponse =
+            await activeClient.chatCompletion(decisionRequest);
+          const decisionContent =
+            decisionResponse.choices[0]?.message?.content || "";
 
           // Try to parse JSON response
           try {
             // Remove markdown code blocks if present
-            const cleanedContent = decisionContent.replace(/```json\s*|\s*```/g, "").trim();
+            const cleanedContent = decisionContent
+              .replace(/```json\s*|\s*```/g, "")
+              .trim();
             const parsedDecision = JSON.parse(cleanedContent);
 
             if (parsedDecision.selected_model && parsedDecision.reasoning) {
@@ -773,7 +864,7 @@ export class ChatService {
 
               // Try exact match first
               let selectedModel = allModels.find(
-                (m: any) => m.display_name === parsedDecision.selected_model
+                (m: any) => m.display_name === parsedDecision.selected_model,
               );
 
               // If no exact match, try case-insensitive partial match
@@ -782,20 +873,32 @@ export class ChatService {
                 selectedModel = allModels.find((m: any) => {
                   const displayLower = m.display_name.toLowerCase();
                   // Remove " (free)" suffix for better matching
-                  const cleanSearch = searchLower.replace(/\s*\(free\)\s*$/i, "").trim();
-                  const cleanDisplay = displayLower.replace(/\s*\(free\)\s*$/i, "").trim();
-                  return cleanDisplay === cleanSearch || displayLower.includes(cleanSearch);
+                  const cleanSearch = searchLower
+                    .replace(/\s*\(free\)\s*$/i, "")
+                    .trim();
+                  const cleanDisplay = displayLower
+                    .replace(/\s*\(free\)\s*$/i, "")
+                    .trim();
+                  return (
+                    cleanDisplay === cleanSearch ||
+                    displayLower.includes(cleanSearch)
+                  );
                 });
               }
 
               if (selectedModel) {
                 actualModelKey = selectedModel.model_key;
               } else {
-                console.warn(`Could not find model for: ${parsedDecision.selected_model}`);
+                console.warn(
+                  `Could not find model for: ${parsedDecision.selected_model}`,
+                );
               }
             }
           } catch (parseError) {
-            console.error("Failed to parse decision model response:", parseError);
+            console.error(
+              "Failed to parse decision model response:",
+              parseError,
+            );
             // Continue with original model if parsing fails
           }
         } catch (decisionError) {
@@ -827,7 +930,9 @@ export class ChatService {
       // Stream the response
       const startTime = Date.now();
       let reasoningContent = "";
-      for await (const chunk of activeClient.streamChatCompletion(openRouterRequest)) {
+      for await (const chunk of activeClient.streamChatCompletion(
+        openRouterRequest,
+      )) {
         if (chunk.type === "reasoning") {
           reasoningContent += chunk.data;
         } else if (chunk.type === "content") {
@@ -842,14 +947,19 @@ export class ChatService {
       // Log reasoning summary if captured
       if (reasoningContent) {
         console.log(
-          `[Chat Service] Captured ${reasoningContent.length} characters of reasoning content`
+          `[Chat Service] Captured ${reasoningContent.length} characters of reasoning content`,
         );
       }
 
       // Update search log with reasoning content if available
       if (reasoningContent && searchLog) {
-        await ChatQuery.updateSearchLogReasoningContent(searchLog.id_uuid, reasoningContent);
-        console.log(`[Chat Service] Saved reasoning content to search log ${searchLog.id_uuid}`);
+        await ChatQuery.updateSearchLogReasoningContent(
+          searchLog.id_uuid,
+          reasoningContent,
+        );
+        console.log(
+          `[Chat Service] Saved reasoning content to search log ${searchLog.id_uuid}`,
+        );
       }
 
       // Create chat_ai_respond record
@@ -869,7 +979,9 @@ export class ChatService {
 
       savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
 
-      const completeUserMessage = await ChatQuery.getChatById(savedUserMessage.id);
+      const completeUserMessage = await ChatQuery.getChatById(
+        savedUserMessage.id,
+      );
 
       return {
         userMessage: completeUserMessage || savedUserMessage,
@@ -909,12 +1021,17 @@ export class ChatService {
         }
       }
 
-      throw error instanceof Error ? error : new Error("Failed to send message");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to send message");
     }
   }
 
   // Send anonymous message (no database storage)
-  static async sendAnonymousMessage(body: { message: string; model_key?: string }): Promise<{
+  static async sendAnonymousMessage(body: {
+    message: string;
+    model_key?: string;
+  }): Promise<{
     message: Chat;
     response: Chat;
   }> {
@@ -925,10 +1042,15 @@ export class ChatService {
 
       const userMessage = body.message;
       const modelKey =
-        body.model_key || process.env.SERVER_ANON_MODEL || "xiaomi/mimo-v2-flash:free"; // Default model
+        body.model_key ||
+        process.env.SERVER_ANON_MODEL ||
+        "xiaomi/mimo-v2-flash:free"; // Default model
 
       // Get AI response
-      const aiContent = await openRouterClient.simpleChat(modelKey, userMessage);
+      const aiContent = await openRouterClient.simpleChat(
+        modelKey,
+        userMessage,
+      );
 
       // Create Chat objects for response
       const userChat: Chat = {
@@ -967,7 +1089,9 @@ export class ChatService {
       };
     } catch (error) {
       console.error("Error sending anonymous message:", error);
-      throw error instanceof Error ? error : new Error("Failed to send anonymous message");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to send anonymous message");
     }
   }
 }

@@ -62,7 +62,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
         username: t.String({ minLength: 1 }),
         password: t.String({ minLength: 1 }),
       }),
-    }
+    },
   )
 
   // Register
@@ -81,13 +81,13 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
     {
       body: t.Object({
         username: t.String({ minLength: 3 }),
-        password: t.String({ minLength: 6 }),
+        password: t.String({ minLength: 4 }),
         email: t.String(),
         firstname: t.Optional(t.String()),
         lastname: t.Optional(t.String()),
         nickname: t.Optional(t.String()),
       }),
-    }
+    },
   )
 
   // Refresh token
@@ -107,7 +107,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
       body: t.Object({
         refresh_token: t.String(),
       }),
-    }
+    },
   )
 
   // Logout
@@ -132,9 +132,9 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
       body: t.Optional(
         t.Object({
           refresh_token: t.Optional(t.String()),
-        })
+        }),
       ),
-    }
+    },
   )
 
   // Validate token
@@ -179,7 +179,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
         permissions: t.Array(t.String()),
         expires_in_days: t.Optional(t.Number({ minimum: 1, maximum: 365 })),
       }),
-    }
+    },
   )
 
   // Get user's API keys (requires authentication)

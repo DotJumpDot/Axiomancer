@@ -1,5 +1,9 @@
 import { sql } from "@/database/db";
-import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "./ai_type";
+import type {
+  AiModel,
+  CreateAiModelRequest,
+  UpdateAiModelRequest,
+} from "./ai_type";
 
 export async function getAiModels(): Promise<AiModel[]> {
   const result = await sql`
@@ -20,7 +24,9 @@ export async function getAiModelById(id: string): Promise<AiModel | null> {
   return result[0] as unknown as AiModel;
 }
 
-export async function getAiModelByModelKey(model_key: string): Promise<AiModel | null> {
+export async function getAiModelByModelKey(
+  model_key: string,
+): Promise<AiModel | null> {
   const result = await sql`
     SELECT id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
     FROM ai_model
@@ -32,15 +38,17 @@ export async function getAiModelByModelKey(model_key: string): Promise<AiModel |
   return result[0] as unknown as AiModel;
 }
 
-export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel> {
+export async function createAiModel(
+  data: CreateAiModelRequest,
+): Promise<AiModel> {
   const id = crypto.randomUUID();
   const result = await sql`
     INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at)
     VALUES (${id}, ${data.provider}, ${data.model_key}, ${data.display_name}, ${
-    data.context_length
-  }, ${data.cost_per_1k_token}, ${JSON.stringify(data.capabilities)}, ${
-    data.enabled ?? true
-  }, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      data.context_length
+    }, ${data.cost_per_1k_token}, ${sql.json(data.capabilities)}, ${
+      data.enabled ?? true
+    }, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     RETURNING id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
   `;
   return result[0] as unknown as AiModel;
@@ -48,7 +56,7 @@ export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel
 
 export async function updateAiModel(
   id: string,
-  data: UpdateAiModelRequest
+  data: UpdateAiModelRequest,
 ): Promise<AiModel | null> {
   const setParts = [];
   const values = [];
@@ -97,4 +105,46 @@ export async function deleteAiModel(id: string): Promise<boolean> {
     DELETE FROM ai_model WHERE id = ${id}
   `;
   return result.count > 0;
+}
+
+//* Get or create AI model by model key (auto-insert if missing)
+export async function getOrCreateAiModel(modelKey: string): Promise<AiModel> {
+  // First try to get existing model
+  let model = await getAiModelByModelKey(modelKey);
+  if (model) {
+    return model;
+  }
+
+  // Model doesn't exist, create a default entry
+  console.log(`[AI Query] Auto-creating missing model: ${modelKey}`);
+
+  // Extract provider from model key (e.g., "mistralai/devstral-2512:free" -> "mistralai")
+  const provider = modelKey.split("/")[0] || "openrouter";
+
+  // Create display name from model key
+  const displayName = modelKey
+    .replace(/\//g, " ")
+    .replace(/:/g, " ")
+    .replace(/-/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  // Create model with default values
+  const newModel: CreateAiModelRequest = {
+    provider,
+    model_key: modelKey,
+    display_name: displayName,
+    context_length: 32768, // Default context length
+    cost_per_1k_token: 0.001, // Default cost
+    capabilities: {
+      reasoning: true,
+      coding: true,
+      vision: false,
+      fast: true,
+    },
+    enabled: true,
+  };
+
+  return await createAiModel(newModel);
 }

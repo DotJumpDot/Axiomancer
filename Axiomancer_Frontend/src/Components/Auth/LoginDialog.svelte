@@ -91,7 +91,11 @@
     username: "",
     password: "",
     email: "",
+    confirmPassword: "",
   });
+  
+  // Confirm password field state
+  let confirmPassword = $state("");
 
   // Real-time validation function
   function validateField(field: string, value: string) {
@@ -106,10 +110,14 @@
     } else if (field === "password") {
       if (!value) {
         validationErrors.password = "Password is required";
-      } else if (value.length < 6) {
-        validationErrors.password = "Password must be at least 6 characters";
+      } else if (value.length < 4) {
+        validationErrors.password = "Password must be at least 4 characters";
       } else {
         validationErrors.password = "";
+      }
+      // Also validate confirm password when password changes
+      if (confirmPassword) {
+        validateField("confirmPassword", confirmPassword);
       }
     } else if (field === "email") {
       if (!value) {
@@ -118,6 +126,14 @@
         validationErrors.email = "Please enter a valid email";
       } else {
         validationErrors.email = "";
+      }
+    } else if (field === "confirmPassword") {
+      if (!value) {
+        validationErrors.confirmPassword = "Please confirm your password";
+      } else if (value !== registerData.password) {
+        validationErrors.confirmPassword = "Passwords do not match";
+      } else {
+        validationErrors.confirmPassword = "";
       }
     }
   }
@@ -138,13 +154,21 @@
     validateField('email', target.value);
   }
 
+  function handleConfirmPasswordInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    confirmPassword = target.value;
+    validateField('confirmPassword', target.value);
+  }
+
   // Clear validation errors when switching modes
   function clearValidationErrors() {
     validationErrors = {
       username: "",
       password: "",
       email: "",
+      confirmPassword: "",
     };
+    confirmPassword = "";
   }
 
   function switchMode() {
@@ -181,17 +205,20 @@
   function isRegisterFormValid(): boolean {
     return (
       registerData.username.length >= 3 &&
-      registerData.password.length >= 6 &&
+      registerData.password.length >= 4 &&
+      confirmPassword.length >= 4 &&
+      registerData.password === confirmPassword &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email) &&
       !validationErrors.username &&
       !validationErrors.password &&
-      !validationErrors.email
+      !validationErrors.email &&
+      !validationErrors.confirmPassword
     );
   }
 
   async function handleRegister() {
     // Client-side validation matching backend rules
-    if (!registerData.username || !registerData.password || !registerData.email) {
+    if (!registerData.username || !registerData.password || !registerData.email || !confirmPassword) {
       error = "Please fill in all required fields";
       return;
     }
@@ -201,8 +228,13 @@
       return;
     }
 
-    if (registerData.password.length < 6) {
-      error = "Password must be at least 6 characters long";
+    if (registerData.password.length < 4) {
+      error = "Password must be at least 4 characters long";
+      return;
+    }
+
+    if (registerData.password !== confirmPassword) {
+      error = "Passwords do not match";
       return;
     }
 
@@ -354,7 +386,23 @@
             {#if validationErrors.password}
               <div class="validation-error">{validationErrors.password}</div>
             {:else}
-              <div class="password-hint">Minimum 6 characters</div>
+              <div class="password-hint">Minimum 4 characters</div>
+            {/if}
+          </div>
+
+          <div class="form-group">
+            <label for="register-confirm-password">Confirm Password *</label>
+            <input
+              id="register-confirm-password"
+              type="password"
+              value={confirmPassword}
+              oninput={handleConfirmPasswordInput}
+              placeholder="Confirm your password"
+              disabled={isLoading}
+              class:error={validationErrors.confirmPassword}
+            />
+            {#if validationErrors.confirmPassword}
+              <div class="validation-error">{validationErrors.confirmPassword}</div>
             {/if}
           </div>
 

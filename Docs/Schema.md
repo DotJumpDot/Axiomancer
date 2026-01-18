@@ -202,6 +202,7 @@ DROP TABLE IF EXISTS ai_model;
 DROP TABLE IF EXISTS conversation;
 DROP TABLE IF EXISTS user_selected_models;
 DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS user_favorite;
 
 -- User table
 CREATE TABLE "user" (
@@ -289,7 +290,6 @@ CREATE TABLE chat (
     FOREIGN KEY (conversation_id) REFERENCES conversation(id),
     FOREIGN KEY (model_id) REFERENCES ai_model(id),
     FOREIGN KEY (prompt_profile_id) REFERENCES prompt_profile(id),
-    FOREIGN KEY (search_log_uuid) REFERENCES search_log(id_uuid),
     FOREIGN KEY (chat_ai_respond_id) REFERENCES chat_ai_respond(id)
 );
 
@@ -338,6 +338,10 @@ CREATE TABLE user_favorite (
 );
 
 
+-- Add foreign key constraint for chat to search_log after both tables are created
+ALTER TABLE chat ADD CONSTRAINT fk_chat_search_log FOREIGN KEY (search_log_uuid) REFERENCES search_log(id_uuid);
+
+
 -- Performance indexes
 CREATE INDEX idx_conversation_user_uuid ON conversation(user_uuid);
 CREATE INDEX idx_chat_conversation_id ON chat(conversation_id);
@@ -372,13 +376,13 @@ INSERT INTO prompt_profile (id, user_uuid, name, description, system_prompt, cre
 ('7ba7b811-9dad-11d1-80b4-00c04fd430c8', '550e8400-e29b-41d4-a716-446655440000', 'Code Expert', 'Specialized in programming and coding', 'You are an expert programmer. Provide clear, efficient code solutions.', CURRENT_TIMESTAMP);
 
 -- Insert sample conversation
-INSERT INTO conversation (id, user_id, title, system_prompt_snapshot, auto_routing_enabled, created_at, updated_at)
-VALUES ('8ba7b810-9dad-11d1-80b4-00c04fd430c8', 1, 'First Conversation', 'You are a helpful assistant.', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO conversation (id, user_uuid, title, auto_routing_enabled, created_at, updated_at)
+VALUES ('8ba7b810-9dad-11d1-80b4-00c04fd430c8', '550e8400-e29b-41d4-a716-446655440000', 'First Conversation', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample chat messages
-INSERT INTO chat (id, conversation_id, role, content, model_id, prompt_profile_id, routing_mode, used_web_search, used_image_search, token_usage, latency_ms, created_at, updated_at) VALUES
-('9ba7b810-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'user', 'Hello, how are you?', NULL, NULL, 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 0, "total": 4}', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('9ba7b811-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'assistant', 'I am doing well, thank you for asking! How can I help you today?', '6ba7b810-9dad-11d1-80b4-00c04fd430c8', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'auto', FALSE, FALSE, '{"prompt": 4, "completion": 15, "total": 19}', 1200, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO chat (id, conversation_id, role, content, model_id, prompt_profile_id, routing_mode, search_log_uuid, chat_ai_respond_id, respond_error, created_at, updated_at) VALUES
+('9ba7b810-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'user', 'Hello, how are you?', NULL, NULL, 'auto', NULL, NULL, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('9ba7b811-9dad-11d1-80b4-00c04fd430c8', '8ba7b810-9dad-11d1-80b4-00c04fd430c8', 'assistant', 'I am doing well, thank you for asking! How can I help you today?', '6ba7b810-9dad-11d1-80b4-00c04fd430c8', '7ba7b810-9dad-11d1-80b4-00c04fd430c8', 'auto', NULL, NULL, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample user selected models
 INSERT INTO user_selected_models (preset, user_uuid, ai_model_ids, prompt_id, searchable, created_at, updated_at) VALUES
