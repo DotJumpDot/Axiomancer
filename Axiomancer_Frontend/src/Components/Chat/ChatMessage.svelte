@@ -332,6 +332,7 @@
     border: 1px solid var(--border-color, #2d2d2d);
     align-self: flex-start;
     margin-right: auto;
+    /* min-width: 700px; */
   }
 
   .message.assistant.error {
@@ -457,7 +458,7 @@
     border-radius: 8px;
     margin: 12px 0;
     overflow: hidden;
-    border: 1px solid rgba(168, 85, 247, 0.2);
+    border: 1px solid rgba(31, 240, 240, 0.2);
   }
 
   .message-content :global(.math-content) {
@@ -531,8 +532,8 @@
   }
 
   .message-reminder.math {
-    background: rgba(168, 85, 247, 0.1);
-    border-left: 2px solid #a855f7;
+    background: rgba(31, 240, 240, 0.1);
+    border-left: 2px solid #1ff0f0;
   }
 
   .reminder-text {
@@ -551,7 +552,7 @@
   }
 
   .message-reminder.math .reminder-text {
-    color: #a855f7;
+    color: #1ff0f0;
   }
 
   .message-meta {

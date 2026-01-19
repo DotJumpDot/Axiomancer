@@ -75,15 +75,15 @@
     margin: 8px 0;
     border-radius: 6px;
     overflow: hidden;
-    background: rgba(168, 85, 247, 0.05);
-    border: 1px solid rgba(168, 85, 247, 0.2);
+    background: rgba(31, 240, 240, 0.05);
+    border: 1px solid rgba(31, 240, 240, 0.2);
     transition: background 0.2s ease;
   }
 
   .math-label {
     font-size: 12px;
     font-weight: 500;
-    color: #a855f7;
+    color: #1ff0f0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -102,8 +102,8 @@
   }
 
   .action-btn:hover {
-    background: rgba(168, 85, 247, 0.1);
-    color: #a855f7;
+    background: rgba(31, 240, 240, 0.1);
+    color: #1ff0f0;
   }
 
   .math-content {
