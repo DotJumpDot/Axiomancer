@@ -376,45 +376,53 @@
             </div>
             <div class="reasoning-options">
               {#if !hasReasoningCapability}
-                <button 
-                  class="reasoning-option disabled" 
+                <button
+                  class="reasoning-option disabled"
                   class:active={chatStore.reasoningEffort === "disabled"}
                   onclick={() => { chatStore.reasoningEffort = "disabled"; showReasoningTooltip = false; }}
                 >
-                  <span class="option-label">{t.input.reasoningDisabled}</span>
+                  <span class="option-label option-disabled">{t.input.reasoningDisabled}</span>
                   <span class="option-description">Model does not support reasoning</span>
                 </button>
               {:else}
-                <button 
-                  class="reasoning-option" 
+                <button
+                  class="reasoning-option"
+                  class:active={chatStore.reasoningEffort === "disabled"}
+                  onclick={() => { chatStore.reasoningEffort = "disabled"; showReasoningTooltip = false; }}
+                >
+                  <span class="option-label option-disabled">{t.input.reasoningDisabled}</span>
+                  <span class="option-description">Disable reasoning for faster responses</span>
+                </button>
+                <button
+                  class="reasoning-option"
                   class:active={chatStore.reasoningEffort === "minimal"}
                   onclick={() => { chatStore.reasoningEffort = "minimal"; showReasoningTooltip = false; }}
                 >
-                  <span class="option-label">{t.input.reasoningMinimal}</span>
+                  <span class="option-label option-minimal">{t.input.reasoningMinimal}</span>
                   <span class="option-description">Basic reasoning with minimal effort</span>
                 </button>
-                <button 
-                  class="reasoning-option" 
+                <button
+                  class="reasoning-option"
                   class:active={chatStore.reasoningEffort === "low"}
                   onclick={() => { chatStore.reasoningEffort = "low"; showReasoningTooltip = false; }}
                 >
-                  <span class="option-label">{t.input.reasoningLow}</span>
+                  <span class="option-label option-low">{t.input.reasoningLow}</span>
                   <span class="option-description">Light reasoning for simple problems</span>
                 </button>
-                <button 
-                  class="reasoning-option" 
+                <button
+                  class="reasoning-option"
                   class:active={chatStore.reasoningEffort === "medium"}
                   onclick={() => { chatStore.reasoningEffort = "medium"; showReasoningTooltip = false; }}
                 >
-                  <span class="option-label">{t.input.reasoningMedium}</span>
+                  <span class="option-label option-medium">{t.input.reasoningMedium}</span>
                   <span class="option-description">Balanced reasoning for moderate complexity</span>
                 </button>
-                <button 
-                  class="reasoning-option" 
+                <button
+                  class="reasoning-option"
                   class:active={chatStore.reasoningEffort === "high"}
                   onclick={() => { chatStore.reasoningEffort = "high"; showReasoningTooltip = false; }}
                 >
-                  <span class="option-label">{t.input.reasoningHigh}</span>
+                  <span class="option-label option-high">{t.input.reasoningHigh}</span>
                   <span class="option-description">Deep reasoning for complex problems</span>
                 </button>
               {/if}
@@ -905,7 +913,7 @@
     position: absolute;
     bottom: calc(100% + 8px);
     right: 0;
-    min-width: 320px;
+    min-width: 280px;
     padding: 12px;
     background: var(--bg-secondary, #2d2d2d);
     border: 1px solid var(--border-color, #3d3d3d);
@@ -965,6 +973,41 @@
     font-weight: 600;
     margin-bottom: 2px;
     text-transform: capitalize;
+  }
+
+  .option-disabled {
+    background: linear-gradient(135deg, #a1a1aa 0%, #d4d4d8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .option-minimal {
+    background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .option-low {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .option-medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .option-high {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .option-description {

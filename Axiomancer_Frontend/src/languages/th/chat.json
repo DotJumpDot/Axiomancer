@@ -89,7 +89,7 @@
     "selectModelOrAutoAlert": "โปรดเลือกโมเดลหรือเปิดใช้งานการเดินทางอัตโนมัติ",
     "chatMemory": "หน่วยความจำแชท",
     "messagesMemory": "ข้อความ",
-    "reasoningEffort": "การให้เหตุผล",
+    "reasoningEffort": "ความพยายามในการใช้เหตุผล",
     "reasoningMinimal": "น้อยที่สุด",
     "reasoningLow": "ต่ำ",
     "reasoningMedium": "ปานกลาง",

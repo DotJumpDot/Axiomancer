@@ -89,7 +89,7 @@
     "selectModelOrAutoAlert": "Please select a model or enable auto-routing",
     "chatMemory": "Chat Memory",
     "messagesMemory": "messages",
-    "reasoningEffort": "Reasoning",
+    "reasoningEffort": "Reasoning Effort",
     "reasoningMinimal": "Minimal",
     "reasoningLow": "Low",
     "reasoningMedium": "Medium",

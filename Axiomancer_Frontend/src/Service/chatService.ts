@@ -122,7 +122,7 @@ export const chatService = {
       reasoningEffort?: string;
     },
     signal: AbortSignal,
-    onChunk: (chunk: string) => void,
+    onChunk: (chunk: string, type?: "content" | "reasoning") => void,
     onDone: (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => void,
     onError: (error: string) => void
   ) {
@@ -184,7 +184,8 @@ export const chatService = {
             try {
               const data = JSON.parse(trimmed.slice(6));
               if (data.chunk) {
-                onChunk(data.chunk);
+                // Pass chunk type if available (for reasoning streaming)
+                onChunk(data.chunk, data.type);
               } else if (data.done) {
                 onDone(data.result);
               } else if (data.error) {

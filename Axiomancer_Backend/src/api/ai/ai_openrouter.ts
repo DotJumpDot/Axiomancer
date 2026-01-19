@@ -34,7 +34,7 @@ export class OpenRouterClient {
   //! Stream chat completion with Server-Sent Events
   async *streamChatCompletion(
     request: OpenRouterRequest
-  ): AsyncGenerator<{ type: "content" | "reasoning"; data: string }, void, unknown> {
+  ): AsyncGenerator<{ type: "content" | "reasoning" | "usage"; data?: any }, void, void> {
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -60,6 +60,7 @@ export class OpenRouterClient {
 
     const decoder = new TextDecoder();
     let buffer = "";
+    let usage: any = undefined;
 
     try {
       while (true) {
@@ -92,6 +93,11 @@ export class OpenRouterClient {
               if (content) {
                 yield { type: "content", data: content };
               }
+
+              // Capture usage information from final chunk
+              if (data.usage) {
+                usage = data.usage;
+              }
             } catch (e) {
               // Skip invalid JSON lines
               console.warn("Failed to parse SSE line:", trimmed);
@@ -101,6 +107,11 @@ export class OpenRouterClient {
       }
     } finally {
       reader.releaseLock();
+    }
+
+    // Yield usage information as final chunk if available
+    if (usage) {
+      yield { type: "usage", data: usage };
     }
   }
 

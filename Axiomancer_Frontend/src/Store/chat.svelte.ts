@@ -232,6 +232,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
     if (useStreaming) {
       // Use streaming mode
       let streamingAiMessage: Chat | null = null;
+      let streamingReasoningContent = "";
 
       // Create AbortController for this stream
       streamAbortController = new AbortController();
@@ -251,7 +252,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         },
         streamAbortController.signal,
         // onChunk
-        (chunk: string) => {
+        (chunk: string, type?: "content" | "reasoning") => {
           if (!streamingAiMessage) {
             // Extract ai_model_key from routing prefix if present (format: **Model:** Name (`model_key`))
             let extractedAiModelKey: string | null = null;
@@ -275,15 +276,38 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
               respond_error: false,
               created_at: new Date(),
               updated_at: new Date(),
+              search_log: {
+                memory_chat_include: options?.memoryCount ?? memoryCount,
+                used_web_search: webSearchEnabled,
+                used_image_search: imageSearchEnabled,
+                used_steam: steamSearchEnabled,
+                reasoning_effort: options?.reasoningEffort || reasoningEffort,
+                reasoning_content: null,
+                search_context_web: null,
+                search_context_picture: null,
+              },
             };
             messages = [...messages, streamingAiMessage];
           } else {
-            // Update streaming message content - create new object reference for reactivity
-            streamingAiMessage = {
-              ...streamingAiMessage,
-              content: streamingAiMessage.content + chunk,
-              updated_at: new Date(),
-            };
+            // Update streaming message based on chunk type
+            if (type === "reasoning") {
+              streamingReasoningContent += chunk;
+              streamingAiMessage = {
+                ...streamingAiMessage,
+                search_log: {
+                  ...streamingAiMessage.search_log!,
+                  reasoning_content: streamingReasoningContent,
+                },
+                updated_at: new Date(),
+              };
+            } else {
+              // Content chunk
+              streamingAiMessage = {
+                ...streamingAiMessage,
+                content: streamingAiMessage.content + chunk,
+                updated_at: new Date(),
+              };
+            }
             // Replace the streaming message in the array with the new object
             messages = messages.map((m) =>
               m.id === streamingAiMessage.id ? streamingAiMessage : m

@@ -406,7 +406,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
                   reasoningEffort: body.reasoningEffort,
                 },
                 auth.user.id,
-                (chunk) => {
+                (chunk, type) => {
                   // Send each chunk to the client
                   controller.enqueue(`data: ${JSON.stringify({ chunk })}\n\n`);
                 }

@@ -18,6 +18,14 @@
   // Check if message has an error
   const hasError = $derived(message.respond_error === true);
 
+  // Check if this message is currently streaming reasoning content
+  const isStreamingReasoning = $derived(
+    isStreaming &&
+    message.search_log?.reasoning_effort &&
+    message.search_log.reasoning_effort !== "disabled" &&
+    !message.search_log?.reasoning_content
+  );
+
   // Get the appropriate content based on message type
   const displayContent = $derived(
     message.role === "user"
@@ -41,8 +49,38 @@
   const isUser = $derived(message.role === "user");
   const markdownData = $derived(processMarkdown(displayContentForError));
 
-  // Process content with streaming cursor injected
+  // Process reasoning content with streaming cursor
+  const processedReasoningContent = $derived.by(() => {
+    // If streaming reasoning, use the main content (displayContent)
+    if (isStreamingReasoning) {
+      return displayContent + '<span class="streaming-cursor-blink"> ▋</span>';
+    }
+    
+    // Otherwise use the stored reasoning_content
+    if (!message.search_log?.reasoning_content) return "";
+    
+    const content = message.search_log.reasoning_content;
+    
+    // If streaming and reasoning content exists, add cursor
+    if (isStreaming) {
+      return content + '<span class="streaming-cursor-blink"> ▋</span>';
+    }
+    
+    return content;
+  });
+
+  // Process content with streaming cursor injected (only if not streaming reasoning)
   const processedMarkdownData = $derived.by(() => {
+    // If currently streaming reasoning, don't show any content in main area
+    if (isStreamingReasoning) {
+      return { ...markdownData, parts: [] };
+    }
+    
+    // If streaming and there's reasoning content, don't show cursor in main content
+    if (isStreaming && message.search_log?.reasoning_content) {
+      return markdownData;
+    }
+    
     if (!isStreaming || markdownData.parts.length === 0) {
       return markdownData;
     }
@@ -126,6 +164,27 @@
   </div>
 
   <div class="message-content">
+    {#if !isUser && (message.search_log?.reasoning_content || isStreamingReasoning)}
+      <div class="reasoning-toggle">
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <button type="button" class="reasoning-toggle-btn" onclick={() => showReasoning = !showReasoning}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+          <span>Reasoning</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate({showReasoning ? '180deg' : '0deg'}); transition: transform 0.2s;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        {#if showReasoning || isStreamingReasoning}
+          <div class="reasoning-content-inline">
+            <div class="reasoning-text">
+              {@html processedReasoningContent}
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
     {#each processedMarkdownData.parts as part, index (part.id || index)}
       {#if part.type === 'html'}
         {@html part.content}
@@ -187,21 +246,11 @@
         </span>
       {/if}
       {#if message.search_log.reasoning_effort && message.search_log.reasoning_effort !== "disabled"}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <span 
-          class="meta-item reasoning" 
-          class:clickable={message.search_log.reasoning_content}
-          onclick={() => message.search_log.reasoning_content && (showReasoning = !showReasoning)}
-        >
+        <span class="meta-item reasoning">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
           </svg>
           Reasoning: {message.search_log.reasoning_effort}
-          {#if message.search_log.reasoning_content}
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate({showReasoning ? '180deg' : '0deg'}); transition: transform 0.2s;">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          {/if}
         </span>
       {/if}
       {#if message.search_log.memory_chat_include !== 1000}
@@ -214,23 +263,6 @@
       {/if}
     </div>
     
-    {#if showReasoning && message.search_log.reasoning_content}
-      <div class="reasoning-content">
-        <div class="reasoning-header">
-          <span class="reasoning-title">🧠 Reasoning Process</span>
-          <!-- svelte-ignore a11y_consider_explicit_label -->
-          <button class="reasoning-close" onclick={() => showReasoning = false}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="reasoning-text">
-          {message.search_log.reasoning_content}
-        </div>
-      </div>
-    {/if}
   {/if}
 </div>
 
@@ -484,50 +516,41 @@
     gap: 4px;
   }
 
-  .meta-item.reasoning.clickable {
+  .reasoning-toggle {
+    margin-bottom: 12px;
+  }
+
+  .reasoning-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 6px;
+    color: #a855f7;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    position: relative;
+    z-index: 1;
   }
 
-  .meta-item.reasoning.clickable:hover {
+  .reasoning-toggle-btn:hover {
     background: rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.3);
   }
 
-  .reasoning-content {
-    margin-top: 12px;
+  .reasoning-content-inline {
+    margin-top: 8px;
     padding: 12px;
     background: rgba(168, 85, 247, 0.05);
     border: 1px solid rgba(168, 85, 247, 0.2);
-    border-radius: 8px;
-  }
-
-  .reasoning-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .reasoning-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: #a855f7;
-  }
-
-  .reasoning-close {
-    padding: 4px;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    color: var(--text-secondary, #888);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .reasoning-close:hover {
-    background: var(--hover-bg, #3d3d3d);
-    color: var(--text-primary, #fff);
+    border-radius: 0 0 8px 8px;
+    border-top: none;
+    margin-top: 0;
   }
 
   .reasoning-text {
@@ -536,6 +559,10 @@
     color: var(--text-primary, #fff);
     white-space: pre-wrap;
     font-family: "Fira Code", "Consolas", monospace;
+  }
+
+  .streaming-reasoning {
+    display: inline;
   }
 
   .message.streaming {
