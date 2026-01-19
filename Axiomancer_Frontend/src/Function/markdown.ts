@@ -7,34 +7,64 @@ export interface CodeBlock {
   code: string;
 }
 
-export interface MarkdownResult {
-  parts: Array<{ type: "html" | "code"; content: string; id?: string }>;
-  codeBlocks: CodeBlock[];
+export interface MathBlock {
+  id: string;
+  math: string;
 }
 
-// Extract and process markdown with code blocks separated
+export interface MarkdownResult {
+  parts: Array<{ type: "html" | "code" | "math"; content: string; id?: string }>;
+  codeBlocks: CodeBlock[];
+  mathBlocks: MathBlock[];
+}
+
+// Extract and process markdown with code blocks and math blocks separated
 export function processMarkdown(markdown: string): MarkdownResult {
   const codeBlocks: CodeBlock[] = [];
-  const parts: Array<{ type: "html" | "code"; content: string; id?: string }> = [];
+  const mathBlocks: MathBlock[] = [];
+  const parts: Array<{ type: "html" | "code" | "math"; content: string; id?: string }> = [];
 
+  // First, extract math blocks
+  const mathBlockRegex = /\\\[([\s\S]*?)\\\]/g;
+  let mathMatch;
+  const mathReplacements: Array<{ index: number; length: number; id: string }> = [];
+
+  while ((mathMatch = mathBlockRegex.exec(markdown)) !== null) {
+    const id = `math-block-${mathBlocks.length}`;
+    const math = mathMatch[1].trim();
+    mathBlocks.push({ id, math });
+    mathReplacements.push({
+      index: mathMatch.index,
+      length: mathMatch[0].length,
+      id,
+    });
+  }
+
+  // Replace math blocks with placeholders
+  let processedMarkdown = markdown;
+  mathReplacements.reverse().forEach((replacement) => {
+    processedMarkdown =
+      processedMarkdown.substring(0, replacement.index) +
+      `__MATH_BLOCK_${replacement.id}__` +
+      processedMarkdown.substring(replacement.index + replacement.length);
+  });
+
+  // Now process code blocks in the processed markdown
   let lastIndex = 0;
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-  let match;
+  let codeMatch;
 
-  while ((match = codeBlockRegex.exec(markdown)) !== null) {
-    // Add text before code block
-    if (match.index > lastIndex) {
-      const textBefore = markdown.substring(lastIndex, match.index);
-      parts.push({
-        type: "html",
-        content: markdownToHtml(textBefore),
-      });
+  while ((codeMatch = codeBlockRegex.exec(processedMarkdown)) !== null) {
+    // Add text before code block (which may contain math placeholders)
+    if (codeMatch.index > lastIndex) {
+      const textBefore = processedMarkdown.substring(lastIndex, codeMatch.index);
+      const processedText = processMathPlaceholders(textBefore, mathBlocks, parts);
     }
 
     // Add code block
     const id = `code-block-${codeBlocks.length}`;
-    const language = match[1] || "text";
-    const code = match[2].trim();
+    const language = codeMatch[1] || "text";
+    const code = codeMatch[2].trim();
 
     codeBlocks.push({ id, language, code });
     parts.push({
@@ -43,19 +73,59 @@ export function processMarkdown(markdown: string): MarkdownResult {
       id,
     });
 
-    lastIndex = match.index + match[0].length;
+    lastIndex = codeMatch.index + codeMatch[0].length;
   }
 
   // Add remaining text
-  if (lastIndex < markdown.length) {
-    const textAfter = markdown.substring(lastIndex);
-    parts.push({
-      type: "html",
-      content: markdownToHtml(textAfter),
-    });
+  if (lastIndex < processedMarkdown.length) {
+    const textAfter = processedMarkdown.substring(lastIndex);
+    processMathPlaceholders(textAfter, mathBlocks, parts);
   }
 
-  return { parts, codeBlocks };
+  return { parts, codeBlocks, mathBlocks };
+}
+
+// Helper function to process math placeholders and add to parts
+function processMathPlaceholders(
+  text: string,
+  mathBlocks: MathBlock[],
+  parts: Array<{ type: "html" | "code" | "math"; content: string; id?: string }>
+) {
+  const mathPlaceholderRegex = /__MATH_BLOCK_(math-block-\d+)__/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mathPlaceholderRegex.exec(text)) !== null) {
+    // Add HTML before math placeholder
+    if (match.index > lastIndex) {
+      const htmlBefore = text.substring(lastIndex, match.index);
+      parts.push({
+        type: "html",
+        content: markdownToHtml(htmlBefore),
+      });
+    }
+
+    // Add math block
+    const mathBlock = mathBlocks.find((mb) => mb.id === match[1]);
+    if (mathBlock) {
+      parts.push({
+        type: "math",
+        content: mathBlock.math,
+        id: mathBlock.id,
+      });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining HTML
+  if (lastIndex < text.length) {
+    const htmlAfter = text.substring(lastIndex);
+    parts.push({
+      type: "html",
+      content: markdownToHtml(htmlAfter),
+    });
+  }
 }
 
 // Simple markdown to HTML converter (basic subset)

@@ -505,7 +505,7 @@ export class ChatService {
       const tokenUsage = aiResponse.usage;
       const finishReason = aiResponse.choices[0]?.finish_reason;
 
-      console.log("[Chat Service] AI Response usage:", JSON.stringify(tokenUsage));
+
 
       //* Create chat_ai_respond record
       const chatAiRespond = await ChatQuery.createChatAiRespond({
@@ -868,14 +868,6 @@ export class ChatService {
       }
       const latencyMs = Date.now() - startTime;
 
-      console.log("[Chat Service] Streaming AI Response usage:", JSON.stringify(tokenUsage));
-
-      // Log reasoning summary if captured
-      if (reasoningContent) {
-        console.log(
-          `[Chat Service] Captured ${reasoningContent.length} characters of reasoning content`
-        );
-      }
 
       // Update search log with reasoning content if available
       if (reasoningContent && searchLog) {

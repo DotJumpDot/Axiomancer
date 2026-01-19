@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { Chat } from "@/Types";
-  import { processMarkdown, formatRole, formatLatency, formatTokens, copyToClipboard, getTranslations, type LanguageCode } from "@/Function";
+  import { processMarkdown, formatRole, formatLatency, formatTokens, copyToClipboard, getTranslations, type LanguageCode, type MarkdownResult } from "@/Function";
   import { settingsStore } from "@/Store";
   import CodeBlock from "./MessageMarkdown/CodeBlock.svelte";
+  import MathBlock from "./MessageMarkdown/MathBlock.svelte";
 
   let { message }: { message: Chat } = $props();
 
@@ -21,10 +22,29 @@
   // Check if this message is currently streaming reasoning content
   const isStreamingReasoning = $derived(
     isStreaming &&
-    message.search_log?.reasoning_effort &&
-    message.search_log.reasoning_effort !== "disabled" &&
-    !message.search_log?.reasoning_content
+    !!message.search_log?.reasoning_content && // Has reasoning content
+    (!message.content || message.content.length === 0) // But no answer content yet
   );
+
+  // Check if this message is currently streaming answer content (after reasoning is complete)
+  const isStreamingAnswer = $derived(
+    isStreaming &&
+    !!message.search_log?.reasoning_content &&
+    !!message.content && message.content.length > 0 // Has answer content now
+  );
+
+  // Auto-open reasoning during streaming (or if only reasoning exists), auto-close when answer starts
+  $effect(() => {
+    // If we have reasoning content but no answer content yet, keep it open
+    // This works even if isStreaming is flaky initially, or for interrupted states
+    if (message.search_log?.reasoning_content && (!message.content || message.content.length === 0)) {
+      showReasoning = true;
+    } 
+    // If we are definitely streaming and have moved to answer phase, close it
+    else if (isStreamingAnswer) {
+      showReasoning = false;
+    }
+  });
 
   // Get the appropriate content based on message type
   const displayContent = $derived(
@@ -47,13 +67,26 @@
   }
 
   const isUser = $derived(message.role === "user");
-  const markdownData = $derived(processMarkdown(displayContentForError));
+  const markdownData: MarkdownResult = $derived.by(() => {
+    // During reasoning phase, don't process markdown (reasoning goes to reasoning box only)
+    if (isStreamingReasoning) {
+      return { parts: [], codeBlocks: [], mathBlocks: [] };
+    }
+    return processMarkdown(displayContentForError);
+  });
 
   // Process reasoning content with streaming cursor
   const processedReasoningContent = $derived.by(() => {
-    // If streaming reasoning, use the main content (displayContent)
+    // If streaming reasoning, use the reasoning_content from search_log
     if (isStreamingReasoning) {
-      return displayContent + '<span class="streaming-cursor-blink"> ▋</span>';
+      const reasoning = message.search_log?.reasoning_content || "";
+      return reasoning + '<span class="streaming-cursor-blink"> ▋</span>';
+    }
+    
+    // If streaming answer, show the completed reasoning content from search_log
+    if (isStreamingAnswer) {
+      const reasoning = message.search_log?.reasoning_content || "";
+      return reasoning;
     }
     
     // Otherwise use the stored reasoning_content
@@ -61,56 +94,56 @@
     
     const content = message.search_log.reasoning_content;
     
-    // If streaming and reasoning content exists, add cursor
-    if (isStreaming) {
-      return content + '<span class="streaming-cursor-blink"> ▋</span>';
-    }
-    
     return content;
   });
 
   // Process content with streaming cursor injected (only if not streaming reasoning)
-  const processedMarkdownData = $derived.by(() => {
+  const processedMarkdownData: MarkdownResult = $derived.by(() => {
     // If currently streaming reasoning, don't show any content in main area
     if (isStreamingReasoning) {
       return { ...markdownData, parts: [] };
     }
     
-    // If streaming and there's reasoning content, don't show cursor in main content
-    if (isStreaming && message.search_log?.reasoning_content) {
-      return markdownData;
+    // If streaming answer, add cursor to main content
+    if (isStreamingAnswer) {
+      // Only show answer content (not reasoning)
+      const answerOnlyMarkdown = processMarkdown(displayContent);
+      
+      if (answerOnlyMarkdown.parts.length === 0) {
+        return answerOnlyMarkdown;
+      }
+
+      // Clone the parts array
+      const parts = [...answerOnlyMarkdown.parts];
+      const lastPart = parts[parts.length - 1];
+
+      // If the last part is HTML, inject the cursor before closing tags
+      if (lastPart.type === 'html') {
+        let content = lastPart.content;
+        // Find the last closing tag (</p>, </div>, etc.) and inject cursor before it
+        const lastClosingTagMatch = content.match(/(<\/[^>]+>)(\s*)$/);
+        if (lastClosingTagMatch) {
+          const beforeClosing = content.substring(0, lastClosingTagMatch.index);
+          const closingTag = lastClosingTagMatch[1];
+          const trailing = lastClosingTagMatch[2];
+          content = beforeClosing + '<span class="streaming-cursor-blink"> ▋</span>' + closingTag + trailing;
+        } else {
+          // No closing tag found, just append
+          content += '<span class="streaming-cursor-blink"> ▋</span>';
+        }
+        parts[parts.length - 1] = { ...lastPart, content };
+      }
+
+      return { ...answerOnlyMarkdown, parts };
     }
     
-    if (!isStreaming || markdownData.parts.length === 0) {
-      return markdownData;
-    }
-
-    // Clone the parts array
-    const parts = [...markdownData.parts];
-    const lastPart = parts[parts.length - 1];
-
-    // If the last part is HTML, inject the cursor before closing tags
-    if (lastPart.type === 'html') {
-      let content = lastPart.content;
-      // Find the last closing tag (</p>, </div>, etc.) and inject cursor before it
-      const lastClosingTagMatch = content.match(/(<\/[^>]+>)(\s*)$/);
-      if (lastClosingTagMatch) {
-        const beforeClosing = content.substring(0, lastClosingTagMatch.index);
-        const closingTag = lastClosingTagMatch[1];
-        const trailing = lastClosingTagMatch[2];
-        content = beforeClosing + '<span class="streaming-cursor-blink"> ▋</span>' + closingTag + trailing;
-      } else {
-        // No closing tag found, just append
-        content += '<span class="streaming-cursor-blink"> ▋</span>';
-      }
-      parts[parts.length - 1] = { ...lastPart, content };
-    }
-
-    return { ...markdownData, parts };
+    // Not streaming, return markdown as-is
+    return markdownData;
   });
 
-  // Show reminder for AI messages with code blocks
+  // Show reminder for AI messages with code blocks or math blocks
   const hasCodeInContent = $derived(markdownData.codeBlocks.length > 0);
+  const hasMathInContent = $derived(markdownData.mathBlocks.length > 0);
 
   // Parse search context (handle both object and string)
   const webResultsCount = $derived.by(() => {
@@ -176,7 +209,7 @@
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-        {#if showReasoning || isStreamingReasoning}
+        {#if (showReasoning || isStreamingReasoning) && processedReasoningContent}
           <div class="reasoning-content-inline">
             <div class="reasoning-text">
               {@html processedReasoningContent}
@@ -192,9 +225,13 @@
         {#each processedMarkdownData.codeBlocks.filter(cb => cb.id === part.id) as codeBlock}
           <CodeBlock code={codeBlock.code} language={codeBlock.language} />
         {/each}
+      {:else if part.type === 'math'}
+        {#each processedMarkdownData.mathBlocks.filter(mb => mb.id === part.id) as mathBlock}
+          <MathBlock math={mathBlock.math} />
+        {/each}
       {/if}
     {/each}
-    {#if isStreaming && processedMarkdownData.parts.length === 0}
+    {#if isStreamingAnswer && processedMarkdownData.parts.length === 0}
       <span class="streaming-cursor-blink"> ▋</span>
     {/if}
   </div>
@@ -205,9 +242,17 @@
         ⚠️ {displayContent.replace(/^Error:\s*/, '')}
       </span>
     </div>
+  {:else if !isUser && hasCodeInContent && hasMathInContent}
+    <div class="message-reminder">
+      <span class="reminder-text">💡 Code and math blocks include a copy button in the top-right corner</span>
+    </div>
   {:else if !isUser && hasCodeInContent}
     <div class="message-reminder">
       <span class="reminder-text">💡 Code blocks include a copy button in the top-right corner</span>
+    </div>
+  {:else if !isUser && hasMathInContent}
+    <div class="message-reminder math">
+      <span class="reminder-text">🧮 Math blocks include a copy button in the top-right corner</span>
     </div>
   {/if}
 
@@ -408,6 +453,33 @@
     color: var(--text-primary, #fff);
   }
 
+  .message-content :global(.math-block-wrapper) {
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+  }
+
+  .message-content :global(.math-content) {
+    padding: 12px 16px;
+    overflow-x: auto;
+    color: var(--text-primary, #fff);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* KaTeX styling overrides */
+  .message-content :global(.math-content .katex) {
+    font-size: 1.1em;
+    color: var(--text-primary, #fff);
+  }
+
+  .message-content :global(.math-content .katex-display) {
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
   .message-content :global(code.inline-code) {
     background: var(--code-bg, #0d0d0d);
     padding: 2px 6px;
@@ -458,6 +530,11 @@
     justify-content: flex-start;
   }
 
+  .message-reminder.math {
+    background: rgba(168, 85, 247, 0.1);
+    border-left: 2px solid #a855f7;
+  }
+
   .reminder-text {
     font-size: 11px;
     color: var(--primary-color, #6366f1);
@@ -471,6 +548,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .message-reminder.math .reminder-text {
+    color: #a855f7;
   }
 
   .message-meta {
@@ -559,10 +640,6 @@
     color: var(--text-primary, #fff);
     white-space: pre-wrap;
     font-family: "Fira Code", "Consolas", monospace;
-  }
-
-  .streaming-reasoning {
-    display: inline;
   }
 
   .message.streaming {

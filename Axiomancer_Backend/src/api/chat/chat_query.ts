@@ -22,11 +22,6 @@ export class ChatQuery {
     const id = crypto.randomUUID();
     const now = new Date();
 
-    console.log(
-      "[Chat Query] Creating ChatAiRespond with token_usage:",
-      JSON.stringify(respond.token_usage, null, 2)
-    );
-
     const result = await sql`
       INSERT INTO chat_ai_respond (
         id, ai_content, model_key, token_usage, latency_ms, finish_reason, created_at, updated_at
@@ -39,7 +34,6 @@ export class ChatQuery {
       RETURNING *
     `;
 
-    console.log("[Chat Query] Created ChatAiRespond result:", JSON.stringify(result[0], null, 2));
     return result[0] as unknown as ChatAiRespond;
   }
 
@@ -193,10 +187,7 @@ export class ChatQuery {
       WHERE c.conversation_id = ${conversationId}
       ORDER BY c.created_at ASC
     `;
-    console.log(
-      "[Chat Query] Raw result from getChatsByConversationId:",
-      JSON.stringify(result, null, 2)
-    );
+
     return result.map((row) => {
       const chat: any = { ...row };
       // Include AI response data in the Chat object

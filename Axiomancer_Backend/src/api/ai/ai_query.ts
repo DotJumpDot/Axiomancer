@@ -1,9 +1,5 @@
 import { sql } from "@/database/db";
-import type {
-  AiModel,
-  CreateAiModelRequest,
-  UpdateAiModelRequest,
-} from "./ai_type";
+import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "./ai_type";
 
 export async function getAiModels(): Promise<AiModel[]> {
   const result = await sql`
@@ -24,9 +20,7 @@ export async function getAiModelById(id: string): Promise<AiModel | null> {
   return result[0] as unknown as AiModel;
 }
 
-export async function getAiModelByModelKey(
-  model_key: string,
-): Promise<AiModel | null> {
+export async function getAiModelByModelKey(model_key: string): Promise<AiModel | null> {
   const result = await sql`
     SELECT id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
     FROM ai_model
@@ -38,9 +32,7 @@ export async function getAiModelByModelKey(
   return result[0] as unknown as AiModel;
 }
 
-export async function createAiModel(
-  data: CreateAiModelRequest,
-): Promise<AiModel> {
+export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel> {
   const id = crypto.randomUUID();
   const result = await sql`
     INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at)
@@ -56,7 +48,7 @@ export async function createAiModel(
 
 export async function updateAiModel(
   id: string,
-  data: UpdateAiModelRequest,
+  data: UpdateAiModelRequest
 ): Promise<AiModel | null> {
   const setParts = [];
   const values = [];
@@ -116,7 +108,7 @@ export async function getOrCreateAiModel(modelKey: string): Promise<AiModel> {
   }
 
   // Model doesn't exist, create a default entry
-  console.log(`[AI Query] Auto-creating missing model: ${modelKey}`);
+  // console.log(`[AI Query] Auto-creating missing model: ${modelKey}`);
 
   // Extract provider from model key (e.g., "mistralai/devstral-2512:free" -> "mistralai")
   const provider = modelKey.split("/")[0] || "openrouter";

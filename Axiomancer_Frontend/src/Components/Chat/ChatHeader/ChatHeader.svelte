@@ -342,7 +342,6 @@
 
   function handlePresetApply(event: any) {
     const { models, prompt, presetName, presetId } = event.detail;
-    console.log('Applying preset:', { models, prompt, presetName, presetId });
     currentPresetName = presetName;
     
     // Save preset to localStorage if presetId is provided
@@ -358,7 +357,6 @@
 
   function handlePresetSelected(event: any) {
     const { presetName, presetId } = event.detail;
-    console.log('Preset selected:', presetName, 'Preset ID:', presetId);
     currentPresetName = presetName;
     
     // Save preset to localStorage if presetId is provided

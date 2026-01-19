@@ -190,6 +190,13 @@
     }
   });
 
+  // Auto-disable reasoning effort when model doesn't support reasoning
+  $effect(() => {
+    if (!hasReasoningCapability && chatStore.reasoningEffort !== "disabled") {
+      chatStore.reasoningEffort = "disabled";
+    }
+  });
+  
 </script>
 
 <div class="chat-input-container">
@@ -351,17 +358,42 @@
 
     {#if selectedModelForCap}
       <div class="reasoning-selector-wrapper" bind:this={reasoningTooltipRef} style="margin-left: auto;">
-        <button 
+        <button
           class="reasoning-button"
+          class:has-reasoning={hasReasoningCapability}
+          class:reasoning-disabled={hasReasoningCapability && chatStore.reasoningEffort === "disabled"}
+          class:reasoning-minimal={hasReasoningCapability && chatStore.reasoningEffort === "minimal"}
+          class:reasoning-low={hasReasoningCapability && chatStore.reasoningEffort === "low"}
+          class:reasoning-medium={hasReasoningCapability && chatStore.reasoningEffort === "medium"}
+          class:reasoning-high={hasReasoningCapability && chatStore.reasoningEffort === "high"}
           onclick={(e) => { e.stopPropagation(); toggleReasoningTooltip(); }}
           title={t.input.reasoningEffort || "Reasoning Effort"}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class:icon-disabled={hasReasoningCapability && chatStore.reasoningEffort === "disabled"}
+            class:icon-minimal={hasReasoningCapability && chatStore.reasoningEffort === "minimal"}
+            class:icon-low={hasReasoningCapability && chatStore.reasoningEffort === "low"}
+            class:icon-medium={hasReasoningCapability && chatStore.reasoningEffort === "medium"}
+            class:icon-high={hasReasoningCapability && chatStore.reasoningEffort === "high"}
+          >
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
             <path d="M12 17h.01"></path>
           </svg>
-          <span>{chatStore.reasoningEffort === "disabled" ? t.input.reasoningDisabled : chatStore.reasoningEffort}</span>
+          <span
+            class:label-disabled={chatStore.reasoningEffort === "disabled"}
+            class:label-minimal={hasReasoningCapability && chatStore.reasoningEffort === "minimal"}
+            class:label-low={hasReasoningCapability && chatStore.reasoningEffort === "low"}
+            class:label-medium={hasReasoningCapability && chatStore.reasoningEffort === "medium"}
+            class:label-high={hasReasoningCapability && chatStore.reasoningEffort === "high"}
+          >{chatStore.reasoningEffort === "disabled" ? t.input.reasoningDisabled : chatStore.reasoningEffort}</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -896,6 +928,99 @@
   .reasoning-button:hover {
     background: var(--hover-bg, #3d3d3d);
     border-color: var(--primary-color, #6366f1);
+  }
+
+  .reasoning-button.has-reasoning {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3);
+  }
+
+  .reasoning-button.has-reasoning:hover {
+    border-color: var(--primary-color, #6366f1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+  }
+
+  /* Reasoning effort colors in button */
+  .reasoning-button.reasoning-disabled {
+    border-color: #00e1ff;
+    box-shadow: 0 0 0 1px rgba(24, 224, 224, 0.3);
+  }
+
+  .reasoning-button.reasoning-minimal {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
+  }
+
+  .reasoning-button.reasoning-low {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+  }
+
+  .reasoning-button.reasoning-medium {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+
+  .reasoning-button.reasoning-high {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3);
+  }
+
+  /* Icon colors */
+  .reasoning-button svg.icon-disabled {
+    color: #00e1ff;
+  }
+
+  .reasoning-button svg.icon-minimal {
+    color: #22c55e;
+  }
+
+  .reasoning-button svg.icon-low {
+    color: #3b82f6;
+  }
+
+  .reasoning-button svg.icon-medium {
+    color: #f59e0b;
+  }
+
+  .reasoning-button svg.icon-high {
+    color: #ef4444;
+  }
+
+  /* Label colors */
+  .reasoning-button span.label-disabled {
+    background: linear-gradient(135deg, #a1a1aa 0%, #d4d4d8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .reasoning-button span.label-minimal {
+    background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .reasoning-button span.label-low {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .reasoning-button span.label-medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .reasoning-button span.label-high {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .reasoning-button svg {

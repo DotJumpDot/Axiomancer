@@ -190,7 +190,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
       try {
         // Only authenticated users can archive conversations
         if (!auth?.user) {
-          console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`);
+          // console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`);
           return new Response(
             JSON.stringify({
               success: false,
@@ -202,7 +202,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
 
         const conversation = await ChatService.archiveConversation(params.id, body.archived);
         if (!conversation) {
-          console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`);
+          // console.log(`[Chat API] PUT /api/conversations/${params.id}/archive ❌`);
           return new Response(JSON.stringify({ success: false, error: "Conversation not found" }), {
             status: 404,
             headers: { "Content-Type": "application/json" },
@@ -408,7 +408,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
                 auth.user.id,
                 (chunk, type) => {
                   // Send each chunk to the client
-                  controller.enqueue(`data: ${JSON.stringify({ chunk })}\n\n`);
+                  controller.enqueue(`data: ${JSON.stringify({ chunk, type })}\n\n`);
                 }
               );
 

@@ -194,7 +194,6 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
 
   // Ensure conversation exists before sending message
   if (!currentConversation) {
-    console.log("[ChatStore] No current conversation, creating new one...");
     const conv = await createNewConversation(generateConversationTitle(content));
     if (!conv) {
       console.error("[ChatStore] Failed to create conversation");
@@ -202,7 +201,6 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       return null;
     }
     currentConversation = conv;
-    console.log("[ChatStore] Created conversation:", conv.id);
   }
 
   try {
@@ -233,6 +231,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       // Use streaming mode
       let streamingAiMessage: Chat | null = null;
       let streamingReasoningContent = "";
+      let streamingAnswerContent = "";
 
       // Create AbortController for this stream
       streamAbortController = new AbortController();
@@ -266,7 +265,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
               id: `streaming-${Date.now()}`,
               conversation_id: currentConversation!.id,
               role: "assistant",
-              content: chunk,
+              content: "", // Keep content empty during reasoning phase
               model_id: modelKey || null,
               ai_model_key: extractedAiModelKey,
               prompt_profile_id: options?.promptProfileId || null,
@@ -282,11 +281,17 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
                 used_image_search: imageSearchEnabled,
                 used_steam: steamSearchEnabled,
                 reasoning_effort: options?.reasoningEffort || reasoningEffort,
-                reasoning_content: null,
+                reasoning_content: type === "reasoning" ? chunk : null,
                 search_context_web: null,
                 search_context_picture: null,
               },
             };
+            // Initialize streaming content based on type
+            if (type === "reasoning") {
+              streamingReasoningContent = chunk;
+            } else {
+              streamingAnswerContent = chunk;
+            }
             messages = [...messages, streamingAiMessage];
           } else {
             // Update streaming message based on chunk type
@@ -294,6 +299,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
               streamingReasoningContent += chunk;
               streamingAiMessage = {
                 ...streamingAiMessage,
+                content: "", // Keep content empty during reasoning phase
                 search_log: {
                   ...streamingAiMessage.search_log!,
                   reasoning_content: streamingReasoningContent,
@@ -301,10 +307,15 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
                 updated_at: new Date(),
               };
             } else {
-              // Content chunk
+              // Content chunk - only update answer content
+              streamingAnswerContent += chunk;
               streamingAiMessage = {
                 ...streamingAiMessage,
-                content: streamingAiMessage.content + chunk,
+                content: streamingAnswerContent, // Only answer content, not reasoning
+                search_log: {
+                  ...streamingAiMessage.search_log!,
+                  reasoning_content: streamingReasoningContent, // Keep completed reasoning in search_log
+                },
                 updated_at: new Date(),
               };
             }

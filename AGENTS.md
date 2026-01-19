@@ -65,9 +65,8 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
 ### Git
 
 - **When instructed with "git acp"** — Perform the following automated workflow:
-
   - Run `git status` to check current changes
-  - For each modified file, run `git diff <file>` to analyze changes and generate a meaningful commit message
+  - Run `git diff` to analyze all changes and generate a meaningful commit message
   - Run `git add . && git commit -m "feat/fix/clean/improve/refact/docs: [brief description]
 
 - [bullet points of changes]" && git push` (from the monorepo root directory)

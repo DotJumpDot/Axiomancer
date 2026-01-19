@@ -205,28 +205,6 @@
                 </div>
               </div>
 
-              <!-- Model Settings -->
-              <div class="settings-section">
-                <h3>AI Models</h3>
-
-                <div class="setting-item">
-                  <label for="default-model">Default Model</label>
-                  <select id="default-model">
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-3.5-turbo" selected>GPT-3.5 Turbo</option>
-                    <option value="claude-3">Claude 3</option>
-                    <option value="gemini-pro">Gemini Pro</option>
-                  </select>
-                </div>
-
-                <div class="setting-item">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="model-switching">
-                    Allow automatic model switching
-                  </label>
-                </div>
-              </div>
-
               <!-- Behavior Settings -->
               <div class="settings-section">
                 <h3>Behavior</h3>
