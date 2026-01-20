@@ -31,7 +31,7 @@
   background: linear-gradient(135deg, #ff66f2, #9a2fff);
   border-color: transparent;
   border-radius: 8px;
-  color: var(--text-primary, #fff);
+  color: var(--action-text, #363636);
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;

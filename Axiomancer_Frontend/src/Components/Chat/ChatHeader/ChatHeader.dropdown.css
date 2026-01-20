@@ -22,22 +22,40 @@
 }
 
 .dropdown-item.active-mode {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color, #6366f1),
+    var(--primary-color-hover, #8b5cf6)
+  );
   color: #ffffff;
 }
 
 .dropdown-item.active-mode:hover {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color-hover, #4f46e5),
+    var(--primary-color-active, #7c3aed)
+  );
 }
 
 .dropdown-item.active-mode.single {
-  background: linear-gradient(135deg, #f15742, #ff9100);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color, #f15742),
+    var(--primary-color-hover, #ff9100)
+  );
 }
 
 .dropdown-item.active-mode.single:hover {
-  background: linear-gradient(135deg, #d14532, #e67e00);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color-hover, #d14532),
+    var(--primary-color-active, #e67e00)
+  );
 }
 
+.dropdown-item.active-mode .item-name,
+.dropdown-item.active-mode.single .item-name,
 .dropdown-item.active-mode .item-desc,
 .dropdown-item.active-mode.single .item-desc {
   color: #ffffff;

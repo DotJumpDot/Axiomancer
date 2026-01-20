@@ -460,7 +460,6 @@
               <span class="item-name">{t.header.autoRouting}</span>
               <span class="item-desc">{t.header.autoRoutingDesc}</span>
             </button>
-            <div class="dropdown-divider"></div>
             <button class="dropdown-item" class:active-mode={currentMode === 'single'} class:single={currentMode === 'single'} onclick={toggleMode}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>

@@ -8,6 +8,16 @@ export const THEME_VARIANTS = [
   { value: "nord", label: "Nord" },
   { value: "gruvbox", label: "Gruvbox" },
   { value: "solarized", label: "Solarized" },
+  { value: "cyberpunk", label: "Cyberpunk" },
+  { value: "matrix", label: "Matrix" },
+  { value: "arcade", label: "Arcade" },
+  { value: "arcade-neon", label: "Arcade Neon" },
+  { value: "retro", label: "Retro" },
+  { value: "vaporwave", label: "Vaporwave" },
+  { value: "vaporwave-synth", label: "Vaporwave Synth" },
+  { value: "vaporwave-retro", label: "Vaporwave Retro" },
+  { value: "rainbow", label: "Rainbow" },
+  { value: "terminal", label: "Terminal" },
   { value: "github", label: "GitHub" },
 ] as const;
 
@@ -23,7 +33,22 @@ export const LANGUAGES = [
 
 // Reactive state using Svelte 5 runes
 let themeVariant = $state<
-  "classic" | "monokai" | "dracula" | "nord" | "gruvbox" | "solarized" | "github"
+  | "classic"
+  | "monokai"
+  | "dracula"
+  | "nord"
+  | "gruvbox"
+  | "solarized"
+  | "cyberpunk"
+  | "matrix"
+  | "arcade"
+  | "arcade-neon"
+  | "arcade-retro"
+  | "vaporwave"
+  | "vaporwave-synth"
+  | "vaporwave-retro"
+  | "terminal"
+  | "github"
 >("classic");
 let themeMode = $state<"dark" | "light">("dark");
 let sidebarOpen = $state(true);
@@ -82,7 +107,23 @@ function loadSettings() {
 }
 
 function setThemeVariant(
-  variant: "classic" | "monokai" | "dracula" | "nord" | "gruvbox" | "solarized" | "github"
+  variant:
+    | "classic"
+    | "monokai"
+    | "dracula"
+    | "nord"
+    | "gruvbox"
+    | "solarized"
+    | "cyberpunk"
+    | "matrix"
+    | "arcade"
+    | "arcade-neon"
+    | "arcade-retro"
+    | "vaporwave"
+    | "vaporwave-synth"
+    | "vaporwave-retro"
+    | "terminal"
+    | "github"
 ) {
   themeVariant = variant;
   applyTheme();

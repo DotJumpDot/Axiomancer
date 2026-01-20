@@ -19,11 +19,11 @@
 }
 
 .preset-btn {
-  background: linear-gradient(135deg, #2efc38, #5cf6ee);
+  background: linear-gradient(135deg, var(--preset-btn, #2efc38), var(--preset-btn2, #5cf6ee));
   border-color: transparent;
   display: flex;
   align-items: center;
-  color: #363636;
+  color: var(--action-text, #363636);
   gap: 6px;
   padding: 8px 20px;
   border: 1px solid var(--border-color, #3d3d3d);
@@ -34,7 +34,11 @@
 }
 
 .preset-btn:hover {
-  background: linear-gradient(135deg, #24c92c, #16b6ae);
+  background: linear-gradient(
+    135deg,
+    var(--preset-btn-hover, #24c92c),
+    var(--preset-btn2-hover, #16b6ae)
+  );
   border-color: var(--border-color-hover, #4d4d4d);
 }
 
@@ -143,18 +147,26 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #c4c4c4, #464646);
+  background: linear-gradient(
+    135deg,
+    var(--manage-prompt, #c4c4c4),
+    var(--manage-prompt2, #464646)
+  );
   border-color: transparent;
   border-radius: 8px;
-  color: var(--text-primary, #fff);
+  color: #000000;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .prompt-edit-btn:hover {
-  background: linear-gradient(135deg, #d8d8d8, #2e2e2e);
-  border-color: transparent;
+  background: linear-gradient(
+    135deg,
+    var(--manage-prompt-hover, #d8d8d8),
+    var(--manage-prompt2-hover, #2e2e2e)
+  );
+  border-color: var(--manage-promp-border-hover, #4d4d4d);
 }
 
 .settings-btn {
@@ -220,19 +232,31 @@
 
 /* Deciding Model Button (Auto Mode) */
 .dropdown-trigger.deciding-model {
-  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  background: linear-gradient(
+    135deg,
+    var(--deciding-model, #ff3c3c),
+    var(--deciding-model2, #ff9a3c)
+  );
   border-color: transparent;
-  color: white;
+  color: var(--action-text, #363636);
   font-weight: 500;
 }
 
 .dropdown-trigger.deciding-model:hover:not(:disabled) {
-  background: linear-gradient(135deg, #a569bd, #9b59b6);
+  background: linear-gradient(
+    135deg,
+    var(--deciding-model-hover, #a82626),
+    var(--deciding-model2-hover, #a56426)
+  );
   border-color: transparent;
 }
 
 .dropdown-trigger.deciding-model:disabled {
-  background: linear-gradient(135deg, #6c5a7c, #5a4a6a);
+  background: linear-gradient(
+    135deg,
+    var(--deciding-model-disabled, #661616),
+    var(--deciding-model2-disabled, #683e18)
+  );
   opacity: 0.5;
   cursor: not-allowed;
   color: rgba(255, 255, 255, 0.5);

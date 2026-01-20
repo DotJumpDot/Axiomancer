@@ -82,9 +82,9 @@
 }
 
 .preset-popup-header .new-preset-btn {
-  background: #00ffc8;
+  background: var(--action-color, #00ffc8);
   border: none;
-  color: #000000;
+  color: var(--action-text, #000000);
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 6px;
@@ -97,7 +97,7 @@
 }
 
 .preset-popup-header .new-preset-btn:hover {
-  background: #01b18b;
+  background: var(--action-color-hover, #01b18b);
 }
 
 .preset-popup-header .delete-preset-btn {
@@ -166,15 +166,15 @@
 }
 
 .preset-popup-header .error-message {
-  background: rgba(255, 68, 68, 0.1);
-  border: 1px solid #ff4444;
-  color: #ff6666;
+  background: var(--error-bg, rgba(255, 68, 68, 0.1));
+  border: 1px solid var(--error-color, #ff4444);
+  color: var(--error-text, #ff6666);
 }
 
 .preset-popup-header .success-message {
-  background: rgba(0, 255, 200, 0.1);
-  border: 1px solid #00ffc8;
-  color: #00ffc8;
+  background: var(--success-bg, rgba(0, 255, 200, 0.1));
+  border: 1px solid var(--success-color, #00ffc8);
+  color: var(--success-color, #00ffc8);
 }
 
 .preset-popup-header .preset-selector {
@@ -512,7 +512,7 @@
 }
 
 .cancel-edit-btn:hover {
-  background: #8b2626;
+  background: var(--danger-color-hover, #8b2626);
 }
 
 .prompt-info .item-name {

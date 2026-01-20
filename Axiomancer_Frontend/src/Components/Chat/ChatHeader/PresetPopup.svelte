@@ -670,7 +670,7 @@
               {/if}
             {/if}
             <button class="new-preset-btn" onclick={createNewPreset} title={t.preset.create}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:black">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--action-text, black)">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
@@ -786,7 +786,7 @@
                           onclick={(e) => toggleModelFavorite(e, model.id)}
                           title={favoriteStore.isFavorite('model', model.id) ? "Remove from favorites" : "Add to favorites"}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('model', model.id) ? "#ffc107" : "none"} stroke="#ffc107" stroke-width="2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('model', model.id) ? "var(--favorite-color, #ffc107)" : "none"} stroke="var(--favorite-color, #ffc107)" stroke-width="2">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                           </svg>
                         </button>
@@ -958,7 +958,7 @@
                           onclick={(e) => togglePromptFavorite(e, profile.id)}
                           title={favoriteStore.isFavorite('prompt', profile.id) ? "Remove from favorites" : "Add to favorites"}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('prompt', profile.id) ? "#ffc107" : "none"} stroke="#ffc107" stroke-width="2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('prompt', profile.id) ? "var(--favorite-color, #ffc107)" : "none"} stroke="var(--favorite-color, #ffc107)" stroke-width="2">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                           </svg>
                         </button>
@@ -1072,7 +1072,7 @@
   }
 
   .inline-favorite-btn:hover {
-    background: rgba(255, 193, 7, 0.2);
+    background: var(--favorite-hover-bg, rgba(255, 193, 7, 0.2));
   }
 
   /* Show favorite button on hover of the parent item */

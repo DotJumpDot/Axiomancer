@@ -346,7 +346,7 @@
 												onclick={(e) => togglePromptFavorite(e, profile.id)}
 												title={favoriteStore.isFavorite('prompt', profile.id) ? "Remove from favorites" : "Add to favorites"}
 											>
-												<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('prompt', profile.id) ? "#ffc107" : "none"} stroke="#ffc107" stroke-width="2">
+												<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={favoriteStore.isFavorite('prompt', profile.id) ? "var(--favorite-color, #ffc107)" : "none"} stroke="var(--favorite-color, #ffc107)" stroke-width="2">
 													<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
 												</svg>
 											</button>
@@ -503,15 +503,15 @@
 	}
 
 	.preset-popup-header .error-message {
-	  background: rgba(255, 68, 68, 0.1);
-	  border: 1px solid #ff4444;
-	  color: #ff6666;
+	  background: var(--error-bg, rgba(255, 68, 68, 0.1));
+	  border: 1px solid var(--error-color, #ff4444);
+	  color: var(--error-text, #ff6666);
 	}
 
 	.preset-popup-header .success-message {
-	  background: rgba(0, 255, 200, 0.1);
-	  border: 1px solid #00ffc8;
-	  color: #00ffc8;
+	  background: var(--success-bg, rgba(0, 255, 200, 0.1));
+	  border: 1px solid var(--success-color, #00ffc8);
+	  color: var(--success-color, #00ffc8);
 	}
 
 	.preset-popup-content {
@@ -552,9 +552,9 @@
 	}
 
 	.add-prompt-btn {
-	  background: #00ffc8;
+	  background: var(--action-color, #00ffc8);
 	  border: none;
-	  color: #000000;
+	  color: var(--action-text, #000000);
 	  cursor: pointer;
 	  padding: 6px 12px;
 	  border-radius: 6px;
@@ -567,7 +567,7 @@
 	}
 
 	.add-prompt-btn:hover {
-	  background: #01b18b;
+	  background: var(--action-color-hover, #01b18b);
 	}
 
 	.model-count {
@@ -664,8 +664,8 @@
 
 	.edit-prompt-btn:hover {
 	  background: var(--hover-bg, #3d3d3d);
-	  color: #00ffc8;
-	  border-color: #00ffc8;
+	  color: var(--action-color, #00ffc8);
+	  border-color: var(--action-color, #00ffc8);
 	}
 
 	.delete-prompt-btn:hover {
@@ -718,12 +718,12 @@
 	}
 
 	.save-edit-btn {
-	  background: #00ffc8;
-	  color: #000;
+	  background: var(--action-color, #00ffc8);
+	  color: var(--action-text, #000);
 	}
 
 	.save-edit-btn:hover {
-	  background: #01b18b;
+	  background: var(--action-color-hover, #01b18b);
 	}
 
 	.cancel-edit-btn {
@@ -768,8 +768,8 @@
 	}
 
 	.cancel-btn:hover {
-	  background: #8b2626;
-	  border-color: #8b2626;
+	  background: var(--danger-color-hover, #8b2626);
+	  border-color: var(--danger-color-hover, #8b2626);
 	}
 
 	.apply-btn {
@@ -827,8 +827,8 @@
 
 	.edit-system-prompt-btn:hover {
 	  background: var(--hover-bg, #3d3d3d);
-	  color: #00ffc8;
-	  border-color: #00ffc8;
+	  color: var(--action-color, #00ffc8);
+	  border-color: var(--action-color, #00ffc8);
 	}
 
 	.edit-system-prompt-form {
@@ -892,7 +892,7 @@
 	  visibility: hidden;
 	}
 .inline-favorite-btn:hover {
-	background: rgba(255, 193, 7, 0.2);
+	background: var(--favorite-hover-bg, rgba(255, 193, 7, 0.2));
 }
 
 /* Show favorite button on hover of the parent item */
@@ -914,7 +914,7 @@
 	flex-wrap: wrap;
 }
 	.prompt-meta {
-		color: #6b7280;
+		color: var(--text-secondary, #6b7280);
 		font-size: 12px;
 		margin-top: 4px;
 	}

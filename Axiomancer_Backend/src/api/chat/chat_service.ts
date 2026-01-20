@@ -505,8 +505,6 @@ export class ChatService {
       const tokenUsage = aiResponse.usage;
       const finishReason = aiResponse.choices[0]?.finish_reason;
 
-
-
       //* Create chat_ai_respond record
       const chatAiRespond = await ChatQuery.createChatAiRespond({
         ai_content: aiContent,
@@ -868,7 +866,6 @@ export class ChatService {
       }
       const latencyMs = Date.now() - startTime;
 
-
       // Update search log with reasoning content if available
       if (reasoningContent && searchLog) {
         await ChatQuery.updateSearchLogReasoningContent(searchLog.id_uuid, reasoningContent);
@@ -958,7 +955,7 @@ export class ChatService {
 
       const userMessage = body.message;
       const modelKey =
-        body.model_key || process.env.SERVER_ANON_MODEL || "xiaomi/mimo-v2-flash:free"; // Default model
+        body.model_key || process.env.SERVER_ANON_MODEL || "mistralai/devstral-2512:free"; // Default model
 
       // Get AI response
       const aiContent = await openRouterClient.simpleChat(modelKey, userMessage);
