@@ -390,8 +390,8 @@ export class ChatQuery {
         ${id_uuid}, ${log.chat_id}, ${log.memory_chat_include},
         ${log.used_web_search}, ${log.used_image_search}, ${log.used_steam},
         ${log.reasoning_effort || null}, ${log.reasoning_content || null},
-        ${log.search_context_web ? JSON.stringify(log.search_context_web) : null},
-        ${log.search_context_picture ? JSON.stringify(log.search_context_picture) : null},
+        ${log.search_context_web ? sql.json(log.search_context_web) : null},
+        ${log.search_context_picture ? sql.json(log.search_context_picture) : null},
         ${now}
       )
       RETURNING *

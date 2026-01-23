@@ -2,6 +2,7 @@
 import { authService, userService } from "@/Service";
 import { apiClient } from "@/Service";
 import type { AuthUser, User, LoginRequest, RegisterRequest } from "@/Types";
+import { chatStore } from "./chat.svelte";
 
 // Reactive state using Svelte 5 runes
 let isAuthenticated = $state(false);
@@ -136,10 +137,12 @@ async function logout() {
   } finally {
     currentUser = null;
     currentApiKey = null;
-    apiClient.setAuthToken(null); // Clear JWT token from client
+    apiClient.setAuthToken(null);
     isAuthenticated = false;
     error = null;
     localStorage.removeItem("AxmLogin");
+
+    chatStore.clearCurrentConversation();
   }
 }
 

@@ -64,7 +64,7 @@
         username: "",
         password: "",
       };
-      
+
       // Reset register data
       registerData = {
         username: "",
@@ -74,15 +74,12 @@
         lastname: "",
         nickname: "",
       };
-      
+
       // Reset validation errors
       clearValidationErrors();
-      
+
       // Reset error message
       error = null;
-      
-      // Reset to login mode
-      isLogin = true;
     }
   });
 
@@ -285,7 +282,12 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Enter") {
+    if (!isOpen) return;
+
+    const target = event.target as HTMLElement;
+    const isInputFocused = target.tagName === "INPUT";
+
+    if (event.key === "Enter" && isInputFocused) {
       if (isLogin) {
         handleLogin();
       } else {

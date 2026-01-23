@@ -50,19 +50,34 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
     async ({ body }: { body: LoginRequest }) => {
       const result = await AuthService.login(body);
       if (!result.success) {
-        return {
-          error: result.error,
-          status: 401,
-        };
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: result.error || "Login failed",
+          }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
-      return { success: true, data: result };
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: result,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     },
     {
       body: t.Object({
         username: t.String({ minLength: 1 }),
         password: t.String({ minLength: 1 }),
       }),
-    },
+    }
   )
 
   // Register
@@ -71,12 +86,27 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
     async ({ body }: { body: RegisterRequest }) => {
       const result = await AuthService.register(body);
       if (!result.success) {
-        return {
-          error: result.error,
-          status: 400,
-        };
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: result.error || "Registration failed",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
-      return { success: true, data: result };
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: result,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     },
     {
       body: t.Object({
@@ -87,7 +117,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
         lastname: t.Optional(t.String()),
         nickname: t.Optional(t.String()),
       }),
-    },
+    }
   )
 
   // Refresh token
@@ -107,7 +137,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
       body: t.Object({
         refresh_token: t.String(),
       }),
-    },
+    }
   )
 
   // Logout
@@ -132,9 +162,9 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
       body: t.Optional(
         t.Object({
           refresh_token: t.Optional(t.String()),
-        }),
+        })
       ),
-    },
+    }
   )
 
   // Validate token
@@ -179,7 +209,7 @@ export const authApi = new Elysia({ prefix: "/api/auth", tags: ["Auth"] })
         permissions: t.Array(t.String()),
         expires_in_days: t.Optional(t.Number({ minimum: 1, maximum: 365 })),
       }),
-    },
+    }
   )
 
   // Get user's API keys (requires authentication)
