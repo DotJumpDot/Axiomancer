@@ -62,7 +62,11 @@
     "manageApiKey": "Manage OpenRouter API Key",
     "addApiKeyRequired": "Add OpenRouter API Key (Required)",
     "userSettings": "User Settings",
-    "loginToSelectMode": "Login to select mode"
+    "loginToSelectMode": "Login to select mode",
+    "searchHistory": "Search History",
+    "searchPlaceholder": "Search in your conversations...",
+    "noSearchResults": "No results found",
+    "searchResultsCount": "result(s) found"
   },
   "messages": {
     "startConversation": "Start a new conversation",

@@ -11,6 +11,7 @@
   import ModelSelector from "./ModelSelector.svelte";
   import PromptEdit from "./PromptEdit.svelte";
   import UserSetting from "./UserSetting.svelte";
+  import SearchDialog from "./SearchDialog.svelte";
   import type { User, AiModel } from "@/Types";
 
   // Reactive translations
@@ -23,6 +24,7 @@
   let showModelSelector = $state(false);
   let showPromptEditor = $state(false);
   let showLanguageDropdown = $state(false);
+  let showSearchDialog = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
   let currentPresetName = $state<string | null>(null);
@@ -635,6 +637,20 @@
   </div>
 
   <div class="header-right">
+    <!-- Search Button -->
+    {#if authStore.isAuthenticated}
+      <button 
+        class="search-btn"
+        onclick={() => showSearchDialog = true}
+        title={t.header.searchHistory}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+      </button>
+    {/if}
+
     <!-- Theme Toggle Button -->
     <button class="theme-toggle-btn" onclick={toggleTheme} title={settingsStore.themeMode === 'light' ? t.header.switchToDark : t.header.switchToLight}>
       {#if settingsStore.themeMode === 'light'}
@@ -796,6 +812,8 @@
   <ApiKeyDialog bind:this={apiKeyDialog} />
   <!-- User Setting Dialog -->
   <UserSetting bind:this={userSettingDialog} />
+  <!-- Search Dialog -->
+  <SearchDialog bind:isOpen={showSearchDialog} onClose={() => showSearchDialog = false} />
 
   <style>
     /* Import split CSS files */

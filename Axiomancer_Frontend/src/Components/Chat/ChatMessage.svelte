@@ -214,7 +214,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError} class:streaming={isStreaming}>
+<div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError} class:streaming={isStreaming} data-message-id={message.id}>
   <div class="message-header">
     <span class="role" style="color: {getDisplayRoleColor(message.role)}">{getDisplayRole(message.role)}</span>
     {#if settingsStore.showMessageTimestamps && message.created_at}

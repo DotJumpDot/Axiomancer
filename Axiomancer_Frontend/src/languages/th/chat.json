@@ -62,7 +62,11 @@
     "manageApiKey": "จัดการ API Key",
     "addApiKeyRequired": "เพิ่ม OpenRouter API Key (จำเป็น)",
     "userSettings": "ตั้งค่าบัญชี",
-    "loginToSelectMode": "เข้าสู่ระบบเพื่อเลือกโหมด"
+    "loginToSelectMode": "เข้าสู่ระบบเพื่อเลือกโหมด",
+    "searchHistory": "ค้นหาประวัติ",
+    "searchPlaceholder": "ค้นหาในการสนทนาของคุณ...",
+    "noSearchResults": "ไม่พบผลลัพธ์",
+    "searchResultsCount": "ผลลัพธ์"
   },
   "messages": {
     "startConversation": "เริ่มการสนทนาใหม่",
