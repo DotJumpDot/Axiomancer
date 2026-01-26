@@ -18,6 +18,7 @@ let conversations = $state<Conversation[]>([]);
 let currentConversation = $state<Conversation | null>(null);
 let messages = $state<Chat[]>([]);
 let isLoading = $state(false);
+let isLoadingConversation = $state(false);
 let isSending = $state(false);
 let error = $state<string | null>(null);
 
@@ -74,7 +75,7 @@ async function loadConversations() {
 
 async function loadConversation(id: string) {
   try {
-    isLoading = true;
+    isLoadingConversation = true;
     error = null;
 
     const response = await chatService.getConversationById(id);
@@ -85,7 +86,7 @@ async function loadConversation(id: string) {
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load conversation";
   } finally {
-    isLoading = false;
+    isLoadingConversation = false;
   }
 }
 
@@ -565,6 +566,9 @@ export const chatStore = {
   },
   get isLoading() {
     return isLoading;
+  },
+  get isLoadingConversation() {
+    return isLoadingConversation;
   },
   get isSending() {
     return isSending;

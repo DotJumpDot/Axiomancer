@@ -5,6 +5,7 @@ import { getPromptProfileById } from "@/api/prompt/prompt_query";
 import { getUserById } from "@/api/user/user_query";
 import { decryptApiKey } from "@/api/user/user_service";
 import { DuckDuckGoService } from "@/api/search/duckduckgo/duckduckgo_service";
+import { PixabayService } from "@/api/search/pixabay/pixabay_service";
 import type {
   Chat,
   CreateChatRequest,
@@ -324,20 +325,49 @@ export class ChatService {
         }
       }
 
-      // TODO: Implement Pixabay image search
-      // if (options?.imageSearch) {
-      //   try {
-      //     const imageResponse = await PixabayService.search(userMessage, 5);
-      //     if (imageResponse.success && imageResponse.results.length > 0) {
-      //       searchContextPicture = imageResponse;
-      //     }
-      //   } catch (error) {
-      //     console.error("ImageSearchError : ", error);
-      //   }
-      // }
+      //! Perform Pixabay image search if enabled
+      if (options?.imageSearch) {
+        try {
+          const imageResponse = await PixabayService.search(userMessage, 5, "photo");
+          if (imageResponse.success && imageResponse.results.length > 0) {
+            searchContextPicture = {
+              query: userMessage,
+              results: imageResponse.results.map((img: any) => ({
+                id: img.id,
+                previewURL: img.previewURL,
+                webformatURL: img.webformatURL,
+                largeImageURL: img.largeImageURL,
+                tags: img.tags,
+                pageURL: img.pageURL,
+                user: img.user,
+                likes: img.likes,
+                views: img.views,
+              })),
+            };
+          } else {
+            // Store empty results to indicate search was performed but no results found
+            searchContextPicture = {
+              query: userMessage,
+              results: [],
+            };
+          }
+        } catch (imageError) {
+          console.error("ImageSearchError : ", imageError);
+          // Store error state
+          searchContextPicture = {
+            query: userMessage,
+            results: [],
+            error: imageError instanceof Error ? imageError.message : "Image search failed",
+          };
+        }
+      }
 
       // Determine memory count (default to 20 if not specified)
       const memoryCount = options?.memoryCount ?? 20;
+
+      // Normalize reasoning effort - convert "disabled" to "none" for storage
+      const normalizedReasoningEffort =
+        options?.reasoningEffort === "disabled" ? "none" : options?.reasoningEffort || null;
 
       //* Create search log record
       const searchLog = await ChatQuery.createSearchLog({
@@ -346,7 +376,7 @@ export class ChatService {
         used_web_search: options?.webSearch || false,
         used_image_search: options?.imageSearch || false,
         used_steam: options?.steamSearch || false,
-        reasoning_effort: options?.reasoningEffort || null,
+        reasoning_effort: normalizedReasoningEffort,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
       });
@@ -481,8 +511,12 @@ export class ChatService {
         messages: openRouterMessages,
       };
 
-      // Add reasoning parameter if provided
-      if (options?.reasoningEffort && options.reasoningEffort !== "disabled") {
+      // Add reasoning parameter if provided and not disabled/none
+      if (
+        options?.reasoningEffort &&
+        options.reasoningEffort !== "disabled" &&
+        options.reasoningEffort !== "none"
+      ) {
         openRouterRequest.reasoning = {
           effort: options.reasoningEffort,
         };
@@ -689,15 +723,55 @@ export class ChatService {
         }
       }
 
+      //! Perform Pixabay image search if enabled (streaming version)
+      if (options?.imageSearch) {
+        try {
+          const imageResponse = await PixabayService.search(userMessage, 5, "photo");
+          if (imageResponse.success && imageResponse.results.length > 0) {
+            searchContextPicture = {
+              query: userMessage,
+              results: imageResponse.results.map((img: any) => ({
+                id: img.id,
+                previewURL: img.previewURL,
+                webformatURL: img.webformatURL,
+                largeImageURL: img.largeImageURL,
+                tags: img.tags,
+                pageURL: img.pageURL,
+                user: img.user,
+                likes: img.likes,
+                views: img.views,
+              })),
+            };
+          } else {
+            searchContextPicture = {
+              query: userMessage,
+              results: [],
+            };
+          }
+        } catch (imageError) {
+          console.error("ImageSearchError : ", imageError);
+          searchContextPicture = {
+            query: userMessage,
+            results: [],
+            error: imageError instanceof Error ? imageError.message : "Image search failed",
+          };
+        }
+      }
+
       // Create search log record
       const memoryCount = options?.memoryCount ?? 20;
+
+      // Normalize reasoning effort - convert "disabled" to "none" for storage
+      const normalizedReasoningEffort =
+        options?.reasoningEffort === "disabled" ? "none" : options?.reasoningEffort || null;
+
       const searchLog = await ChatQuery.createSearchLog({
         chat_id: savedUserMessage.id,
         memory_chat_include: memoryCount,
         used_web_search: options?.webSearch || false,
         used_image_search: options?.imageSearch || false,
         used_steam: options?.steamSearch || false,
-        reasoning_effort: options?.reasoningEffort || null,
+        reasoning_effort: normalizedReasoningEffort,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
       });
@@ -830,8 +904,12 @@ export class ChatService {
         messages: openRouterMessages,
       };
 
-      // Add reasoning parameter if provided
-      if (options?.reasoningEffort && options.reasoningEffort !== "disabled") {
+      // Add reasoning parameter if provided and not disabled/none
+      if (
+        options?.reasoningEffort &&
+        options.reasoningEffort !== "disabled" &&
+        options.reasoningEffort !== "none"
+      ) {
         openRouterRequest.reasoning = {
           effort: options.reasoningEffort,
         };

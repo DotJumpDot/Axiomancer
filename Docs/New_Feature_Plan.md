@@ -10,7 +10,7 @@ Update Date: 26-01-2026
   - **Why?** The modular theme system we created is perfect for this; empowers creative users.
   - **Implementation**: Expand settings with a theme editor tab, save custom themes to localStorage.
 
-- [ ] **Auto-Save Drafts**
+- [x] **Auto-Save Drafts**
   - **Description**: Automatically save message drafts per conversation (in localStorage or backend).
   - **Why?** Prevents loss of work if the page refreshes or crashes.
   - **Implementation**: Save on input change, restore on conversation load.

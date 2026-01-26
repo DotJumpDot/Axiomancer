@@ -178,6 +178,39 @@
     
     return parsed?.results?.length || 0;
   });
+
+  // Parse image search context
+  const imageResults = $derived.by(() => {
+    if (!message.search_log?.search_context_picture) return [];
+    
+    const context = message.search_log.search_context_picture;
+    let parsed = null;
+    
+    if (typeof context === 'string') {
+      try {
+        parsed = JSON.parse(context);
+      } catch {
+        return [];
+      }
+    } else {
+      parsed = context;
+    }
+    
+    return parsed?.results || [];
+  });
+
+  const imageResultsCount = $derived(imageResults.length);
+
+  // State for expanded image modal
+  let expandedImage = $state<any>(null);
+  
+  function openImageModal(image: any) {
+    expandedImage = image;
+  }
+  
+  function closeImageModal() {
+    expandedImage = null;
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -253,6 +286,73 @@
     {/if}
   </div>
 
+  <!-- Image Results Gallery -->
+  {#if !isUser && message.search_log && imageResultsCount > 0}
+    <div class="image-results-gallery">
+      <div class="gallery-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>Images from Pixabay</span>
+      </div>
+      <div class="gallery-grid">
+        {#each imageResults as image (image.id)}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div class="gallery-item" onclick={() => openImageModal(image)}>
+            <img 
+              src={image.previewURL || image.webformatURL} 
+              alt={image.tags || 'Image result'} 
+              loading="lazy"
+            />
+            <div class="image-overlay">
+              <span class="image-tags">{image.tags?.split(',').slice(0, 2).join(', ') || ''}</span>
+            </div>
+          </div>
+        {/each}
+      </div>
+      <div class="gallery-attribution">
+        <a href="https://pixabay.com" target="_blank" rel="noopener noreferrer">
+          Images from Pixabay
+        </a>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Image Modal -->
+  {#if expandedImage}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="image-modal-overlay" onclick={closeImageModal}>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="image-modal" onclick={(e) => e.stopPropagation()}>
+        <button class="modal-close-btn" onclick={closeImageModal} aria-label="Close image modal">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <img 
+          src={expandedImage.largeImageURL || expandedImage.webformatURL} 
+          alt={expandedImage.tags || 'Expanded image'} 
+        />
+        <div class="modal-info">
+          <p class="modal-tags">{expandedImage.tags || ''}</p>
+          <div class="modal-meta">
+            <span>👤 {expandedImage.user}</span>
+            <span>❤️ {expandedImage.likes}</span>
+            <span>👁️ {expandedImage.views}</span>
+          </div>
+          <a href={expandedImage.pageURL} target="_blank" rel="noopener noreferrer" class="modal-link">
+            View on Pixabay →
+          </a>
+        </div>
+      </div>
+    </div>
+  {/if}
+
   {#if !isUser && hasError}
     <div class="message-reminder error">
       <span class="reminder-text" title={displayContent.replace(/^Error:\s*/, '')}>
@@ -298,14 +398,26 @@
         {/if}
       {/if}
       {#if message.search_log.used_image_search}
-        <span class="meta-item search">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-          Image search
-        </span>
+        {#if imageResultsCount > 0}
+          <span class="meta-item image-search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            Image ({imageResultsCount} results)
+          </span>
+        {:else}
+          <span class="meta-item image-search no-results">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            Image - No results
+          </span>
+        {/if}
       {/if}
       {#if message.search_log.reasoning_effort && message.search_log.reasoning_effort !== "disabled"}
         <span class="meta-item reasoning">
@@ -324,7 +436,7 @@
         </span>
       {/if}
     </div>
-    
+
   {/if}
 </div>
 
@@ -613,12 +725,197 @@
     background: rgba(245, 158, 11, 0.1);
   }
 
+  .meta-item.image-search {
+    color: #ec4899;
+    background: rgba(236, 72, 153, 0.1);
+  }
+
+  .meta-item.image-search.no-results {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
   .meta-item.reasoning {
     color: #a855f7;
     background: rgba(168, 85, 247, 0.1);
     display: flex;
     align-items: center;
     gap: 4px;
+  }
+
+  /* Image Results Gallery */
+  .image-results-gallery {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(236, 72, 153, 0.05);
+    border: 1px solid rgba(236, 72, 153, 0.2);
+    border-radius: 8px;
+  }
+
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ec4899;
+    margin-bottom: 12px;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .gallery-item {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 1;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .gallery-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 4px 6px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .gallery-item:hover .image-overlay {
+    opacity: 1;
+  }
+
+  .image-tags {
+    font-size: 10px;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+
+  .gallery-attribution {
+    margin-top: 8px;
+    text-align: right;
+  }
+
+  .gallery-attribution a {
+    font-size: 10px;
+    color: var(--text-secondary, #888);
+    text-decoration: none;
+    opacity: 0.7;
+  }
+
+  .gallery-attribution a:hover {
+    opacity: 1;
+    text-decoration: underline;
+  }
+
+  /* Image Modal */
+  .image-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+  }
+
+  .image-modal {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: var(--bg-secondary, #2d2d2d);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .image-modal img {
+    display: block;
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+  }
+
+  .modal-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: background 0.2s;
+    z-index: 1;
+  }
+
+  .modal-close-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .modal-info {
+    padding: 16px;
+    background: var(--bg-secondary, #2d2d2d);
+  }
+
+  .modal-tags {
+    font-size: 14px;
+    color: var(--text-primary, #fff);
+    margin: 0 0 8px 0;
+  }
+
+  .modal-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary, #888);
+    margin-bottom: 8px;
+  }
+
+  .modal-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #ec4899;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
   }
 
   .reasoning-toggle {
