@@ -1,16 +1,22 @@
 // Helper utilities for the application
 
-// Debounce function
+// Debounce function with cancel
 export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   fn: T,
   delay: number
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) & { cancel: () => void } {
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  return (...args: Parameters<T>) => {
+  const debounced = (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
+
+  debounced.cancel = () => {
+    clearTimeout(timeoutId);
+  };
+
+  return debounced;
 }
 
 // Throttle function

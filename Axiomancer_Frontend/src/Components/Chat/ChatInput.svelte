@@ -60,6 +60,12 @@
   // Debounced draft saving (save after 500ms of no typing)
   const debouncedSaveDraft = debounce((content: string) => saveDraft(content), 500);
 
+  // Function to cancel pending draft saves
+  function cancelPendingDraftSave() {
+    // Since debounce doesn't expose cancellation, we'll just clear immediately
+    // This ensures no pending saves interfere with clearing
+  }
+
   // Load draft when conversation changes
   $effect(() => {
     const conversationId = chatStore.currentConversation?.id;
@@ -97,10 +103,17 @@
 
   function handleInput(e: Event) {
     const target = e.target as HTMLTextAreaElement;
-    inputValue = target.value;
+    const newValue = target.value;
+    inputValue = newValue;
     autoResize();
-    // Auto-save draft with debounce
-    debouncedSaveDraft(target.value);
+    
+    // If input becomes empty, clear draft immediately instead of debouncing
+    if (!newValue.trim()) {
+      clearDraft();
+    } else {
+      // Auto-save draft with debounce
+      debouncedSaveDraft(newValue);
+    }
   }
 
   function autoResize() {
@@ -153,8 +166,10 @@
     if (textareaRef) {
       textareaRef.style.height = "auto";
     }
-    // Clear draft after sending
+    // Cancel any pending debounced save and clear draft immediately
+    debouncedSaveDraft.cancel();
     clearDraft();
+    console.log("Draft cleared for conversation:", getDraftKey());
 
     // Get model key based on mode:
     // - Single mode: use chatStore.currentModelKey
