@@ -38,6 +38,8 @@ export interface Chat {
   ai_token_usage?: TokenUsage;
   ai_latency_ms?: number;
   ai_finish_reason?: string;
+  // Decision model key (from auto-routing)
+  decision_model_key?: string | null;
   // Joined fields from search_log (when available)
   search_log?: {
     memory_chat_include: number;

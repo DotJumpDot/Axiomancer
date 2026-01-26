@@ -222,7 +222,7 @@
     {/if}
     {#if !isUser && message.routing_mode === "auto" && message.model_id && message.ai_model_key}
       <span class="model-badge decision" title="Decision model used for routing">
-        Decision: {message.model_id}
+        Decision: {message.decision_model_key || message.model_id}
       </span>
       <span class="model-badge active" title="Active model responding">
         Active: {message.ai_model_key}

@@ -173,6 +173,7 @@ export class ChatQuery {
         car.token_usage as ai_token_usage,
         car.latency_ms as ai_latency_ms,
         car.finish_reason as ai_finish_reason,
+        am.model_key as decision_model_key,
         sl.memory_chat_include,
         sl.used_web_search,
         sl.used_image_search,
@@ -183,6 +184,7 @@ export class ChatQuery {
         sl.search_context_picture
       FROM chat c
       LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
+      LEFT JOIN ai_model am ON c.model_id = am.id
       LEFT JOIN search_log sl ON c.search_log_uuid = sl.id_uuid
       WHERE c.conversation_id = ${conversationId}
       ORDER BY c.created_at ASC
@@ -226,6 +228,7 @@ export class ChatQuery {
         car.token_usage as ai_token_usage,
         car.latency_ms as ai_latency_ms,
         car.finish_reason as ai_finish_reason,
+        am.model_key as decision_model_key,
         sl.memory_chat_include,
         sl.used_web_search,
         sl.used_image_search,
@@ -236,6 +239,7 @@ export class ChatQuery {
         sl.search_context_picture
       FROM chat c
       LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
+      LEFT JOIN ai_model am ON c.model_id = am.id
       LEFT JOIN search_log sl ON c.search_log_uuid = sl.id_uuid
       WHERE c.id = ${id}
     `;
