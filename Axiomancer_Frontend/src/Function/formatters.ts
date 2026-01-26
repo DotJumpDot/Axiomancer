@@ -23,7 +23,10 @@ export function formatRelativeTime(date: string | Date): string {
 }
 
 // Format date to locale string
-export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
+export function formatDate(
+  date: string | Date,
+  options?: Intl.DateTimeFormatOptions,
+): string {
   return new Date(date).toLocaleDateString(undefined, options);
 }
 
@@ -33,8 +36,17 @@ export function formatDateTime(date: string | Date): string {
 }
 
 // Format time for message timestamps (e.g., "2:34 PM" or "14:34")
-export function formatMessageTime(date: string | Date): string {
-  return new Date(date).toLocaleTimeString(undefined, {
+export function formatMessageTime(
+  date: string | Date,
+  locale: string = "en-US",
+): string {
+  const localeMap: Record<string, string> = {
+    en: "en-US",
+    th: "th-TH",
+  };
+  const resolvedLocale = localeMap[locale] || locale;
+
+  return new Date(date).toLocaleTimeString(resolvedLocale, {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
@@ -65,7 +77,8 @@ export function formatCost(cost: number): string {
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -112,7 +125,9 @@ export function formatRoutingMode(mode: string): string {
 }
 
 // Extract code blocks from markdown
-export function extractCodeBlocks(text: string): { language: string; code: string }[] {
+export function extractCodeBlocks(
+  text: string,
+): { language: string; code: string }[] {
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
   const blocks: { language: string; code: string }[] = [];
 

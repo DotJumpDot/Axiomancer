@@ -13,6 +13,7 @@ import { chatApi } from "./api/chat/chat_api";
 import { searchApi } from "./api/search/search_api";
 import { selectionApi } from "./api/selection/selection_api";
 import { favoriteApi } from "./api/favorite/favorite_api";
+import { folderApi } from "./api/folder/folder_api";
 import { AuthService } from "./api/auth/auth_service";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,7 +32,7 @@ const app = new Elysia()
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-API-KEY"],
       credentials: true,
-    })
+    }),
   )
   .use(swagger({ path: "/w" }))
   // Auth API (no authentication required - used to get tokens/API keys)
@@ -87,6 +88,7 @@ const app = new Elysia()
   .use(searchApi)
   .use(selectionApi)
   .use(favoriteApi)
+  .use(folderApi)
   .get("/", () => "Hello Elysia")
   .get("/test-db", async () => {
     try {

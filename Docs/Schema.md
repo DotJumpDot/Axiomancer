@@ -166,6 +166,19 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | created_at            | datetime | No       | Record creation timestamp                 |
 | updated_at            | datetime | No       | Record last update timestamp              |
 
+### User Conversation Folder
+
+| Column           | Type     | Nullable | Description                                        |
+| ---------------- | -------- | -------- | -------------------------------------------------- |
+| id               | uuid     | No       | Primary key, folder ID                             |
+| user_uuid        | str      | No       | Foreign key to user.uuid                           |
+| folder_name      | str      | No       | Display name of the folder                         |
+| conversation_ids | text[]   | No       | Array of conversation IDs in this folder (ordered) |
+| is_collapsed     | boolean  | No       | Whether folder is collapsed in UI (default false)  |
+| position         | int      | No       | Display order position (lower = higher in list)    |
+| created_at       | datetime | No       | Record creation timestamp                          |
+| updated_at       | datetime | No       | Record last update timestamp                       |
+
 ---
 
 ## Entity Relationships
@@ -175,6 +188,7 @@ user (1) ──── (many) conversation
 user (1) ──── (many) user_selected_models
 user (1) ──── (many) prompt_profile
 user (1) ──── (1) user_favorite
+user (1) ──── (many) user_conversation_folder
 conversation (1) ──── (many) chat
 chat (many) ──── (1) ai_model
 chat (many) ──── (1) prompt_profile
@@ -185,6 +199,7 @@ user_selected_models (many) ──── (1) prompt_profile
 user_favorite (many) ──── (many) ai_model
 user_favorite (many) ──── (many) prompt_profile
 user_favorite (many) ──── (many) conversation
+user_conversation_folder (many) ──── (many) conversation
 ```
 
 ---
@@ -340,6 +355,19 @@ CREATE TABLE user_favorite (
     FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
 );
 
+-- User Conversation Folder table
+CREATE TABLE user_conversation_folder (
+    id TEXT PRIMARY KEY,
+    user_uuid TEXT NOT NULL,
+    folder_name TEXT NOT NULL,
+    conversation_ids TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    is_collapsed BOOLEAN NOT NULL DEFAULT FALSE,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_uuid) REFERENCES "user"(uuid)
+);
+
 
 -- Add foreign key constraint for chat to search_log after both tables are created
 ALTER TABLE chat ADD CONSTRAINT fk_chat_search_log FOREIGN KEY (search_log_uuid) REFERENCES search_log(id_uuid);
@@ -356,6 +384,7 @@ CREATE INDEX idx_search_log_chat_id ON search_log(chat_id);
 CREATE INDEX idx_user_username ON "user"(username);
 CREATE INDEX idx_user_selected_models_user_uuid ON user_selected_models(user_uuid);
 CREATE INDEX idx_user_favorite_user_uuid ON user_favorite(user_uuid);
+CREATE INDEX idx_user_conversation_folder_user_uuid ON user_conversation_folder(user_uuid);
 ```
 
 ## Sample Data

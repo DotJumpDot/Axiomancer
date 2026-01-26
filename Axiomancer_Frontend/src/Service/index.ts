@@ -8,3 +8,4 @@ export { default as searchService } from "./searchService";
 export { default as userService } from "./userService";
 export { selectionService } from "./selectionService";
 export { favoriteService } from "./favoriteService";
+export { folderService } from "./folderService";

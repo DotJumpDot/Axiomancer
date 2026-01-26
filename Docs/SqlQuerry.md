@@ -377,3 +377,70 @@ WHERE id NOT IN (
     WHERE chat_ai_respond_id IS NOT NULL
 );
 ```
+
+## Folder Queries
+
+### Get User Folders with Conversation Counts
+
+```sql
+SELECT
+    ucf.id,
+    ucf.folder_name,
+    ucf.position,
+    ucf.is_collapsed,
+    ucf.created_at,
+    ARRAY_LENGTH(ucf.conversation_ids, 1) as conversation_count
+FROM public.user_conversation_folder ucf
+WHERE ucf.user_uuid = 'your-user-uuid'
+ORDER BY ucf.position ASC;
+```
+
+### Get Folder Contents with Conversation Details
+
+```sql
+SELECT
+    ucf.id as folder_id,
+    ucf.folder_name,
+    conv.id as conversation_id,
+    conv.title as conversation_title,
+    conv.updated_at as conversation_updated
+FROM public.user_conversation_folder ucf
+CROSS JOIN LATERAL unnest(ucf.conversation_ids) as cid
+INNER JOIN public.conversation conv ON conv.id = cid::uuid
+WHERE ucf.user_uuid = 'your-user-uuid'
+ORDER BY ucf.position ASC, conv.updated_at DESC;
+```
+
+### Find Conversations Not in Any Folder
+
+```sql
+WITH folder_conversations AS (
+    SELECT DISTINCT unnest(conversation_ids)::uuid as conv_id
+    FROM public.user_conversation_folder
+    WHERE user_uuid = 'your-user-uuid'
+)
+SELECT conv.id, conv.title, conv.updated_at
+FROM public.conversation conv
+WHERE conv.user_id = 'your-user-uuid'
+  AND conv.archived = false
+  AND conv.id NOT IN (SELECT conv_id FROM folder_conversations)
+ORDER BY conv.updated_at DESC;
+```
+
+### Create User Conversation Folder Table
+
+```sql
+CREATE TABLE IF NOT EXISTS public.user_conversation_folder (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_uuid UUID NOT NULL REFERENCES public.user(uuid) ON DELETE CASCADE,
+    folder_name VARCHAR(100) NOT NULL,
+    conversation_ids TEXT[] DEFAULT '{}',
+    is_collapsed BOOLEAN DEFAULT false,
+    position INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_conversation_folder_user
+    ON public.user_conversation_folder(user_uuid);
+```

@@ -36,7 +36,16 @@
     "addToFavorites": "Add to favorites",
     "removeFromFavorites": "Remove from favorites",
     "archiveConversation": "Archive conversation",
-    "deleteConversation": "Delete conversation"
+    "deleteConversation": "Delete conversation",
+    "newFolder": "New Folder",
+    "folderName": "Folder name",
+    "renameFolder": "Rename folder",
+    "deleteFolder": "Delete folder",
+    "deleteFolderConfirm": "Delete this folder? Conversations inside will be moved out.",
+    "moveToFolder": "Move to folder",
+    "removeFromFolder": "Remove from folder",
+    "favorites": "Favorites",
+    "noFolder": "No Folder"
   },
   "header": {
     "auto": "Auto",
@@ -263,7 +272,12 @@
     "enhanceSearchAbilityDesc": "Use AI to optimize search queries by extracting key terms from your message",
     "enhanceSearchDisabled": "Disabled",
     "enhanceSearchServerDefault": "Use Server Default AI",
-    "enhanceSearchCurrentModel": "Use Current Model"
+    "enhanceSearchCurrentModel": "Use Current Model",
+    "folders": "Folders",
+    "autoExpandFolder": "Auto Expand Folder",
+    "autoExpandFolderDesc": "Auto-expand collapsed folders when selecting a conversation inside",
+    "showFavoritesFolder": "Show Favorites Folder",
+    "showFavoritesFolderDesc": "Group favorited conversations in a special folder at the top"
   },
   "notification": {
     "success": "Success",

@@ -218,7 +218,7 @@
   <div class="message-header">
     <span class="role" style="color: {getDisplayRoleColor(message.role)}">{getDisplayRole(message.role)}</span>
     {#if settingsStore.showMessageTimestamps && message.created_at}
-      <span class="message-timestamp">{formatMessageTime(message.created_at)}</span>
+      <span class="message-timestamp">{formatMessageTime(message.created_at, settingsStore.language)}</span>
     {/if}
     {#if !isUser && message.routing_mode === "auto" && message.model_id && message.ai_model_key}
       <span class="model-badge decision" title="Decision model used for routing">

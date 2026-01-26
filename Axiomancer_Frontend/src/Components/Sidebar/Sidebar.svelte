@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { chatStore, settingsStore, authStore, favoriteStore, FAVORITE_COLORS } from "@/Store";
-  import type { Conversation } from "@/Types";
+  import { chatStore, settingsStore, authStore, favoriteStore, folderStore, FAVORITE_COLORS } from "@/Store";
+  import type { Conversation, UserConversationFolder } from "@/Types";
   import { formatRelativeTime, formatDateTime, truncate, getTranslations, type LanguageCode } from "@/Function";
   import ArchiveDialog from "./ArchiveDialog.svelte";
   import ConversationSetting from "./ConversationSetting.svelte";
@@ -14,22 +14,69 @@
   let editingConversationId = $state<string | null>(null);
   let editingTitle = $state('');
   
+  // Folder state
+  let editingFolderId = $state<string | null>(null);
+  let editingFolderName = $state('');
+  let showFolderContextMenu = $state(false);
+  let folderContextMenuPosition = $state({ x: 0, y: 0 });
+  let contextMenuFolderId = $state<string | null>(null);
+  let draggedConversationId = $state<string | null>(null);
+  let dragOverFolderId = $state<string | null>(null);
+  let showCreateFolderInput = $state(false);
+  let newFolderName = $state('');
+  let isFavoriteFolderCollapsed = $state(false);
+  
   let archivedConversations = $derived(
     Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => c.archived) : []
   );
+
+  // Get favorite conversation IDs
+  let favoriteConversationIds = $derived(
+    favoriteStore.favorites?.favorite_conversation || []
+  );
+
+  // Get all conversation IDs that are in folders
+  let conversationsInFolders = $derived.by(() => {
+    const idsInFolders = new Set<string>();
+    folderStore.folders.forEach(folder => {
+      folder.conversation_ids.forEach(id => idsInFolders.add(id));
+    });
+    return idsInFolders;
+  });
+
+  // Separate favorite conversations (for favorite folder)
+  let favoriteConversations = $derived.by(() => {
+    if (!settingsStore.favoriteFolderEnabled) return [];
+    const active = Array.isArray(chatStore.conversations) 
+      ? chatStore.conversations.filter(c => !c.archived && favoriteConversationIds.includes(c.id)) 
+      : [];
+    return active.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  });
   
-  // Sort conversations: favorites first, then by updated_at
+  // Sort conversations: favorites first (if not using favorite folder), then by updated_at
+  // Also exclude conversations that are in folders
   let activeConversations = $derived.by(() => {
     const active = Array.isArray(chatStore.conversations) 
       ? chatStore.conversations.filter(c => !c.archived) 
       : [];
     
-    return active.sort((a, b) => {
-      const aIsFavorite = favoriteStore.isFavorite('conversation', a.id);
-      const bIsFavorite = favoriteStore.isFavorite('conversation', b.id);
-      
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
+    // Filter out conversations in folders
+    const unfolderedActive = active.filter(c => !conversationsInFolders.has(c.id));
+    
+    // If favorite folder is enabled, also filter out favorites from main list
+    const filteredActive = settingsStore.favoriteFolderEnabled 
+      ? unfolderedActive.filter(c => !favoriteConversationIds.includes(c.id))
+      : unfolderedActive;
+    
+    return filteredActive.sort((a, b) => {
+      // If favorite folder is disabled, sort favorites first
+      if (!settingsStore.favoriteFolderEnabled) {
+        const aIsFavorite = favoriteStore.isFavorite('conversation', a.id);
+        const bIsFavorite = favoriteStore.isFavorite('conversation', b.id);
+        
+        if (aIsFavorite && !bIsFavorite) return -1;
+        if (!aIsFavorite && bIsFavorite) return 1;
+      }
       
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
@@ -61,6 +108,10 @@
       if (isFav) {
         await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'conversation', id);
       } else {
+        // When adding to favorites, remove from any folder
+        if (folderStore.isConversationInFolder(id)) {
+          await folderStore.removeConversationFromAllFolders(authStore.currentUser.uuid, id);
+        }
         await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'conversation', id);
       }
     } catch (error) {
@@ -179,13 +230,327 @@
       if (isFav) {
         await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'conversation', conversationId);
       } else {
+        // When adding to favorites, remove from any folder
+        if (folderStore.isConversationInFolder(conversationId)) {
+          await folderStore.removeConversationFromAllFolders(authStore.currentUser.uuid, conversationId);
+        }
         await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'conversation', conversationId);
       }
     } catch (error) {
       console.error("Failed to toggle favorite via double-click:", error);
     }
   }
+
+  // * Folder management functions
+  async function handleCreateFolder() {
+    if (!authStore.currentUser?.uuid || !newFolderName.trim()) return;
+    
+    try {
+      await folderStore.createFolder(authStore.currentUser.uuid, {
+        folder_name: newFolderName.trim()
+      });
+      newFolderName = '';
+      showCreateFolderInput = false;
+    } catch (error) {
+      console.error("Failed to create folder:", error);
+    }
+  }
+
+  function startEditingFolder(folder: UserConversationFolder) {
+    editingFolderId = folder.id;
+    editingFolderName = folder.folder_name;
+  }
+
+  function cancelEditingFolder() {
+    editingFolderId = null;
+    editingFolderName = '';
+  }
+
+  async function saveFolderName(folderId: string) {
+    if (!authStore.currentUser?.uuid || !editingFolderName.trim()) return;
+    
+    try {
+      await folderStore.updateFolder(authStore.currentUser.uuid, folderId, {
+        folder_name: editingFolderName.trim()
+      });
+    } catch (error) {
+      console.error("Failed to update folder:", error);
+    }
+    editingFolderId = null;
+    editingFolderName = '';
+  }
+
+  function handleFolderNameKeydown(e: KeyboardEvent, folderId: string) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveFolderName(folderId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditingFolder();
+    }
+  }
+
+  async function handleDeleteFolder(folderId: string) {
+    if (!authStore.currentUser?.uuid) return;
+    
+    const t = getTranslations(settingsStore.language as LanguageCode);
+    if (confirm(t.sidebar.deleteFolderConfirm)) {
+      try {
+        await folderStore.deleteFolder(authStore.currentUser.uuid, folderId);
+      } catch (error) {
+        console.error("Failed to delete folder:", error);
+      }
+    }
+  }
+
+  async function handleToggleFolderCollapse(folderId: string) {
+    if (!authStore.currentUser?.uuid) return;
+    
+    try {
+      await folderStore.toggleFolderCollapsed(authStore.currentUser.uuid, folderId);
+    } catch (error) {
+      console.error("Failed to toggle folder:", error);
+    }
+  }
+
+  // * Drag and drop handlers
+  function handleDragStart(e: DragEvent, conversationId: string) {
+    draggedConversationId = conversationId;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', conversationId);
+    }
+  }
+
+  function handleDragEnd() {
+    draggedConversationId = null;
+    dragOverFolderId = null;
+  }
+
+  function handleDragOver(e: DragEvent, folderId: string | null) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    dragOverFolderId = folderId;
+  }
+
+  function handleDragLeave() {
+    dragOverFolderId = null;
+  }
+
+  async function handleDrop(e: DragEvent, folderId: string | null) {
+    e.preventDefault();
+    if (!authStore.currentUser?.uuid || !draggedConversationId) return;
+    
+    try {
+      if (folderId) {
+        // Add to folder
+        await folderStore.addConversationToFolder(
+          authStore.currentUser.uuid, 
+          folderId, 
+          draggedConversationId
+        );
+      } else {
+        // Remove from all folders (drop in "No Folder" area)
+        await folderStore.removeConversationFromAllFolders(
+          authStore.currentUser.uuid,
+          draggedConversationId
+        );
+      }
+    } catch (error) {
+      console.error("Failed to move conversation:", error);
+    }
+    
+    draggedConversationId = null;
+    dragOverFolderId = null;
+  }
+
+  // * Get conversations for a specific folder
+  function getConversationsForFolder(folder: UserConversationFolder): Conversation[] {
+    return folder.conversation_ids
+      .map(id => chatStore.conversations.find(c => c.id === id))
+      .filter((c): c is Conversation => c !== undefined && !c.archived)
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }
+
+  // * Load folders on mount
+  $effect(() => {
+    if (authStore.currentUser?.uuid) {
+      folderStore.loadFolders(authStore.currentUser.uuid);
+    }
+  });
+
+  // * Auto expand/collapse folders based on settings on initial load
+  let hasAppliedAutoCollapse = $state(false);
+  $effect(() => {
+    // Only run once when folders are loaded for the first time
+    if (folderStore.folders.length > 0 && !hasAppliedAutoCollapse && authStore.currentUser?.uuid) {
+      hasAppliedAutoCollapse = true;
+      
+      // Apply auto collapse/expand based on setting
+      if (settingsStore.autoOpenCollapse) {
+        // Auto-expand: Set all folders to not collapsed
+        isFavoriteFolderCollapsed = false;
+        // For user folders, we need to update each one that is collapsed
+        folderStore.folders.forEach(async (folder) => {
+          if (folder.is_collapsed) {
+            await folderStore.toggleFolderCollapsed(authStore.currentUser!.uuid, folder.id);
+          }
+        });
+      } else {
+        // Auto-collapse: Set all folders to collapsed
+        isFavoriteFolderCollapsed = true;
+        // For user folders, collapse any that are open
+        folderStore.folders.forEach(async (folder) => {
+          if (!folder.is_collapsed) {
+            await folderStore.toggleFolderCollapsed(authStore.currentUser!.uuid, folder.id);
+          }
+        });
+      }
+    }
+  });
 </script>
+
+{#snippet conversationItem(conversation: Conversation, isDraggable: boolean)}
+  <div
+    class="conversation-item"
+    class:active={chatStore.currentConversation?.id === conversation.id}
+    class:dragging={draggedConversationId === conversation.id}
+    draggable={isDraggable}
+    ondragstart={(e) => isDraggable && handleDragStart(e, conversation.id)}
+    ondragend={handleDragEnd}
+    onclick={() => handleSelect(conversation)}
+    ondblclick={(e) => handleDoubleClick(e, conversation.id)}
+    onkeydown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSelect(conversation);
+      }
+    }}
+    role="button"
+    tabindex="0"
+    aria-label={`Select conversation: ${conversation.title}`}
+  >
+    <span class="conversation-title">
+      {#if favoriteStore.isFavorite('conversation', conversation.id)}
+        <button
+          class="title-favorite-btn"
+          onclick={(e) => handleFavorite(e, conversation.id)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleFavorite(e, conversation.id);
+            }
+          }}
+          aria-label="Remove from favorites"
+          title="Remove from favorites"
+        >
+          {#if settingsStore.favoriteIcon === 'star'}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          {:else}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="2">
+              <path d={getFavoriteIconPath()}></path>
+            </svg>
+          {/if}
+        </button>
+      {/if}
+      {#if editingConversationId === conversation.id}
+        <input
+          type="text"
+          class="title-input"
+          bind:value={editingTitle}
+          onclick={(e) => e.stopPropagation()}
+          onkeydown={(e) => handleTitleKeydown(e, conversation.id)}
+          onblur={() => saveTitle(conversation.id)}
+          use:focusInput
+        />
+      {:else}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <span
+          class="title-text"
+          class:clickable={!settingsStore.disableClickRename}
+          onclick={(e) => {
+            e.stopPropagation();
+            if (!settingsStore.disableClickRename && chatStore.currentConversation?.id === conversation.id) {
+              startEditingTitle(conversation);
+            } else {
+              handleSelect(conversation);
+            }
+          }}
+        >
+          {truncate(conversation.title, 25)}
+        </span>
+      {/if}
+    </span>
+    <span class="conversation-date">{getDateDisplay(conversation.updated_at)}</span>
+    <div class="conversation-actions">
+      {#if !favoriteStore.isFavorite('conversation', conversation.id)}
+        <button
+          class="action-btn favorite-btn"
+          onclick={(e) => handleFavorite(e, conversation.id)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleFavorite(e, conversation.id);
+            }
+          }}
+          aria-label="Add to favorites"
+          title="Add to favorites"
+        >
+          {#if settingsStore.favoriteIcon === 'star'}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          {:else}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d={getFavoriteIconPath()}></path>
+            </svg>
+          {/if}
+        </button>
+      {/if}
+      <button
+        class="action-btn archive-btn"
+        onclick={(e) => handleArchive(e, conversation.id)}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleArchive(e, conversation.id);
+          }
+        }}
+        aria-label="Archive conversation"
+        title="Archive conversation"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="21 8 21 21 3 21 3 8"></polyline>
+          <line x1="1" y1="3" x2="23" y2="3"></line>
+          <path d="M10 12v6"></path>
+          <path d="M14 12v6"></path>
+        </svg>
+      </button>
+      <button
+        class="action-btn delete-btn"
+        onclick={(e) => handleDelete(e, conversation.id)}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleDelete(e, conversation.id);
+          }
+        }}
+        aria-label="Delete conversation"
+        title="Delete conversation"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+{/snippet}
 
 <aside class="sidebar" class:collapsed={!settingsStore.sidebarOpen}>
   <div class="sidebar-header">
@@ -223,144 +588,186 @@
       </div>
     {:else if chatStore.isLoading}
       <div class="loading">{t.sidebar.loadingConversations}</div>
-    {:else if activeConversations.length === 0}
+    {:else if activeConversations.length === 0 && folderStore.folders.length === 0 && favoriteConversations.length === 0}
       <div class="empty">{t.sidebar.noConversations}</div>
     {:else}
-      {#each activeConversations as conversation (conversation.id)}
-        <div
-          class="conversation-item"
-          class:active={chatStore.currentConversation?.id === conversation.id}
-          onclick={() => handleSelect(conversation)}
-          ondblclick={(e) => handleDoubleClick(e, conversation.id)}
-          onkeydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleSelect(conversation);
-            }
-          }}
-          role="button"
-          tabindex="0"
-          aria-label={`Select conversation: ${conversation.title}`}
-        >
-          <span class="conversation-title">
-            {#if favoriteStore.isFavorite('conversation', conversation.id)}
-              <button
-                class="title-favorite-btn"
-                onclick={(e) => handleFavorite(e, conversation.id)}
-                onkeydown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleFavorite(e, conversation.id);
-                  }
-                }}
-                aria-label="Remove from favorites"
-                title="Remove from favorites"
-              >
-                {#if settingsStore.favoriteIcon === 'star'}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                {:else}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="2">
-                    <path d={getFavoriteIconPath()}></path>
-                  </svg>
-                {/if}
-              </button>
-            {/if}
-            {#if editingConversationId === conversation.id}
-              <input
-                type="text"
-                class="title-input"
-                bind:value={editingTitle}
-                onclick={(e) => e.stopPropagation()}
-                onkeydown={(e) => handleTitleKeydown(e, conversation.id)}
-                onblur={() => saveTitle(conversation.id)}
-                use:focusInput
-              />
-            {:else}
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <span
-                class="title-text"
-                class:clickable={!settingsStore.disableClickRename}
-                onclick={(e) => {
-                  e.stopPropagation();
-                  if (!settingsStore.disableClickRename && chatStore.currentConversation?.id === conversation.id) {
-                    startEditingTitle(conversation);
-                  } else {
-                    handleSelect(conversation);
-                  }
-                }}
-              >
-                {truncate(conversation.title, 25)}
+      <!-- Favorites Folder (when enabled) -->
+      {#if settingsStore.favoriteFolderEnabled && favoriteConversations.length > 0}
+        <div class="folder-section favorites-folder">
+          <div class="folder-header">
+            <button class="folder-toggle" onclick={() => { isFavoriteFolderCollapsed = !isFavoriteFolderCollapsed; }}>
+              <svg class="chevron" class:collapsed={isFavoriteFolderCollapsed} xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="favorite-icon-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="1.5">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
               </span>
-            {/if}
-          </span>
-          <span class="conversation-date">{getDateDisplay(conversation.updated_at)}</span>
-          <div class="conversation-actions">
-            {#if !favoriteStore.isFavorite('conversation', conversation.id)}
-              <button
-                class="action-btn favorite-btn"
-                onclick={(e) => handleFavorite(e, conversation.id)}
-                onkeydown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleFavorite(e, conversation.id);
-                  }
-                }}
-                aria-label="Add to favorites"
-                title="Add to favorites"
-              >
-                {#if settingsStore.favoriteIcon === 'star'}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                {:else}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d={getFavoriteIconPath()}></path>
-                  </svg>
-                {/if}
-              </button>
-            {/if}
-            <button
-              class="action-btn archive-btn"
-              onclick={(e) => handleArchive(e, conversation.id)}
-              onkeydown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleArchive(e, conversation.id);
-                }
-              }}
-              aria-label="Archive conversation"
-              title="Archive conversation"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                <line x1="1" y1="3" x2="23" y2="3"></line>
-                <path d="M10 12v6"></path>
-                <path d="M14 12v6"></path>
-              </svg>
-            </button>
-            <button
-              class="action-btn delete-btn"
-              onclick={(e) => handleDelete(e, conversation.id)}
-              onkeydown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleDelete(e, conversation.id);
-                }
-              }}
-              aria-label="Delete conversation"
-              title="Delete conversation"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
+              <span class="folder-name favorites-name">{t.sidebar.favorites}</span>
+              <span class="folder-count favorites-count">{favoriteConversations.length}</span>
             </button>
           </div>
+          {#if !isFavoriteFolderCollapsed}
+            <div class="folder-contents">
+              {#each favoriteConversations as conversation (conversation.id)}
+                {@render conversationItem(conversation, false)}
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- User Folders -->
+      {#each folderStore.folders as folder (folder.id)}
+        {@const folderConversations = getConversationsForFolder(folder)}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div 
+          class="folder-section user-folder"
+          class:drag-over={dragOverFolderId === folder.id}
+          ondragover={(e) => handleDragOver(e, folder.id)}
+          ondragleave={handleDragLeave}
+          ondrop={(e) => handleDrop(e, folder.id)}
+          role="region"
+        >
+          <div class="folder-header">
+            <button class="folder-toggle" onclick={() => handleToggleFolderCollapse(folder.id)}>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="12" 
+                height="12" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2"
+                class="chevron"
+                class:collapsed={folder.is_collapsed}
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              {#if editingFolderId === folder.id}
+                <input
+                  type="text"
+                  class="folder-name-input"
+                  bind:value={editingFolderName}
+                  onclick={(e) => e.stopPropagation()}
+                  onkeydown={(e) => handleFolderNameKeydown(e, folder.id)}
+                  onblur={() => saveFolderName(folder.id)}
+                  use:focusInput
+                />
+              {:else}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <span 
+                  class="folder-name"
+                  class:clickable={!settingsStore.disableFolderClickRename}
+                  ondblclick={(e) => {
+                    if (settingsStore.disableFolderClickRename) return;
+                    e.stopPropagation();
+                    startEditingFolder(folder);
+                  }}
+                >{folder.folder_name}</span>
+              {/if}
+            </button>
+            <div class="folder-actions">
+              <button 
+                class="folder-action-btn"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  startEditingFolder(folder);
+                }}
+                title={t.sidebar.renameFolder}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+              <button 
+                class="folder-action-btn delete"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteFolder(folder.id);
+                }}
+                title={t.sidebar.deleteFolder}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+            <span class="folder-count">{folderConversations.length}</span>
+          </div>
+          {#if !folder.is_collapsed}
+            <div class="folder-contents">
+              {#each folderConversations as conversation (conversation.id)}
+                {@render conversationItem(conversation, true)}
+              {/each}
+              {#if folderConversations.length === 0}
+                <div class="folder-empty">Drop conversations here</div>
+              {/if}
+            </div>
+          {/if}
         </div>
       {/each}
+
+      <!-- Create Folder Button/Input -->
+      {#if showCreateFolderInput}
+        <!-- svelte-ignore a11y_consider_explicit_label -->
+        <div class="create-folder-input">
+          <input
+            type="text"
+            placeholder={t.sidebar.folderName}
+            bind:value={newFolderName}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCreateFolder();
+              } else if (e.key === 'Escape') {
+                showCreateFolderInput = false;
+                newFolderName = '';
+              }
+            }}
+            use:focusInput
+          />
+          <button class="create-folder-confirm" onclick={handleCreateFolder} aria-label="Confirm create folder">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+          <button class="create-folder-cancel" onclick={() => { showCreateFolderInput = false; newFolderName = ''; }} aria-label="Cancel create folder">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      {:else}
+        <button class="create-folder-btn" onclick={() => showCreateFolderInput = true}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            <line x1="12" y1="11" x2="12" y2="17"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+          {t.sidebar.newFolder}
+        </button>
+      {/if}
+
+      <!-- Unfiled Conversations -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div 
+        class="unfiled-section"
+        class:drag-over={dragOverFolderId === null && draggedConversationId !== null}
+        ondragover={(e) => handleDragOver(e, null)}
+        ondragleave={handleDragLeave}
+        ondrop={(e) => handleDrop(e, null)}
+        role="region"
+      >
+        {#each activeConversations as conversation (conversation.id)}
+          {@render conversationItem(conversation, true)}
+        {/each}
+      </div>
     {/if}
     
     <!-- {#if authStore.isAuthenticated && archivedConversations.length > 0}
@@ -725,5 +1132,293 @@
   .auth-submessage {
     font-size: 12px;
     opacity: 0.7;
+  }
+
+  /* Folder Styles */
+  .folder-section {
+    margin-bottom: 4px;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+
+  .folder-section.drag-over {
+    background: var(--hover-bg, #2d2d2d);
+    outline: 2px dashed var(--primary-color, #6366f1);
+  }
+
+  .folder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #2d2d2d);
+    transition: background 0.2s;
+  }
+
+  .folder-header:hover {
+    background: var(--hover-bg, #2d2d2d);
+  }
+
+  .folder-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--text-primary, #fff);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0;
+    flex: 1;
+    text-align: left;
+  }
+
+  .folder-toggle .chevron {
+    transition: transform 0.2s;
+  }
+
+  .folder-toggle .chevron.collapsed {
+    transform: rotate(-90deg);
+  }
+
+  .folder-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .folder-name.clickable {
+    cursor: pointer;
+  }
+
+  .folder-name.clickable:hover {
+    text-decoration: underline;
+  }
+
+  .folder-count {
+    font-size: 11px;
+    color: var(--text-primary, #fff);
+    margin-left: 8px;
+    background: rgba(99, 102, 241, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+    order: 3;
+  }
+
+  .folder-name-input {
+    flex: 1;
+    background: var(--input-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #3d3d3d);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+    font-size: 13px;
+    padding: 2px 6px;
+    outline: none;
+    max-width: 140px;
+  }
+
+  .folder-name-input:focus {
+    border-color: var(--primary-color, #6366f1);
+  }
+
+  .folder-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    order: 2;
+    margin-left: auto;
+  }
+
+  .folder-header:hover .folder-actions {
+    opacity: 1;
+  }
+
+  .folder-action-btn {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .folder-action-btn:hover {
+    background: var(--hover-bg, #3d3d3d);
+    color: var(--text-primary, #fff);
+  }
+
+  .folder-action-btn.delete:hover {
+    background: var(--danger-bg, rgba(239, 68, 68, 0.2));
+    color: var(--danger-color, #ef4444);
+  }
+
+  .folder-contents {
+    padding-left: 20px;
+  }
+
+  .user-folder .folder-contents {
+    padding-top: 4px;
+    border-left: 2px solid var(--border-color, rgba(99, 102, 241, 0.3));
+    margin-left: 18px;
+    padding-left: 10px;
+  }
+
+  .folder-empty {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-muted, #666);
+    font-style: italic;
+  }
+
+  .favorites-folder {
+    margin-bottom: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .favorites-folder .folder-header {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+    border-radius: 10px;
+    margin: 0;
+  }
+
+  .favorites-folder .folder-header:hover {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+    border-color: rgba(251, 191, 36, 0.25);
+  }
+
+  .favorites-folder .folder-toggle {
+    padding: 10px 12px;
+  }
+
+  .favorite-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.4));
+  }
+
+  .favorites-name {
+    color: var(--text-primary, #fff);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .favorites-count {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  .favorites-folder .folder-contents {
+    padding-top: 4px;
+    border-left: 2px solid rgba(251, 191, 36, 0.2);
+    margin-left: 18px;
+    padding-left: 10px;
+  }
+
+  /* Create Folder */
+  .create-folder-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px dashed var(--border-color, #3d3d3d);
+    border-radius: 8px;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    font-size: 13px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+
+  .create-folder-btn:hover {
+    background: var(--hover-bg, #2d2d2d);
+    border-color: var(--primary-color, #6366f1);
+    color: var(--text-primary, #fff);
+  }
+
+  .create-folder-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--primary-color, #6366f1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .create-folder-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary, #fff);
+    font-size: 13px;
+    outline: none;
+  }
+
+  .create-folder-confirm,
+  .create-folder-cancel {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .create-folder-confirm {
+    color: var(--success-color, #22c55e);
+  }
+
+  .create-folder-confirm:hover {
+    background: rgba(34, 197, 94, 0.2);
+  }
+
+  .create-folder-cancel {
+    color: var(--danger-color, #ef4444);
+  }
+
+  .create-folder-cancel:hover {
+    background: rgba(239, 68, 68, 0.2);
+  }
+
+  /* Unfiled Section */
+  .unfiled-section {
+    min-height: 40px;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+
+  .unfiled-section.drag-over {
+    background: var(--hover-bg, #2d2d2d);
+    outline: 2px dashed var(--border-color, #3d3d3d);
+  }
+
+  /* Dragging States */
+  .conversation-item.dragging {
+    opacity: 0.5;
   }
 </style>

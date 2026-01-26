@@ -36,7 +36,16 @@
     "addToFavorites": "เพิ่มเป็นรายการโปรด",
     "removeFromFavorites": "นำออกจากรายการโปรด",
     "archiveConversation": "เก็บถาวร",
-    "deleteConversation": "ลบการสนทนา"
+    "deleteConversation": "ลบการสนทนา",
+    "newFolder": "โฟลเดอร์ใหม่",
+    "folderName": "ชื่อโฟลเดอร์",
+    "renameFolder": "เปลี่ยนชื่อโฟลเดอร์",
+    "deleteFolder": "ลบโฟลเดอร์",
+    "deleteFolderConfirm": "ต้องการลบโฟลเดอร์นี้? การสนทนาภายในจะถูกย้ายออก",
+    "moveToFolder": "ย้ายไปโฟลเดอร์",
+    "removeFromFolder": "นำออกจากโฟลเดอร์",
+    "favorites": "รายการโปรด",
+    "noFolder": "ไม่มีโฟลเดอร์"
   },
   "header": {
     "auto": "อัตโนมัติ",
@@ -263,7 +272,12 @@
     "enhanceSearchAbilityDesc": "ใช้ AI กรองคำสำคัญจากข้อความของคุณก่อนค้นหา",
     "enhanceSearchDisabled": "ปิด",
     "enhanceSearchServerDefault": "ใช้ AI ค่าเริ่มต้นเซิร์ฟเวอร์",
-    "enhanceSearchCurrentModel": "ใช้โมเดลปัจจุบัน"
+    "enhanceSearchCurrentModel": "ใช้โมเดลปัจจุบัน",
+    "folders": "โฟลเดอร์",
+    "autoExpandFolder": "เปิดโฟลเดอร์อัตโนมัติ",
+    "autoExpandFolderDesc": "เปิดโฟลเดอร์ที่ปิดอยู่อัตโนมัติเมื่อเลือกการสนทนาภายใน",
+    "showFavoritesFolder": "แสดงโฟลเดอร์รายการโปรด",
+    "showFavoritesFolderDesc": "จัดกลุ่มรายการโปรดไว้ในโฟลเดอร์พิเศษด้านบน"
   },
   "notification": {
     "success": "สำเร็จ",

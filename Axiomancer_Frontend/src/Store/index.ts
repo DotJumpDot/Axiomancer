@@ -15,3 +15,4 @@ export {
 export { selectionStore } from "./selection.svelte";
 export { favoriteStore } from "./favorite.svelte";
 export { userStore } from "./user.svelte";
+export { folderStore } from "./folder.svelte";

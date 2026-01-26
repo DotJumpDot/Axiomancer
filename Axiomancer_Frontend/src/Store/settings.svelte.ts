@@ -118,6 +118,11 @@ let enhanceSearchMode = $state<"disabled" | "server-default" | "current-model">(
   "disabled",
 );
 
+// Folder settings
+let autoOpenCollapse = $state(true); // Auto open collapsed folders when clicking conversation
+let favoriteFolderEnabled = $state(true); // Show favorite folder section at top
+let disableFolderClickRename = $state(true); // Disable double-click to rename folders
+
 // Persist settings to localStorage
 function saveSettings() {
   const settings = {
@@ -144,6 +149,9 @@ function saveSettings() {
     soundEnabled,
     soundVolume,
     enhanceSearchMode,
+    autoOpenCollapse,
+    favoriteFolderEnabled,
+    disableFolderClickRename,
   };
   localStorage.setItem("axiomancer_settings", JSON.stringify(settings));
 }
@@ -193,6 +201,9 @@ function loadSettings() {
       soundEnabled = settings.soundEnabled ?? false;
       soundVolume = settings.soundVolume ?? 50;
       enhanceSearchMode = settings.enhanceSearchMode ?? "disabled";
+      autoOpenCollapse = settings.autoOpenCollapse ?? true;
+      favoriteFolderEnabled = settings.favoriteFolderEnabled ?? true;
+      disableFolderClickRename = settings.disableFolderClickRename ?? true;
     } catch (e) {
       console.error("Failed to load settings:", e);
     }
@@ -371,6 +382,21 @@ function setEnhanceSearchMode(
   saveSettings();
 }
 
+function setAutoOpenCollapse(enabled: boolean) {
+  autoOpenCollapse = enabled;
+  saveSettings();
+}
+
+function setFavoriteFolderEnabled(enabled: boolean) {
+  favoriteFolderEnabled = enabled;
+  saveSettings();
+}
+
+function setDisableFolderClickRename(disabled: boolean) {
+  disableFolderClickRename = disabled;
+  saveSettings();
+}
+
 // * Reset functions for each tab
 function resetGeneralSettings() {
   themeVariant = "classic";
@@ -405,6 +431,9 @@ function resetConversationSettings() {
   favoriteIcon = "star";
   favoriteColor = "gold";
   showRelativeTime = true;
+  autoOpenCollapse = true;
+  favoriteFolderEnabled = true;
+  disableFolderClickRename = true;
   saveSettings();
 }
 
@@ -479,6 +508,15 @@ export const settingsStore = {
   get enhanceSearchMode() {
     return enhanceSearchMode;
   },
+  get autoOpenCollapse() {
+    return autoOpenCollapse;
+  },
+  get favoriteFolderEnabled() {
+    return favoriteFolderEnabled;
+  },
+  get disableFolderClickRename() {
+    return disableFolderClickRename;
+  },
 
   loadSettings,
   saveSettings,
@@ -513,6 +551,9 @@ export const settingsStore = {
   setSoundEnabled,
   setSoundVolume,
   setEnhanceSearchMode,
+  setAutoOpenCollapse,
+  setFavoriteFolderEnabled,
+  setDisableFolderClickRename,
   resetGeneralSettings,
   resetChatSettings,
   resetConversationSettings,

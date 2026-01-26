@@ -525,6 +525,56 @@
                 </div>
               </div>
 
+              <!-- Folder Settings -->
+              <div class="settings-section">
+                <h3>📁 Folders</h3>
+
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <span class="setting-label">Auto Expand Folder</span>
+                    <span class="setting-desc">Auto-expand collapsed folders when selecting a conversation inside</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settingsStore.autoOpenCollapse}
+                      onchange={(e) => settingsStore.setAutoOpenCollapse((e.target as HTMLInputElement).checked)}
+                    >
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <span class="setting-label">Show Favorites Folder</span>
+                    <span class="setting-desc">Group favorited conversations in a special folder at the top</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settingsStore.favoriteFolderEnabled}
+                      onchange={(e) => settingsStore.setFavoriteFolderEnabled((e.target as HTMLInputElement).checked)}
+                    >
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <span class="setting-label">Disable Folder Click-to-Rename</span>
+                    <span class="setting-desc">Prevent accidental renaming when double-clicking folder names</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settingsStore.disableFolderClickRename}
+                      onchange={(e) => settingsStore.setDisableFolderClickRename((e.target as HTMLInputElement).checked)}
+                    >
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
               <!-- Reset Button -->
               <div class="reset-section">
                 {#if resetConfirmTab === 'conversation'}
