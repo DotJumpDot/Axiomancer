@@ -20,7 +20,7 @@ Update Date: 26-01-2026
   - **Why?** Provides insights into usage patterns; ties into the "Performance Metrics" mentioned in AGENTS.md.
   - **Implementation**: New component, aggregate data from backend logs.
 
-- [ ] **Conversation Search**
+- [x] **Conversation Search**
   - **Description**: Add a search bar in the sidebar to filter conversations by title, content, or date.
   - **Why?** Essential for users with many conversations; complements the existing favorites system.
   - **Implementation**: Add search API endpoint, frontend search input with debouncing.
