@@ -543,6 +543,16 @@ Optimized search query:`;
 
       // Add conversation history (limit to memoryCount messages for context)
       const recentMessages = previousMessages.slice(-memoryCount);
+
+      // Add context instruction if there are previous messages
+      if (recentMessages.length > 0) {
+        openRouterMessages.push({
+          role: "system",
+          content: `[CONVERSATION HISTORY - For context only]
+The following ${recentMessages.length} message(s) are from the previous conversation. Use them ONLY to understand the context and maintain conversation continuity. Do NOT directly respond to or acknowledge these historical messages. Focus your response ONLY on the final/latest user message that follows after this history.`,
+        });
+      }
+
       for (const msg of recentMessages) {
         if (msg.role === "user" || msg.role === "assistant") {
           openRouterMessages.push({
@@ -1044,6 +1054,15 @@ Optimized search query:`;
       }
 
       const recentMessages = previousMessages.slice(-memoryCount);
+
+      // Add context instruction if there are previous messages
+      if (recentMessages.length > 0) {
+        openRouterMessages.push({
+          role: "system",
+          content: `[CONVERSATION HISTORY - For context only]\nThe following ${recentMessages.length} message(s) are from the previous conversation. Use them ONLY to understand the context and maintain conversation continuity. Do NOT directly respond to or acknowledge these historical messages. Focus your response ONLY on the final/latest user message that follows after this history.`,
+        });
+      }
+
       for (const msg of recentMessages) {
         if (msg.role === "user" || msg.role === "assistant") {
           openRouterMessages.push({

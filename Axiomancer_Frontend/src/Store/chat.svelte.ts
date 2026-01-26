@@ -28,7 +28,7 @@ let imageSearchEnabled = $state(false);
 let steamSearchEnabled = $state(false);
 let currentPromptProfileId = $state<string | null>(null);
 let currentModelKey = $state<string | null>(null);
-let memoryCount = $state(1); // Default to 2 messages
+let memoryCount = $state(8); // Default to 2 messages
 let reasoningEffort = $state<string>("disabled"); // Default reasoning effort
 
 // Streaming state
@@ -302,6 +302,9 @@ async function sendMessage(
                 reasoning_content: type === "reasoning" ? chunk : null,
                 search_context_web: null,
                 search_context_picture: null,
+                decision_prompt_model: null,
+                prompt_web_search: null,
+                prompt_picture_search: null,
               },
             };
             // Initialize streaming content based on type
