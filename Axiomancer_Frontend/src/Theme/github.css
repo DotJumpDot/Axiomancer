@@ -1,0 +1,249 @@
+/* GitHub Theme - Dark and Light Modes */
+
+/* GitHub Dark Theme */
+[data-theme="dark"][data-theme-variant="github"] {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --sidebar-bg: #161b22;
+  --header-bg: #161b22;
+  --input-bg: #21262d;
+  --input-container-bg: #161b22;
+  --dropdown-bg: #21262d;
+  --border-color: #30363d;
+  --hover-bg: #2d333b;
+  --active-bg: #373e47;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --hint-color: #58a6ff;
+  --primary-color: #58a6ff;
+  --primary-hover: #388bfd;
+  --danger-color: #f85149;
+  --danger-bg: rgba(248, 81, 73, 0.2);
+  --user-message-bg: #21262d;
+  --assistant-message-bg: #0d1117;
+  --code-bg: #161b22;
+  --badge-bg: #2d333b;
+  --kbd-bg: #2d333b;
+
+  /* New Action Colors */
+  --preset-btn: #238636;
+  --preset-btn2: #58a6ff;
+  --preset-btn-hover: #1f7b2f;
+  --preset-btn2-hover: #388bfd;
+  --manage-prompt: #2d333b;
+  --manage-prompt2: #21262d;
+  --manage-prompt-hover: #373e47;
+  --manage-prompt2-hover: #1c2128;
+  --manage-promp-border-hover: #373e47;
+  --deciding-model: #f85149;
+  --deciding-model2: #db6d28;
+  --deciding-model-hover: #e6413a;
+  --deciding-model2-hover: #c9601f;
+  --deciding-model-disabled: #c43f37;
+  --deciding-model2-disabled: #b05418;
+  --action-color: #238636;
+  --action-color-hover: #1f7b2f;
+  --action-color-active: #1a6e29;
+  --action-color-disabled: #3fb950;
+  --action-text: #0d1117;
+  --action-text-hover: #c9d1d9;
+  --action-text-disabled: #8b949e;
+  --action-bg: rgba(35, 134, 54, 0.1);
+  --action-bg-hover: rgba(35, 134, 54, 0.2);
+  --action-border: rgba(35, 134, 54, 0.3);
+  --action-border-hover: rgba(35, 134, 54, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #db6d28;
+  --favorite-color-hover: #e6763c;
+  --favorite-color-active: #c9601f;
+  --favorite-color-disabled: #f19150;
+  --favorite-text: #0d1117;
+  --favorite-text-hover: #c9d1d9;
+  --favorite-text-disabled: #8b949e;
+  --favorite-bg: rgba(219, 109, 40, 0.1);
+  --favorite-bg-hover: rgba(219, 109, 40, 0.2);
+  --favorite-border: rgba(219, 109, 40, 0.3);
+  --favorite-border-hover: rgba(219, 109, 40, 0.5);
+  --favorite-hover-bg: rgba(219, 109, 40, 0.2);
+
+  /* Notification Colors */
+  --success-color: #238636;
+  --success-text: #1f7b2f;
+  --error-color: #f85149;
+  --error-text: #da3633;
+  --warning-color: #d29922;
+  --warning-text: #bf8700;
+  --info-color: #58a6ff;
+  --info-text: #388bfd;
+
+  /* Message/Chat Colors */
+  --math-color: #58a6ff;
+  --reasoning-color: #8b5cf6;
+  --coding-color: #8b5cf6;
+  --vision-color: #f85149;
+  --fast-color: #238636;
+  --disabled-color: #8b949e;
+  --disabled-text: #8b949e;
+  --disabled-text-light: #57606a;
+  --minimal-color: #238636;
+  --minimal-text-light: #238636;
+  --low-color: #58a6ff;
+  --low-text-light: #58a6ff;
+  --medium-color: #d29922;
+  --medium-text-light: #d29922;
+  --high-color: #f85149;
+  --high-text-light: #f85149;
+  --upload-disabled-color: #f85149;
+  --slider-stroke: #8b949e;
+  --slider-stroke-active: #57606a;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(0, 0, 0, 0.1);
+  --code-header-bg: rgba(0, 0, 0, 0.05);
+  --meta-item-bg: rgba(0, 0, 0, 0.05);
+  --decision-badge-bg: rgba(139, 92, 246, 0.15);
+  --decision-badge-border: rgba(139, 92, 246, 0.3);
+  --active-badge-bg: rgba(35, 134, 54, 0.15);
+  --active-badge-border: rgba(35, 134, 54, 0.3);
+  --search-meta-bg: rgba(88, 166, 255, 0.1);
+  --no-results-bg: rgba(248, 81, 73, 0.1);
+  --memory-bg: rgba(210, 153, 34, 0.1);
+  --reasoning-bg: rgba(139, 92, 246, 0.1);
+  --reasoning-border: rgba(139, 92, 246, 0.2);
+  --reasoning-hover-bg: rgba(139, 92, 246, 0.2);
+  --reasoning-hover-border: rgba(139, 92, 246, 0.3);
+  --reasoning-content-bg: rgba(139, 92, 246, 0.05);
+  --reasoning-content-border: rgba(139, 92, 246, 0.2);
+  --error-bg: rgba(248, 81, 73, 0.1);
+  --math-bg: rgba(88, 166, 255, 0.1);
+  --math-bg-hover: rgba(88, 166, 255, 0.2);
+  --math-border: rgba(88, 166, 255, 0.2);
+  --math-border-hover: rgba(88, 166, 255, 0.3);
+  --reminder-bg: rgba(88, 166, 255, 0.1);
+  --reminder-border: #58a6ff;
+  --disabled-reasoning-bg: rgba(248, 81, 73, 0.2);
+}
+
+/* GitHub Light Theme */
+[data-theme="light"][data-theme-variant="github"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --sidebar-bg: #f6f8fa;
+  --header-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-container-bg: #f6f8fa;
+  --dropdown-bg: #ffffff;
+  --border-color: #d0d7de;
+  --hover-bg: #f3f4f6;
+  --active-bg: #e8ebed;
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
+  --user-message-bg: #f6f8fa;
+  --assistant-message-bg: #ffffff;
+  --code-bg: #f6f8fa;
+  --badge-bg: #e8ebed;
+  --kbd-bg: #e8ebed;
+  --primary-color: #0969da;
+  --primary-hover: #0550ae;
+  --hint-color: #0969da;
+
+  /* New Action Colors */
+  --preset-btn: #1a7f37;
+  --preset-btn2: #0969da;
+  --preset-btn-hover: #156f2f;
+  --preset-btn2-hover: #0550ae;
+  --manage-prompt: #e8ebed;
+  --manage-prompt2: #d0d7de;
+  --manage-prompt-hover: #f3f4f6;
+  --manage-prompt2-hover: #c2cad1;
+  --manage-promp-border-hover: #a8b2ba;
+  --deciding-model: #cf222e;
+  --deciding-model2: #bc4c00;
+  --deciding-model-hover: #b71f29;
+  --deciding-model2-hover: #a24300;
+  --deciding-model-disabled: #f89f9c;
+  --deciding-model2-disabled: #f4b08a;
+  --action-color: #1a7f37;
+  --action-color-hover: #156f2f;
+  --action-color-active: #116329;
+  --action-color-disabled: #2da44e;
+  --action-text: #ffffff;
+  --action-text-hover: #24292f;
+  --action-text-disabled: #57606a;
+  --action-bg: rgba(26, 127, 55, 0.1);
+  --action-bg-hover: rgba(26, 127, 55, 0.2);
+  --action-border: rgba(26, 127, 55, 0.3);
+  --action-border-hover: rgba(26, 127, 55, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #bc4c00;
+  --favorite-color-hover: #d15800;
+  --favorite-color-active: #a24300;
+  --favorite-color-disabled: #e8813a;
+  --favorite-text: #ffffff;
+  --favorite-text-hover: #24292f;
+  --favorite-text-disabled: #57606a;
+  --favorite-bg: rgba(188, 76, 0, 0.1);
+  --favorite-bg-hover: rgba(188, 76, 0, 0.2);
+  --favorite-border: rgba(188, 76, 0, 0.3);
+  --favorite-border-hover: rgba(188, 76, 0, 0.5);
+  --favorite-hover-bg: rgba(188, 76, 0, 0.2);
+
+  /* Notification Colors */
+  --success-color: #1a7f37;
+  --success-text: #156f2f;
+  --error-color: #cf222e;
+  --error-text: #b71f29;
+  --warning-color: #bf8700;
+  --warning-text: #9a6700;
+  --info-color: #0969da;
+  --info-text: #0550ae;
+
+  /* Message/Chat Colors */
+  --math-color: #0969da;
+  --reasoning-color: #8250df;
+  --coding-color: #8250df;
+  --vision-color: #cf222e;
+  --fast-color: #1a7f37;
+  --disabled-color: #57606a;
+  --disabled-text: #57606a;
+  --disabled-text-light: #24292f;
+  --minimal-color: #1a7f37;
+  --minimal-text-light: #1a7f37;
+  --low-color: #0969da;
+  --low-text-light: #0969da;
+  --medium-color: #bf8700;
+  --medium-text-light: #bf8700;
+  --high-color: #cf222e;
+  --high-text-light: #cf222e;
+  --upload-disabled-color: #cf222e;
+  --slider-stroke: #57606a;
+  --slider-stroke-active: #24292f;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(0, 0, 0, 0.1);
+  --code-header-bg: rgba(0, 0, 0, 0.05);
+  --meta-item-bg: rgba(0, 0, 0, 0.05);
+  --decision-badge-bg: rgba(130, 80, 223, 0.15);
+  --decision-badge-border: rgba(130, 80, 223, 0.3);
+  --active-badge-bg: rgba(26, 127, 55, 0.15);
+  --active-badge-border: rgba(26, 127, 55, 0.3);
+  --search-meta-bg: rgba(9, 105, 218, 0.1);
+  --no-results-bg: rgba(207, 34, 46, 0.1);
+  --memory-bg: rgba(191, 135, 0, 0.1);
+  --reasoning-bg: rgba(130, 80, 223, 0.1);
+  --reasoning-border: rgba(130, 80, 223, 0.2);
+  --reasoning-hover-bg: rgba(130, 80, 223, 0.2);
+  --reasoning-hover-border: rgba(130, 80, 223, 0.3);
+  --reasoning-content-bg: rgba(130, 80, 223, 0.05);
+  --reasoning-content-border: rgba(130, 80, 223, 0.2);
+  --error-bg: rgba(207, 34, 46, 0.1);
+  --math-bg: rgba(9, 105, 218, 0.1);
+  --math-bg-hover: rgba(9, 105, 218, 0.2);
+  --math-border: rgba(9, 105, 218, 0.2);
+  --math-border-hover: rgba(9, 105, 218, 0.3);
+  --reminder-bg: rgba(9, 105, 218, 0.1);
+  --reminder-border: #0969da;
+  --disabled-reasoning-bg: rgba(207, 34, 46, 0.2);
+}

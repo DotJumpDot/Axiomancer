@@ -32,6 +32,15 @@ export function formatDateTime(date: string | Date): string {
   return new Date(date).toLocaleString();
 }
 
+// Format time for message timestamps (e.g., "2:34 PM" or "14:34")
+export function formatMessageTime(date: string | Date): string {
+  return new Date(date).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 // Format token count
 export function formatTokens(count: number): string {
   if (count < 1000) return count.toString();

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { chatStore, settingsStore, authStore, favoriteStore } from "@/Store";
+  import { chatStore, settingsStore, authStore, favoriteStore, FAVORITE_COLORS } from "@/Store";
   import type { Conversation } from "@/Types";
-  import { formatRelativeTime, truncate, getTranslations, type LanguageCode } from "@/Function";
+  import { formatRelativeTime, formatDateTime, truncate, getTranslations, type LanguageCode } from "@/Function";
   import ArchiveDialog from "./ArchiveDialog.svelte";
   import ConversationSetting from "./ConversationSetting.svelte";
 
@@ -133,6 +133,58 @@
     node.focus();
     node.select();
   }
+
+  // * Get the appropriate date display based on settings
+  function getDateDisplay(date: string | Date): string {
+    if (settingsStore.showRelativeTime) {
+      return formatRelativeTime(date);
+    }
+    return formatDateTime(date);
+  }
+
+  // * Get favorite icon SVG based on settings
+  function getFavoriteIconPath(): string {
+    switch (settingsStore.favoriteIcon) {
+      case 'heart':
+        return 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z';
+      case 'bookmark':
+        return 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z';
+      case 'pin':
+        return 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z';
+      default: // star
+        return '';
+    }
+  }
+
+  // * Get favorite color from settings
+  // * Get favorite color from settings
+  function getFavoriteColor(): string {
+    const colorObj = FAVORITE_COLORS.find(c => c.value === settingsStore.favoriteColor);
+    return colorObj?.color || '#fbbf24';
+  }
+
+  // * Handle double-click on conversation item to toggle favorite
+  async function handleDoubleClick(e: MouseEvent, conversationId: string) {
+    // Check if double-click favorite is enabled
+    if (!settingsStore.doubleClickFavorite) return;
+    // Check if user is authenticated
+    if (!authStore.currentUser?.uuid) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Toggle favorite status
+    const isFav = favoriteStore.isFavorite('conversation', conversationId);
+    try {
+      if (isFav) {
+        await favoriteStore.removeFromFavorite(authStore.currentUser.uuid, 'conversation', conversationId);
+      } else {
+        await favoriteStore.addToFavorite(authStore.currentUser.uuid, 'conversation', conversationId);
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite via double-click:", error);
+    }
+  }
 </script>
 
 <aside class="sidebar" class:collapsed={!settingsStore.sidebarOpen}>
@@ -179,6 +231,7 @@
           class="conversation-item"
           class:active={chatStore.currentConversation?.id === conversation.id}
           onclick={() => handleSelect(conversation)}
+          ondblclick={(e) => handleDoubleClick(e, conversation.id)}
           onkeydown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -203,9 +256,15 @@
                 aria-label="Remove from favorites"
                 title="Remove from favorites"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
+                {#if settingsStore.favoriteIcon === 'star'}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                {:else}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={getFavoriteColor()} stroke={getFavoriteColor()} stroke-width="2">
+                    <path d={getFavoriteIconPath()}></path>
+                  </svg>
+                {/if}
               </button>
             {/if}
             {#if editingConversationId === conversation.id}
@@ -222,10 +281,11 @@
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <!-- svelte-ignore a11y_no_static_element_interactions -->
               <span
-                class="title-text clickable"
+                class="title-text"
+                class:clickable={!settingsStore.disableClickRename}
                 onclick={(e) => {
                   e.stopPropagation();
-                  if (chatStore.currentConversation?.id === conversation.id) {
+                  if (!settingsStore.disableClickRename && chatStore.currentConversation?.id === conversation.id) {
                     startEditingTitle(conversation);
                   } else {
                     handleSelect(conversation);
@@ -236,7 +296,7 @@
               </span>
             {/if}
           </span>
-          <span class="conversation-date">{formatRelativeTime(conversation.updated_at)}</span>
+          <span class="conversation-date">{getDateDisplay(conversation.updated_at)}</span>
           <div class="conversation-actions">
             {#if !favoriteStore.isFavorite('conversation', conversation.id)}
               <button
@@ -251,9 +311,15 @@
                 aria-label="Add to favorites"
                 title="Add to favorites"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
+                {#if settingsStore.favoriteIcon === 'star'}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                {:else}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d={getFavoriteIconPath()}></path>
+                  </svg>
+                {/if}
               </button>
             {/if}
             <button

@@ -1,0 +1,255 @@
+/* Arcade Neon Theme - Dark and Light Modes */
+
+/* Arcade Neon Dark Theme */
+[data-theme="dark"][data-theme-variant="arcade-neon"] {
+  --bg-primary: #0a0014;
+  --bg-secondary: #1a002e;
+  --sidebar-bg: #1a002e;
+  --header-bg: #1a002e;
+  --input-bg: #2d004d;
+  --input-container-bg: #1a002e;
+  --dropdown-bg: #2d004d;
+  --border-color: #4d0080;
+  --hover-bg: #6a00a8;
+  --active-bg: #8000c0;
+  --text-primary: #ff00ff;
+  --text-secondary: #cc00cc;
+  --hint-color: #00ffff;
+  --primary-color: #ff00ff;
+  --primary-color-hover: #e600e6;
+  --primary-color-active: #cc00cc;
+  --danger-color: #ff0080;
+  --danger-color-hover: #e60073;
+  --danger-bg: rgba(255, 0, 128, 0.2);
+  --user-message-bg: #2d004d;
+  --assistant-message-bg: #0a0014;
+  --code-bg: #1a002e;
+  --badge-bg: #6a00a8;
+  --kbd-bg: #6a00a8;
+
+  /* Action Colors */
+  --preset-btn: #00ffff;
+  --preset-btn2: #ff00ff;
+  --preset-btn-hover: #00e6e6;
+  --preset-btn2-hover: #e600e6;
+  --manage-prompt: #cc00cc;
+  --manage-prompt2: #2d004d;
+  --manage-prompt-hover: #b300b3;
+  --manage-prompt2-hover: #6a00a8;
+  --manage-promp-border-hover: #8000c0;
+  --deciding-model: #ff0080;
+  --deciding-model2: #ffff00;
+  --deciding-model-hover: #e60073;
+  --deciding-model2-hover: #e6e600;
+  --deciding-model-disabled: #660033;
+  --deciding-model2-disabled: #666600;
+  --action-color: #00ffff;
+  --action-color-hover: #00e6e6;
+  --action-color-active: #00cccc;
+  --action-color-disabled: #008080;
+  --action-text: #0a0014;
+  --action-text-hover: #ffffff;
+  --action-text-disabled: #666666;
+  --action-bg: rgba(0, 255, 255, 0.1);
+  --action-bg-hover: rgba(0, 255, 255, 0.2);
+  --action-border: rgba(0, 255, 255, 0.3);
+  --action-border-hover: rgba(0, 255, 255, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #ffff00;
+  --favorite-color-hover: #ffff33;
+  --favorite-color-active: #e6e600;
+  --favorite-color-disabled: #666600;
+  --favorite-text: #0a0014;
+  --favorite-text-hover: #ffffff;
+  --favorite-text-disabled: #666666;
+  --favorite-bg: rgba(255, 255, 0, 0.1);
+  --favorite-bg-hover: rgba(255, 255, 0, 0.2);
+  --favorite-border: rgba(255, 255, 0, 0.3);
+  --favorite-border-hover: rgba(255, 255, 0, 0.5);
+  --favorite-hover-bg: rgba(255, 255, 0, 0.2);
+
+  /* Notification Colors */
+  --success-color: #00ff00;
+  --success-text: #00e600;
+  --error-color: #ff0080;
+  --error-text: #e60073;
+  --warning-color: #ffff00;
+  --warning-text: #e6e600;
+  --info-color: #00ffff;
+  --info-text: #00e6e6;
+
+  /* Message/Chat Colors */
+  --math-color: #00ffff;
+  --reasoning-color: #ff00ff;
+  --coding-color: #ff00ff;
+  --vision-color: #ff0080;
+  --fast-color: #00ff00;
+  --disabled-color: #cc00cc;
+  --disabled-text: #800080;
+  --disabled-text-light: #cc00cc;
+  --minimal-color: #00ff00;
+  --minimal-text-light: #00e600;
+  --low-color: #00ffff;
+  --low-text-light: #00e6e6;
+  --medium-color: #ffff00;
+  --medium-text-light: #e6e600;
+  --high-color: #ff0080;
+  --high-text-light: #ff4da6;
+  --upload-disabled-color: #ff0080;
+  --slider-stroke: #cc00cc;
+  --slider-stroke-active: #ff00ff;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(255, 0, 255, 0.1);
+  --code-header-bg: rgba(255, 0, 255, 0.05);
+  --meta-item-bg: rgba(255, 0, 255, 0.05);
+  --decision-badge-bg: rgba(255, 0, 255, 0.15);
+  --decision-badge-border: rgba(255, 0, 255, 0.3);
+  --active-badge-bg: rgba(0, 255, 0, 0.15);
+  --active-badge-border: rgba(0, 255, 0, 0.3);
+  --search-meta-bg: rgba(0, 255, 255, 0.1);
+  --no-results-bg: rgba(255, 0, 128, 0.1);
+  --memory-bg: rgba(255, 255, 0, 0.1);
+  --reasoning-bg: rgba(255, 0, 255, 0.1);
+  --reasoning-border: rgba(255, 0, 255, 0.2);
+  --reasoning-hover-bg: rgba(255, 0, 255, 0.2);
+  --reasoning-hover-border: rgba(255, 0, 255, 0.3);
+  --reasoning-content-bg: rgba(255, 0, 255, 0.05);
+  --reasoning-content-border: rgba(255, 0, 255, 0.2);
+  --error-bg: rgba(255, 0, 128, 0.1);
+  --math-bg: rgba(0, 255, 255, 0.1);
+  --math-bg-hover: rgba(0, 255, 255, 0.2);
+  --math-border: rgba(0, 255, 255, 0.2);
+  --math-border-hover: rgba(0, 255, 255, 0.3);
+  --reminder-bg: rgba(0, 255, 255, 0.1);
+  --reminder-border: #00ffff;
+  --disabled-reasoning-bg: rgba(255, 0, 128, 0.2);
+}
+
+/* Arcade Neon Light Theme */
+[data-theme="light"][data-theme-variant="arcade-neon"] {
+  --bg-primary: #fff5ff;
+  --bg-secondary: #ffe0ff;
+  --sidebar-bg: #ffe0ff;
+  --header-bg: #fff5ff;
+  --input-bg: #ffffff;
+  --input-container-bg: #ffe0ff;
+  --dropdown-bg: #ffffff;
+  --border-color: #ffc0ff;
+  --hover-bg: #ffd0ff;
+  --active-bg: #ffb8f8;
+  --text-primary: #2d002d;
+  --text-secondary: #5d005d;
+  --hint-color: #ff0080;
+  --primary-color: #ff0080;
+  --primary-color-hover: #e60073;
+  --primary-color-active: #cc0066;
+  --danger-color: #ff0080;
+  --danger-color-hover: #e60073;
+  --danger-bg: rgba(255, 0, 128, 0.2);
+  --user-message-bg: #ffe0ff;
+  --assistant-message-bg: #fff5ff;
+  --code-bg: #ffe0ff;
+  --badge-bg: #ffd0ff;
+  --kbd-bg: #ffd0ff;
+
+  /* Action Colors */
+  --preset-btn: #00ffff;
+  --preset-btn2: #ff0080;
+  --preset-btn-hover: #00e6e6;
+  --preset-btn2-hover: #e60073;
+  --manage-prompt: #ffd0ff;
+  --manage-prompt2: #ffc0ff;
+  --manage-prompt-hover: #ffe0ff;
+  --manage-prompt2-hover: #ffa8f5;
+  --manage-promp-border-hover: #ff98e0;
+  --deciding-model: #ff0080;
+  --deciding-model2: #00ccff;
+  --deciding-model-hover: #e60073;
+  --deciding-model2-hover: #00b8e6;
+  --deciding-model-disabled: #ff80bf;
+  --deciding-model2-disabled: #66e0ff;
+  --action-color: #00ffff;
+  --action-color-hover: #00e6e6;
+  --action-color-active: #00b8cc;
+  --action-color-disabled: #80f8ff;
+  --action-text: #fff5ff;
+  --action-text-hover: #2d002d;
+  --action-text-disabled: #5d005d;
+  --action-bg: rgba(0, 255, 255, 0.1);
+  --action-bg-hover: rgba(0, 255, 255, 0.2);
+  --action-border: rgba(0, 255, 255, 0.3);
+  --action-border-hover: rgba(0, 255, 255, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #ff0080;
+  --favorite-color-hover: #ff4da6;
+  --favorite-color-active: #e60073;
+  --favorite-color-disabled: #ff80bf;
+  --favorite-text: #fff5ff;
+  --favorite-text-hover: #2d002d;
+  --favorite-text-disabled: #5d005d;
+  --favorite-bg: rgba(255, 0, 128, 0.1);
+  --favorite-bg-hover: rgba(255, 0, 128, 0.2);
+  --favorite-border: rgba(255, 0, 128, 0.3);
+  --favorite-border-hover: rgba(255, 0, 128, 0.5);
+  --favorite-hover-bg: rgba(255, 0, 128, 0.2);
+
+  /* Notification Colors */
+  --success-color: #00ffff;
+  --success-text: #00e6e6;
+  --error-color: #ff0080;
+  --error-text: #e60073;
+  --warning-color: #00ccff;
+  --warning-text: #00b8e6;
+  --info-color: #ff0080;
+  --info-text: #e60073;
+
+  /* Message/Chat Colors */
+  --math-color: #00ffff;
+  --reasoning-color: #ff0080;
+  --coding-color: #ff0080;
+  --vision-color: #00ccff;
+  --fast-color: #00ffff;
+  --disabled-color: #5d005d;
+  --disabled-text: #7d007d;
+  --disabled-text-light: #5d005d;
+  --minimal-color: #00ffff;
+  --minimal-text-light: #00e6e6;
+  --low-color: #00ccff;
+  --low-text-light: #00b8e6;
+  --medium-color: #ff0080;
+  --medium-text-light: #e60073;
+  --high-color: #00ccff;
+  --high-text-light: #00b8e6;
+  --upload-disabled-color: #ff0080;
+  --slider-stroke: #5d005d;
+  --slider-stroke-active: #2d002d;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(45, 0, 45, 0.1);
+  --code-header-bg: rgba(45, 0, 45, 0.05);
+  --meta-item-bg: rgba(45, 0, 45, 0.05);
+  --decision-badge-bg: rgba(255, 0, 128, 0.15);
+  --decision-badge-border: rgba(255, 0, 128, 0.3);
+  --active-badge-bg: rgba(0, 255, 255, 0.15);
+  --active-badge-border: rgba(0, 255, 255, 0.3);
+  --search-meta-bg: rgba(0, 204, 255, 0.1);
+  --no-results-bg: rgba(255, 0, 128, 0.1);
+  --memory-bg: rgba(0, 204, 255, 0.1);
+  --reasoning-bg: rgba(255, 0, 128, 0.1);
+  --reasoning-border: rgba(255, 0, 128, 0.2);
+  --reasoning-hover-bg: rgba(255, 0, 128, 0.2);
+  --reasoning-hover-border: rgba(255, 0, 128, 0.3);
+  --reasoning-content-bg: rgba(255, 0, 128, 0.05);
+  --reasoning-content-border: rgba(255, 0, 128, 0.2);
+  --error-bg: rgba(255, 0, 128, 0.1);
+  --math-bg: rgba(0, 204, 255, 0.1);
+  --math-bg-hover: rgba(0, 204, 255, 0.2);
+  --math-border: rgba(0, 204, 255, 0.2);
+  --math-border-hover: rgba(0, 204, 255, 0.3);
+  --reminder-bg: rgba(0, 204, 255, 0.1);
+  --reminder-border: #00ccff;
+  --disabled-reasoning-bg: rgba(255, 0, 128, 0.2);
+}

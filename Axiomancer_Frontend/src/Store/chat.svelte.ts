@@ -8,6 +8,7 @@ import type {
   OpenRouterMessage,
   ChatAiRespond,
 } from "@/Types";
+import { playNotificationSound } from "@/Function";
 
 import authStore from "./auth.svelte";
 import settingsStore from "./settings.svelte";
@@ -224,6 +225,11 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
     };
     messages = [...messages, userMessage];
 
+    // Play send sound notification
+    if (settingsStore.soundEnabled) {
+      playNotificationSound("send", settingsStore.soundVolume);
+    }
+
     // Check if streaming is enabled
     const useStreaming = settingsStore.streamResponses;
 
@@ -357,6 +363,11 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
             messages = [...messages, aiMessage];
           }
 
+          // Play receive sound notification
+          if (settingsStore.soundEnabled) {
+            playNotificationSound("receive", settingsStore.soundVolume);
+          }
+
           // Update conversation title if it's the first message
           if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
             const newTitle = generateConversationTitle(content);
@@ -372,6 +383,10 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         (errorMessage: string) => {
           streamAbortController = null;
           error = errorMessage;
+          // Play error sound notification
+          if (settingsStore.soundEnabled) {
+            playNotificationSound("error", settingsStore.soundVolume);
+          }
           // Remove temp message on error
           messages = messages.filter((m) => !m.id.startsWith("temp-"));
           if (streamingAiMessage) {
@@ -422,6 +437,11 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
             search_log: response.data.userMessage.search_log, // Include search_log from user message
           };
           messages = [...messages, aiMessage];
+        }
+
+        // Play receive sound notification for non-streaming
+        if (settingsStore.soundEnabled) {
+          playNotificationSound("receive", settingsStore.soundVolume);
         }
 
         // Update conversation title if it's the first message

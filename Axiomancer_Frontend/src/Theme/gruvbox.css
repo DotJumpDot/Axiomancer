@@ -1,0 +1,244 @@
+/* Gruvbox Theme - Dark and Light Modes */
+
+[data-theme="dark"][data-theme-variant="gruvbox"] {
+  --bg-primary: #282828;
+  --bg-secondary: #1d2021;
+  --sidebar-bg: #1d2021;
+  --header-bg: #1d2021;
+  --input-bg: #3c3836;
+  --input-container-bg: #1d2021;
+  --dropdown-bg: #3c3836;
+  --border-color: #3c3836;
+  --hover-bg: #504945;
+  --active-bg: #665c54;
+  --text-primary: #ebdbb2;
+  --text-secondary: #a89984;
+  --hint-color: #8ec07c;
+  --primary-color: #b8bb26;
+  --primary-hover: #98971a;
+  --danger-color: #fb4934;
+  --danger-bg: rgba(251, 73, 52, 0.2);
+  --user-message-bg: #3c3836;
+  --assistant-message-bg: #282828;
+  --code-bg: #1d2021;
+  --badge-bg: #504945;
+  --kbd-bg: #504945;
+
+  /* New Action Colors */
+  --preset-btn: #b8bb26;
+  --preset-btn2: #8ec07c;
+  --preset-btn-hover: #a8b81e;
+  --preset-btn2-hover: #7bb864;
+  --manage-prompt: #504945;
+  --manage-prompt2: #3c3836;
+  --manage-prompt-hover: #665c54;
+  --manage-prompt2-hover: #2e2a28;
+  --manage-promp-border-hover: #665c54;
+  --deciding-model: #fb4934;
+  --deciding-model2: #d65d0e;
+  --deciding-model-hover: #e64524;
+  --deciding-model2-hover: #c2510a;
+  --deciding-model-disabled: #cc3f2c;
+  --deciding-model2-disabled: #b0490c;
+  --action-color: #b8bb26;
+  --action-color-hover: #a8b81e;
+  --action-color-active: #98971a;
+  --action-color-disabled: #8ec07c;
+  --action-text: #282828;
+  --action-text-hover: #ebdbb2;
+  --action-text-disabled: #a89984;
+  --action-bg: rgba(184, 187, 38, 0.1);
+  --action-bg-hover: rgba(184, 187, 38, 0.2);
+  --action-border: rgba(184, 187, 38, 0.3);
+  --action-border-hover: rgba(184, 187, 38, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #fabd2f;
+  --favorite-color-hover: #f9c74f;
+  --favorite-color-active: #f0b01f;
+  --favorite-color-disabled: #f5cc5f;
+  --favorite-text: #282828;
+  --favorite-text-hover: #ebdbb2;
+  --favorite-text-disabled: #a89984;
+  --favorite-bg: rgba(250, 189, 47, 0.1);
+  --favorite-bg-hover: rgba(250, 189, 47, 0.2);
+  --favorite-border: rgba(250, 189, 47, 0.3);
+  --favorite-border-hover: rgba(250, 189, 47, 0.5);
+  --favorite-hover-bg: rgba(250, 189, 47, 0.2);
+
+  /* Notification Colors */
+  --success-color: #b8bb26;
+  --success-text: #98971a;
+  --error-color: #fb4934;
+  --error-text: #d65d0e;
+  --warning-color: #d65d0e;
+  --warning-text: #fabd2f;
+  --info-color: #8ec07c;
+  --info-text: #8ec07c;
+
+  /* Message/Chat Colors */
+  --math-color: #8ec07c;
+  --reasoning-color: #d3869b;
+  --coding-color: #d3869b;
+  --vision-color: #fb4934;
+  --fast-color: #b8bb26;
+  --disabled-color: #928374;
+  --disabled-text: #928374;
+  --disabled-text-light: #a89984;
+  --minimal-color: #b8bb26;
+  --minimal-text-light: #b8bb26;
+  --low-color: #8ec07c;
+  --low-text-light: #8ec07c;
+  --medium-color: #d65d0e;
+  --medium-text-light: #d65d0e;
+  --high-color: #fb4934;
+  --high-text-light: #fb4934;
+  --upload-disabled-color: #fb4934;
+  --slider-stroke: #928374;
+  --slider-stroke-active: #a89984;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(235, 219, 178, 0.1);
+  --code-header-bg: rgba(235, 219, 178, 0.05);
+  --meta-item-bg: rgba(235, 219, 178, 0.05);
+  --decision-badge-bg: rgba(211, 134, 155, 0.15);
+  --decision-badge-border: rgba(211, 134, 155, 0.3);
+  --active-badge-bg: rgba(184, 187, 38, 0.15);
+  --active-badge-border: rgba(184, 187, 38, 0.3);
+  --search-meta-bg: rgba(142, 192, 124, 0.1);
+  --no-results-bg: rgba(251, 73, 52, 0.1);
+  --memory-bg: rgba(214, 93, 14, 0.1);
+  --reasoning-bg: rgba(211, 134, 155, 0.1);
+  --reasoning-border: rgba(211, 134, 155, 0.2);
+  --reasoning-hover-bg: rgba(211, 134, 155, 0.2);
+  --reasoning-hover-border: rgba(211, 134, 155, 0.3);
+  --reasoning-content-bg: rgba(211, 134, 155, 0.05);
+  --reasoning-content-border: rgba(211, 134, 155, 0.2);
+  --error-bg: rgba(251, 73, 52, 0.1);
+  --math-bg: rgba(142, 192, 124, 0.1);
+  --math-border: rgba(142, 192, 124, 0.2);
+  --reminder-bg: rgba(142, 192, 124, 0.1);
+  --reminder-border: #8ec07c;
+  --disabled-reasoning-bg: rgba(251, 73, 52, 0.2);
+}
+
+/* Gruvbox Light Theme */
+[data-theme="light"][data-theme-variant="gruvbox"] {
+  --bg-primary: #fbf1c7;
+  --bg-secondary: #f2e5bc;
+  --sidebar-bg: #f2e5bc;
+  --header-bg: #fbf1c7;
+  --input-bg: #ffffff;
+  --input-container-bg: #f2e5bc;
+  --dropdown-bg: #ffffff;
+  --border-color: #d5c4a1;
+  --hover-bg: #ebdbb2;
+  --active-bg: #d5c4a1;
+  --text-primary: #282828;
+  --text-secondary: #665c54;
+  --user-message-bg: #f2e5bc;
+  --assistant-message-bg: #fbf1c7;
+  --code-bg: #f2e5bc;
+  --badge-bg: #d5c4a1;
+  --kbd-bg: #d5c4a1;
+  --primary-color: #79740e;
+  --primary-hover: #5e5b0c;
+  --hint-color: #427b58;
+
+  /* New Action Colors */
+  --preset-btn: #79740e;
+  --preset-btn2: #427b58;
+  --preset-btn-hover: #6b690d;
+  --preset-btn2-hover: #3a6b4d;
+  --manage-prompt: #d5c4a1;
+  --manage-prompt2: #c4b18a;
+  --manage-prompt-hover: #ebdbb2;
+  --manage-prompt2-hover: #b6a07c;
+  --manage-promp-border-hover: #a89984;
+  --deciding-model: #fb4934;
+  --deciding-model2: #d65d0e;
+  --deciding-model-hover: #e64524;
+  --deciding-model2-hover: #c2510a;
+  --deciding-model-disabled: #ffb3a8;
+  --deciding-model2-disabled: #ffcc99;
+  --action-color: #79740e;
+  --action-color-hover: #6b690d;
+  --action-color-active: #5e5b0c;
+  --action-color-disabled: #427b58;
+  --action-text: #fbf1c7;
+  --action-text-hover: #282828;
+  --action-text-disabled: #665c54;
+  --action-bg: rgba(121, 116, 14, 0.1);
+  --action-bg-hover: rgba(121, 116, 14, 0.2);
+  --action-border: rgba(121, 116, 14, 0.3);
+  --action-border-hover: rgba(121, 116, 14, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #fabd2f;
+  --favorite-color-hover: #f9c74f;
+  --favorite-color-active: #f0b01f;
+  --favorite-color-disabled: #f5cc5f;
+  --favorite-text: #fbf1c7;
+  --favorite-text-hover: #282828;
+  --favorite-text-disabled: #665c54;
+  --favorite-bg: rgba(250, 189, 47, 0.1);
+  --favorite-bg-hover: rgba(250, 189, 47, 0.2);
+  --favorite-border: rgba(250, 189, 47, 0.3);
+  --favorite-border-hover: rgba(250, 189, 47, 0.5);
+  --favorite-hover-bg: rgba(250, 189, 47, 0.2);
+
+  /* Notification Colors */
+  --success-color: #79740e;
+  --success-text: #5e5b0c;
+  --error-color: #fb4934;
+  --error-text: #d65d0e;
+  --warning-color: #d65d0e;
+  --warning-text: #fabd2f;
+  --info-color: #427b58;
+  --info-text: #427b58;
+
+  /* Message/Chat Colors */
+  --math-color: #427b58;
+  --reasoning-color: #79740e;
+  --coding-color: #79740e;
+  --vision-color: #fb4934;
+  --fast-color: #79740e;
+  --disabled-color: #665c54;
+  --disabled-text: #665c54;
+  --disabled-text-light: #a89984;
+  --minimal-color: #79740e;
+  --minimal-text-light: #79740e;
+  --low-color: #427b58;
+  --low-text-light: #427b58;
+  --medium-color: #d65d0e;
+  --medium-text-light: #d65d0e;
+  --high-color: #fb4934;
+  --high-text-light: #fb4934;
+  --upload-disabled-color: #fb4934;
+  --slider-stroke: #665c54;
+  --slider-stroke-active: #a89984;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(0, 0, 0, 0.1);
+  --code-header-bg: rgba(0, 0, 0, 0.05);
+  --meta-item-bg: rgba(0, 0, 0, 0.05);
+  --decision-badge-bg: rgba(121, 116, 14, 0.15);
+  --decision-badge-border: rgba(121, 116, 14, 0.3);
+  --active-badge-bg: rgba(121, 116, 14, 0.15);
+  --active-badge-border: rgba(121, 116, 14, 0.3);
+  --search-meta-bg: rgba(66, 123, 88, 0.1);
+  --no-results-bg: rgba(251, 73, 52, 0.1);
+  --memory-bg: rgba(214, 93, 14, 0.1);
+  --reasoning-bg: rgba(121, 116, 14, 0.1);
+  --reasoning-border: rgba(121, 116, 14, 0.2);
+  --reasoning-hover-bg: rgba(121, 116, 14, 0.2);
+  --reasoning-hover-border: rgba(121, 116, 14, 0.3);
+  --reasoning-content-bg: rgba(121, 116, 14, 0.05);
+  --reasoning-content-border: rgba(121, 116, 14, 0.2);
+  --error-bg: rgba(251, 73, 52, 0.1);
+  --math-bg: rgba(66, 123, 88, 0.1);
+  --math-border: rgba(66, 123, 88, 0.2);
+  --reminder-bg: rgba(66, 123, 88, 0.1);
+  --reminder-border: #427b58;
+  --disabled-reasoning-bg: rgba(251, 73, 52, 0.2);
+}

@@ -1,0 +1,244 @@
+/* Solarized Theme - Dark and Light Modes */
+
+[data-theme="dark"][data-theme-variant="solarized"] {
+  --bg-primary: #002b36;
+  --bg-secondary: #073642;
+  --sidebar-bg: #073642;
+  --header-bg: #073642;
+  --input-bg: #073642;
+  --input-container-bg: #073642;
+  --dropdown-bg: #073642;
+  --border-color: #073642;
+  --hover-bg: #094451;
+  --active-bg: #0d5865;
+  --text-primary: #839496;
+  --text-secondary: #586e75;
+  --hint-color: #2aa198;
+  --primary-color: #268bd2;
+  --primary-hover: #1e70b5;
+  --danger-color: #dc322f;
+  --danger-bg: rgba(220, 50, 47, 0.2);
+  --user-message-bg: #073642;
+  --assistant-message-bg: #002b36;
+  --code-bg: #073642;
+  --badge-bg: #094451;
+  --kbd-bg: #094451;
+
+  /* New Action Colors */
+  --preset-btn: #2aa198;
+  --preset-btn2: #268bd2;
+  --preset-btn-hover: #22877f;
+  --preset-btn2-hover: #1e70b5;
+  --manage-prompt: #094451;
+  --manage-prompt2: #073642;
+  --manage-prompt-hover: #0d5865;
+  --manage-prompt2-hover: #05303a;
+  --manage-promp-border-hover: #0d5865;
+  --deciding-model: #dc322f;
+  --deciding-model2: #cb4b16;
+  --deciding-model-hover: #c42927;
+  --deciding-model2-hover: #b33f12;
+  --deciding-model-disabled: #a02623;
+  --deciding-model2-disabled: #9a3a0f;
+  --action-color: #2aa198;
+  --action-color-hover: #22877f;
+  --action-color-active: #1a6d65;
+  --action-color-disabled: #268bd2;
+  --action-text: #002b36;
+  --action-text-hover: #839496;
+  --action-text-disabled: #586e75;
+  --action-bg: rgba(42, 161, 152, 0.1);
+  --action-bg-hover: rgba(42, 161, 152, 0.2);
+  --action-border: rgba(42, 161, 152, 0.3);
+  --action-border-hover: rgba(42, 161, 152, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #b58900;
+  --favorite-color-hover: #c59300;
+  --favorite-color-active: #a57a00;
+  --favorite-color-disabled: #d4a000;
+  --favorite-text: #002b36;
+  --favorite-text-hover: #839496;
+  --favorite-text-disabled: #586e75;
+  --favorite-bg: rgba(181, 137, 0, 0.1);
+  --favorite-bg-hover: rgba(181, 137, 0, 0.2);
+  --favorite-border: rgba(181, 137, 0, 0.3);
+  --favorite-border-hover: rgba(181, 137, 0, 0.5);
+  --favorite-hover-bg: rgba(181, 137, 0, 0.2);
+
+  /* Notification Colors */
+  --success-color: #2aa198;
+  --success-text: #2aa198;
+  --error-color: #dc322f;
+  --error-text: #cb4b16;
+  --warning-color: #cb4b16;
+  --warning-text: #b58900;
+  --info-color: #268bd2;
+  --info-text: #268bd2;
+
+  /* Message/Chat Colors */
+  --math-color: #268bd2;
+  --reasoning-color: #6c71c4;
+  --coding-color: #6c71c4;
+  --vision-color: #dc322f;
+  --fast-color: #2aa198;
+  --disabled-color: #586e75;
+  --disabled-text: #586e75;
+  --disabled-text-light: #839496;
+  --minimal-color: #2aa198;
+  --minimal-text-light: #2aa198;
+  --low-color: #268bd2;
+  --low-text-light: #268bd2;
+  --medium-color: #cb4b16;
+  --medium-text-light: #cb4b16;
+  --high-color: #dc322f;
+  --high-text-light: #dc322f;
+  --upload-disabled-color: #dc322f;
+  --slider-stroke: #586e75;
+  --slider-stroke-active: #839496;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(131, 148, 150, 0.1);
+  --code-header-bg: rgba(131, 148, 150, 0.05);
+  --meta-item-bg: rgba(131, 148, 150, 0.05);
+  --decision-badge-bg: rgba(108, 113, 196, 0.15);
+  --decision-badge-border: rgba(108, 113, 196, 0.3);
+  --active-badge-bg: rgba(42, 161, 152, 0.15);
+  --active-badge-border: rgba(42, 161, 152, 0.3);
+  --search-meta-bg: rgba(38, 139, 210, 0.1);
+  --no-results-bg: rgba(220, 50, 47, 0.1);
+  --memory-bg: rgba(203, 75, 22, 0.1);
+  --reasoning-bg: rgba(108, 113, 196, 0.1);
+  --reasoning-border: rgba(108, 113, 196, 0.2);
+  --reasoning-hover-bg: rgba(108, 113, 196, 0.2);
+  --reasoning-hover-border: rgba(108, 113, 196, 0.3);
+  --reasoning-content-bg: rgba(108, 113, 196, 0.05);
+  --reasoning-content-border: rgba(108, 113, 196, 0.2);
+  --error-bg: rgba(220, 50, 47, 0.1);
+  --math-bg: rgba(38, 139, 210, 0.1);
+  --math-border: rgba(38, 139, 210, 0.2);
+  --reminder-bg: rgba(38, 139, 210, 0.1);
+  --reminder-border: #268bd2;
+  --disabled-reasoning-bg: rgba(220, 50, 47, 0.2);
+}
+
+/* Solarized Light Theme */
+[data-theme="light"][data-theme-variant="solarized"] {
+  --bg-primary: #fdf6e3;
+  --bg-secondary: #eee8d5;
+  --sidebar-bg: #eee8d5;
+  --header-bg: #fdf6e3;
+  --input-bg: #ffffff;
+  --input-container-bg: #eee8d5;
+  --dropdown-bg: #ffffff;
+  --border-color: #d4cbb7;
+  --hover-bg: #e8dfcc;
+  --active-bg: #d9d0bf;
+  --text-primary: #657b83;
+  --text-secondary: #93a1a1;
+  --user-message-bg: #eee8d5;
+  --assistant-message-bg: #fdf6e3;
+  --code-bg: #eee8d5;
+  --badge-bg: #d9d0bf;
+  --kbd-bg: #d9d0bf;
+  --primary-color: #268bd2;
+  --primary-hover: #1e70b5;
+  --hint-color: #2aa198;
+
+  /* New Action Colors */
+  --preset-btn: #2aa198;
+  --preset-btn2: #268bd2;
+  --preset-btn-hover: #22877f;
+  --preset-btn2-hover: #1e70b5;
+  --manage-prompt: #d9d0bf;
+  --manage-prompt2: #ccc3b0;
+  --manage-prompt-hover: #e8dfcc;
+  --manage-prompt2-hover: #beb5a2;
+  --manage-promp-border-hover: #b0a793;
+  --deciding-model: #dc322f;
+  --deciding-model2: #cb4b16;
+  --deciding-model-hover: #c42927;
+  --deciding-model2-hover: #b33f12;
+  --deciding-model-disabled: #f89f9c;
+  --deciding-model2-disabled: #f4b08a;
+  --action-color: #2aa198;
+  --action-color-hover: #22877f;
+  --action-color-active: #1a6d65;
+  --action-color-disabled: #268bd2;
+  --action-text: #fdf6e3;
+  --action-text-hover: #657b83;
+  --action-text-disabled: #93a1a1;
+  --action-bg: rgba(42, 161, 152, 0.1);
+  --action-bg-hover: rgba(42, 161, 152, 0.2);
+  --action-border: rgba(42, 161, 152, 0.3);
+  --action-border-hover: rgba(42, 161, 152, 0.5);
+
+  /* Favorite Color */
+  --favorite-color: #b58900;
+  --favorite-color-hover: #c59300;
+  --favorite-color-active: #a57a00;
+  --favorite-color-disabled: #d4a000;
+  --favorite-text: #fdf6e3;
+  --favorite-text-hover: #657b83;
+  --favorite-text-disabled: #93a1a1;
+  --favorite-bg: rgba(181, 137, 0, 0.1);
+  --favorite-bg-hover: rgba(181, 137, 0, 0.2);
+  --favorite-border: rgba(181, 137, 0, 0.3);
+  --favorite-border-hover: rgba(181, 137, 0, 0.5);
+  --favorite-hover-bg: rgba(181, 137, 0, 0.2);
+
+  /* Notification Colors */
+  --success-color: #2aa198;
+  --success-text: #2aa198;
+  --error-color: #dc322f;
+  --error-text: #cb4b16;
+  --warning-color: #cb4b16;
+  --warning-text: #b58900;
+  --info-color: #268bd2;
+  --info-text: #268bd2;
+
+  /* Message/Chat Colors */
+  --math-color: #268bd2;
+  --reasoning-color: #6c71c4;
+  --coding-color: #6c71c4;
+  --vision-color: #dc322f;
+  --fast-color: #2aa198;
+  --disabled-color: #586e75;
+  --disabled-text: #586e75;
+  --disabled-text-light: #839496;
+  --minimal-color: #2aa198;
+  --minimal-text-light: #2aa198;
+  --low-color: #268bd2;
+  --low-text-light: #268bd2;
+  --medium-color: #cb4b16;
+  --medium-text-light: #cb4b16;
+  --high-color: #dc322f;
+  --high-text-light: #dc322f;
+  --upload-disabled-color: #dc322f;
+  --slider-stroke: #586e75;
+  --slider-stroke-active: #839496;
+
+  /* Background/Border Colors */
+  --close-hover-bg: rgba(0, 0, 0, 0.1);
+  --code-header-bg: rgba(0, 0, 0, 0.05);
+  --meta-item-bg: rgba(0, 0, 0, 0.05);
+  --decision-badge-bg: rgba(38, 139, 210, 0.15);
+  --decision-badge-border: rgba(38, 139, 210, 0.3);
+  --active-badge-bg: rgba(42, 161, 152, 0.15);
+  --active-badge-border: rgba(42, 161, 152, 0.3);
+  --search-meta-bg: rgba(38, 139, 210, 0.1);
+  --no-results-bg: rgba(220, 50, 47, 0.1);
+  --memory-bg: rgba(203, 75, 22, 0.1);
+  --reasoning-bg: rgba(108, 113, 196, 0.1);
+  --reasoning-border: rgba(108, 113, 196, 0.2);
+  --reasoning-hover-bg: rgba(108, 113, 196, 0.2);
+  --reasoning-hover-border: rgba(108, 113, 196, 0.3);
+  --reasoning-content-bg: rgba(108, 113, 196, 0.05);
+  --reasoning-content-border: rgba(108, 113, 196, 0.2);
+  --error-bg: rgba(220, 50, 47, 0.1);
+  --math-bg: rgba(38, 139, 210, 0.1);
+  --math-border: rgba(38, 139, 210, 0.2);
+  --reminder-bg: rgba(38, 139, 210, 0.1);
+  --reminder-border: #268bd2;
+  --disabled-reasoning-bg: rgba(220, 50, 47, 0.2);
+}

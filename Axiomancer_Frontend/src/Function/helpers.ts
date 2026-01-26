@@ -136,3 +136,67 @@ export function isMobile(): boolean {
 export function isTouchDevice(): boolean {
   return "ontouchstart" in window || navigator.maxTouchPoints > 0;
 }
+
+// * Sound notification system using Web Audio API
+let audioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return audioContext;
+}
+
+// Play a notification sound (using Web Audio API - no external files needed)
+export function playNotificationSound(
+  type: "send" | "receive" | "error" = "receive",
+  volume: number = 50
+): void {
+  try {
+    const ctx = getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    // Normalize volume (0-100 to 0-0.3 for pleasant sound)
+    const normalizedVolume = (volume / 100) * 0.3;
+
+    // Different tones for different events
+    switch (type) {
+      case "send":
+        // Short ascending tone
+        oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.1);
+        oscillator.type = "sine";
+        gainNode.gain.setValueAtTime(normalizedVolume, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.15);
+        break;
+      case "receive":
+        // Short descending tone
+        oscillator.frequency.setValueAtTime(660, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+        oscillator.type = "sine";
+        gainNode.gain.setValueAtTime(normalizedVolume, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.2);
+        break;
+      case "error":
+        // Lower, longer tone
+        oscillator.frequency.setValueAtTime(220, ctx.currentTime);
+        oscillator.type = "triangle";
+        gainNode.gain.setValueAtTime(normalizedVolume * 0.8, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.3);
+        break;
+    }
+  } catch (e) {
+    // Silently fail if audio is not supported
+    console.warn("Audio notification failed:", e);
+  }
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { chatStore, aiStore, settingsStore, selectionStore } from "@/Store";
-  import { getTranslations, type LanguageCode } from "@/Function";
+  import { getTranslations, type LanguageCode, debounce } from "@/Function";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
 
@@ -14,6 +14,65 @@
   let memoryTooltipRef: HTMLDivElement | undefined = $state();
   let showReasoningTooltip = $state(false);
   let reasoningTooltipRef: HTMLDivElement | undefined = $state();
+
+  // * Draft Management
+  const DRAFT_KEY = "axiomancer_drafts";
+
+  function getDraftKey(): string {
+    return chatStore.currentConversation?.id || "new";
+  }
+
+  function loadDraft(): string {
+    if (!settingsStore.autoSaveDrafts) return "";
+    try {
+      const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}");
+      return drafts[getDraftKey()] || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function saveDraft(content: string) {
+    if (!settingsStore.autoSaveDrafts) return;
+    try {
+      const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}");
+      if (content.trim()) {
+        drafts[getDraftKey()] = content;
+      } else {
+        delete drafts[getDraftKey()];
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+    } catch (e) {
+      console.warn("Failed to save draft:", e);
+    }
+  }
+
+  function clearDraft() {
+    try {
+      const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}");
+      delete drafts[getDraftKey()];
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+    } catch (e) {
+      console.warn("Failed to clear draft:", e);
+    }
+  }
+
+  // Debounced draft saving (save after 500ms of no typing)
+  const debouncedSaveDraft = debounce((content: string) => saveDraft(content), 500);
+
+  // Load draft when conversation changes
+  $effect(() => {
+    const conversationId = chatStore.currentConversation?.id;
+    // This effect runs when conversation changes
+    if (settingsStore.autoSaveDrafts) {
+      const draft = loadDraft();
+      if (draft && !inputValue) {
+        inputValue = draft;
+        // Resize textarea to fit content
+        setTimeout(autoResize, 0);
+      }
+    }
+  });
 
   // Get selected model for capabilities display (single mode only)
   let selectedModelForCap = $derived.by(() => {
@@ -40,6 +99,8 @@
     const target = e.target as HTMLTextAreaElement;
     inputValue = target.value;
     autoResize();
+    // Auto-save draft with debounce
+    debouncedSaveDraft(target.value);
   }
 
   function autoResize() {
@@ -92,6 +153,8 @@
     if (textareaRef) {
       textareaRef.style.height = "auto";
     }
+    // Clear draft after sending
+    clearDraft();
 
     // Get model key based on mode:
     // - Single mode: use chatStore.currentModelKey

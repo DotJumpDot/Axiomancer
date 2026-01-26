@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Chat } from "@/Types";
-  import { processMarkdown, formatRole, formatLatency, formatTokens, copyToClipboard, getTranslations, type LanguageCode, type MarkdownResult } from "@/Function";
+  import { processMarkdown, formatLatency, formatTokens, copyToClipboard, getTranslations, type LanguageCode, type MarkdownResult, formatMessageTime } from "@/Function";
   import { settingsStore } from "@/Store";
   import CodeBlock from "./MessageMarkdown/CodeBlock.svelte";
   import MathBlock from "./MessageMarkdown/MathBlock.svelte";
@@ -32,6 +32,20 @@
     !!message.search_log?.reasoning_content &&
     !!message.content && message.content.length > 0 // Has answer content now
   );
+
+  // * Custom role formatter using settings store
+  function getDisplayRole(role: string): string {
+    if (role === "user") return settingsStore.userDisplayName;
+    if (role === "assistant") return settingsStore.aiDisplayName;
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  }
+
+  // * Get display role color based on settings
+  function getDisplayRoleColor(role: string): string {
+    if (role === "user") return settingsStore.userDisplayNameColor;
+    if (role === "assistant") return settingsStore.aiDisplayNameColor;
+    return "var(--text-secondary)";
+  }
 
   // Auto-open reasoning during streaming (or if only reasoning exists), auto-close when answer starts
   $effect(() => {
@@ -169,7 +183,10 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="message" class:user={isUser} class:assistant={!isUser} class:error={hasError} class:streaming={isStreaming}>
   <div class="message-header">
-    <span class="role">{formatRole(message.role)}</span>
+    <span class="role" style="color: {getDisplayRoleColor(message.role)}">{getDisplayRole(message.role)}</span>
+    {#if settingsStore.showMessageTimestamps && message.created_at}
+      <span class="message-timestamp">{formatMessageTime(message.created_at)}</span>
+    {/if}
     {#if !isUser && message.routing_mode === "auto" && message.model_id && message.ai_model_key}
       <span class="model-badge decision" title="Decision model used for routing">
         Decision: {message.model_id}
@@ -353,6 +370,12 @@
     color: var(--text-primary, #fff);
   }
 
+  .message-timestamp {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    opacity: 0.7;
+  }
+
   .model-badge {
     font-size: 13px;
     padding: 2px 8px;
@@ -403,7 +426,7 @@
   }
 
   .message-content {
-    font-size: 15px;
+    font-size: var(--chat-font-size, 15px);
     line-height: 1.6;
     color: var(--text-primary, #fff);
   }

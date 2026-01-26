@@ -1,0 +1,291 @@
+/* Rainbow Theme - Dark and Light Modes */
+
+/* Rainbow Dark Theme - True Rainbow Spectrum */
+[data-theme="dark"][data-theme-variant="rainbow"] {
+  --bg-primary: #0d0d0d;
+  --bg-secondary: #141414;
+  --sidebar-bg: linear-gradient(
+    180deg,
+    rgba(255, 0, 0, 0.08) 0%,
+    rgba(255, 127, 0, 0.08) 20%,
+    rgba(255, 255, 0, 0.08) 40%,
+    rgba(0, 255, 0, 0.08) 60%,
+    rgba(0, 0, 255, 0.08) 80%,
+    rgba(139, 0, 255, 0.08) 100%
+  );
+  --header-bg: #141414;
+  --input-bg: #1f1f1f;
+  --input-container-bg: #141414;
+  --dropdown-bg: #1f1f1f;
+  --border-color: rgba(147, 112, 219, 0.4);
+  --border-gradient: linear-gradient(
+    90deg,
+    #ff0000,
+    #ff7f00,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #8b00ff,
+    #ff0000
+  );
+  --hover-bg: rgba(255, 215, 0, 0.15);
+  --active-bg: rgba(0, 255, 127, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --hint-color: #00ff7f;
+  --primary-color: #ff6b6b;
+  --primary-color-hover: #ff8787;
+  --primary-color-active: #ff4757;
+  --danger-color: #ff4757;
+  --danger-color-hover: #ff6b6b;
+  --danger-bg: rgba(255, 71, 87, 0.2);
+  --user-message-bg: rgba(75, 0, 130, 0.3);
+  --assistant-message-bg: rgba(0, 0, 30, 0.5);
+  --code-bg: rgba(30, 30, 50, 0.8);
+  --badge-bg: rgba(138, 43, 226, 0.3);
+  --kbd-bg: rgba(138, 43, 226, 0.4);
+
+  /* Action Colors - True Rainbow Spectrum (Red->Orange->Yellow->Green->Blue->Violet) */
+  --preset-btn: #ff4500;
+  --preset-btn2: #ffa500;
+  --preset-btn-hover: #ff6347;
+  --preset-btn2-hover: #ffb732;
+  --manage-prompt: #00ff7f;
+  --manage-prompt2: #32cd32;
+  --manage-prompt-hover: #7fff00;
+  --manage-prompt2-hover: #98fb98;
+  --manage-promp-border-hover: #00fa9a;
+  --deciding-model: #ff4500;
+  --deciding-model2: #ffd700;
+  --deciding-model-hover: #ff6347;
+  --deciding-model2-hover: #ffe066;
+  --deciding-model-disabled: #8b2500;
+  --deciding-model2-disabled: #8b7500;
+  --action-color: #00ff7f;
+  --action-color-hover: #7fff00;
+  --action-color-active: #32cd32;
+  --action-color-disabled: #228b22;
+  --action-text: #000000;
+  --action-text-hover: #ffffff;
+  --action-text-disabled: #666666;
+  --action-bg: rgba(0, 255, 127, 0.15);
+  --action-bg-hover: rgba(0, 255, 127, 0.25);
+  --action-border: rgba(0, 255, 127, 0.4);
+  --action-border-hover: rgba(0, 255, 127, 0.6);
+
+  /* Favorite Color - Golden Yellow */
+  --favorite-color: #ffd700;
+  --favorite-color-hover: #ffec8b;
+  --favorite-color-active: #ffc125;
+  --favorite-color-disabled: #b8860b;
+  --favorite-text: #000000;
+  --favorite-text-hover: #ffffff;
+  --favorite-text-disabled: #666666;
+  --favorite-bg: rgba(255, 215, 0, 0.15);
+  --favorite-bg-hover: rgba(255, 215, 0, 0.25);
+  --favorite-border: rgba(255, 215, 0, 0.4);
+  --favorite-border-hover: rgba(255, 215, 0, 0.6);
+  --favorite-hover-bg: rgba(255, 215, 0, 0.25);
+
+  /* Notification Colors - True Rainbow */
+  --success-color: #00ff7f;
+  --success-text: #7fff00;
+  --error-color: #ff4500;
+  --error-text: #ff6347;
+  --warning-color: #ffd700;
+  --warning-text: #ffec8b;
+  --info-color: #1e90ff;
+  --info-text: #87ceeb;
+
+  /* Message/Chat Colors - True Rainbow Spectrum */
+  --math-color: #1e90ff;
+  --reasoning-color: #9370db;
+  --coding-color: #00ff7f;
+  --vision-color: #ff4500;
+  --fast-color: #ffd700;
+  --disabled-color: #696969;
+  --disabled-text: #505050;
+  --disabled-text-light: #808080;
+  --minimal-color: #00ff7f;
+  --minimal-text-light: #7fff00;
+  --low-color: #1e90ff;
+  --low-text-light: #87ceeb;
+  --medium-color: #ffd700;
+  --medium-text-light: #ffec8b;
+  --high-color: #ff4500;
+  --high-text-light: #ff6347;
+  --upload-disabled-color: #ff4500;
+  --slider-stroke: #9370db;
+  --slider-stroke-active: #ba55d3;
+
+  /* Background/Border Colors - True Rainbow */
+  --close-hover-bg: rgba(255, 69, 0, 0.1);
+  --code-header-bg: rgba(138, 43, 226, 0.08);
+  --meta-item-bg: rgba(255, 215, 0, 0.08);
+  --decision-badge-bg: rgba(255, 165, 0, 0.15);
+  --decision-badge-border: rgba(255, 165, 0, 0.3);
+  --active-badge-bg: rgba(0, 255, 127, 0.15);
+  --active-badge-border: rgba(0, 255, 127, 0.3);
+  --search-meta-bg: rgba(30, 144, 255, 0.1);
+  --no-results-bg: rgba(255, 69, 0, 0.1);
+  --memory-bg: rgba(255, 215, 0, 0.1);
+  --reasoning-bg: rgba(147, 112, 219, 0.1);
+  --reasoning-border: rgba(147, 112, 219, 0.2);
+  --reasoning-hover-bg: rgba(147, 112, 219, 0.2);
+  --reasoning-hover-border: rgba(147, 112, 219, 0.3);
+  --reasoning-content-bg: rgba(147, 112, 219, 0.05);
+  --reasoning-content-border: rgba(147, 112, 219, 0.2);
+  --error-bg: rgba(255, 69, 0, 0.1);
+  --math-bg: rgba(30, 144, 255, 0.1);
+  --math-bg-hover: rgba(30, 144, 255, 0.2);
+  --math-border: rgba(30, 144, 255, 0.2);
+  --math-border-hover: rgba(30, 144, 255, 0.3);
+  --reminder-bg: rgba(0, 255, 127, 0.1);
+  --reminder-border: #00ff7f;
+  --disabled-reasoning-bg: rgba(255, 69, 0, 0.2);
+}
+
+/* Rainbow Light Theme - Soft Rainbow Spectrum */
+[data-theme="light"][data-theme-variant="rainbow"] {
+  --bg-primary: #fffef8;
+  --bg-secondary: #fff8f0;
+  --sidebar-bg: linear-gradient(
+    180deg,
+    rgba(255, 200, 200, 0.3) 0%,
+    rgba(255, 230, 200, 0.3) 20%,
+    rgba(255, 255, 200, 0.3) 40%,
+    rgba(200, 255, 200, 0.3) 60%,
+    rgba(200, 220, 255, 0.3) 80%,
+    rgba(230, 200, 255, 0.3) 100%
+  );
+  --header-bg: #fffef8;
+  --input-bg: #ffffff;
+  --input-container-bg: #fff8f0;
+  --dropdown-bg: #ffffff;
+  --border-color: rgba(151, 117, 250, 0.35);
+  --border-gradient: linear-gradient(
+    90deg,
+    #ff6b6b,
+    #ffa94d,
+    #ffd43b,
+    #69db7c,
+    #4dabf7,
+    #9775fa,
+    #ff6b6b
+  );
+  --hover-bg: rgba(255, 215, 0, 0.12);
+  --active-bg: rgba(0, 200, 100, 0.15);
+  --text-primary: #2d2d2d;
+  --text-secondary: #555555;
+  --hint-color: #228b22;
+  --primary-color: #e64980;
+  --primary-color-hover: #d63972;
+  --primary-color-active: #c62964;
+  --danger-color: #e03131;
+  --danger-color-hover: #c92a2a;
+  --danger-bg: rgba(224, 49, 49, 0.15);
+  --user-message-bg: rgba(255, 220, 180, 0.4);
+  --assistant-message-bg: rgba(255, 250, 240, 0.8);
+  --code-bg: rgba(255, 240, 220, 0.6);
+  --badge-bg: rgba(255, 215, 0, 0.2);
+  --kbd-bg: rgba(255, 200, 150, 0.3);
+
+  /* Action Colors - True Rainbow Spectrum */
+  --preset-btn: #e64980;
+  --preset-btn2: #fd7e14;
+  --preset-btn-hover: #d63972;
+  --preset-btn2-hover: #e76f00;
+  --manage-prompt: #40c057;
+  --manage-prompt2: #37b24d;
+  --manage-prompt-hover: #2f9e44;
+  --manage-prompt2-hover: #2b8a3e;
+  --manage-promp-border-hover: #51cf66;
+  --deciding-model: #e64980;
+  --deciding-model2: #fab005;
+  --deciding-model-hover: #d63972;
+  --deciding-model2-hover: #f59f00;
+  --deciding-model-disabled: #ffc9c9;
+  --deciding-model2-disabled: #fff3bf;
+  --action-color: #40c057;
+  --action-color-hover: #37b24d;
+  --action-color-active: #2f9e44;
+  --action-color-disabled: #b2f2bb;
+  --action-text: #ffffff;
+  --action-text-hover: #2d2d2d;
+  --action-text-disabled: #666666;
+  --action-bg: rgba(64, 192, 87, 0.15);
+  --action-bg-hover: rgba(64, 192, 87, 0.25);
+  --action-border: rgba(64, 192, 87, 0.4);
+  --action-border-hover: rgba(64, 192, 87, 0.6);
+
+  /* Favorite Color - Warm Gold */
+  --favorite-color: #fab005;
+  --favorite-color-hover: #f59f00;
+  --favorite-color-active: #e67700;
+  --favorite-color-disabled: #fff3bf;
+  --favorite-text: #ffffff;
+  --favorite-text-hover: #2d2d2d;
+  --favorite-text-disabled: #666666;
+  --favorite-bg: rgba(250, 176, 5, 0.15);
+  --favorite-bg-hover: rgba(250, 176, 5, 0.25);
+  --favorite-border: rgba(250, 176, 5, 0.4);
+  --favorite-border-hover: rgba(250, 176, 5, 0.6);
+  --favorite-hover-bg: rgba(250, 176, 5, 0.25);
+
+  /* Notification Colors - Soft Rainbow */
+  --success-color: #40c057;
+  --success-text: #2f9e44;
+  --error-color: #e03131;
+  --error-text: #c92a2a;
+  --warning-color: #fab005;
+  --warning-text: #e67700;
+  --info-color: #339af0;
+  --info-text: #1971c2;
+
+  /* Message/Chat Colors - Soft Rainbow */
+  --math-color: #339af0;
+  --reasoning-color: #9c36b5;
+  --coding-color: #40c057;
+  --vision-color: #e64980;
+  --fast-color: #fab005;
+  --disabled-color: #868e96;
+  --disabled-text: #6c757d;
+  --disabled-text-light: #adb5bd;
+  --minimal-color: #40c057;
+  --minimal-text-light: #2f9e44;
+  --low-color: #339af0;
+  --low-text-light: #1971c2;
+  --medium-color: #fab005;
+  --medium-text-light: #e67700;
+  --high-color: #e03131;
+  --high-text-light: #c92a2a;
+  --upload-disabled-color: #e03131;
+  --slider-stroke: #9c36b5;
+  --slider-stroke-active: #ae3ec9;
+
+  /* Background/Border Colors - Soft Rainbow */
+  --close-hover-bg: rgba(45, 45, 45, 0.08);
+  --code-header-bg: rgba(156, 54, 181, 0.06);
+  --meta-item-bg: rgba(250, 176, 5, 0.08);
+  --decision-badge-bg: rgba(253, 126, 20, 0.15);
+  --decision-badge-border: rgba(253, 126, 20, 0.3);
+  --active-badge-bg: rgba(64, 192, 87, 0.15);
+  --active-badge-border: rgba(64, 192, 87, 0.3);
+  --search-meta-bg: rgba(51, 154, 240, 0.1);
+  --no-results-bg: rgba(224, 49, 49, 0.1);
+  --memory-bg: rgba(250, 176, 5, 0.1);
+  --reasoning-bg: rgba(156, 54, 181, 0.1);
+  --reasoning-border: rgba(156, 54, 181, 0.2);
+  --reasoning-hover-bg: rgba(156, 54, 181, 0.2);
+  --reasoning-hover-border: rgba(156, 54, 181, 0.3);
+  --reasoning-content-bg: rgba(156, 54, 181, 0.05);
+  --reasoning-content-border: rgba(156, 54, 181, 0.2);
+  --error-bg: rgba(224, 49, 49, 0.1);
+  --math-bg: rgba(51, 154, 240, 0.1);
+  --math-bg-hover: rgba(51, 154, 240, 0.2);
+  --math-border: rgba(51, 154, 240, 0.2);
+  --math-border-hover: rgba(51, 154, 240, 0.3);
+  --reminder-bg: rgba(64, 192, 87, 0.1);
+  --reminder-border: #40c057;
+  --disabled-reasoning-bg: rgba(224, 49, 49, 0.15);
+}

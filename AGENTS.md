@@ -17,6 +17,9 @@
 6. **Conversation History** - Persistent storage of multi-turn conversations with metadata (tokens, latency, search context)
 7. **User Authentication & API Key Management** - Secure user accounts with OpenRouter API key storage
 8. **Favorites System** - User can favorite models, prompts, and conversations for quick access and prioritized display
+9. **Reasoning Effort Control** - Configurable reasoning levels (minimal/low/medium/high) for supported AI models
+10. **Memory Count Control** - Adjustable conversation context window (1-1000 messages) per request
+11. **Streaming Responses** - Real-time word-by-word AI response streaming with stop functionality
 
 ### Technology Stack:
 
@@ -130,13 +133,14 @@ The Axiomancer backend implements the following core entities:
 
 #### **Search Log**
 
-| Purpose             | Details                                                                                                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Search Tracking** | Records all search queries (web/image) performed during conversations with configurable memory settings                                                                             |
-| **Memory Control**  | Stores how many previous messages were included in context for each AI request                                                                                                      |
-| **Audit Trail**     | Enables analysis of search patterns, memory usage, and effectiveness                                                                                                                |
-| **Fields**          | id_no (PK int), id_uuid (unique), chat_id (FK), memory_chat_include (int), used_web_search, used_image_search, search_context_web (JSON), search_context_picture (JSON), created_at |
-| **Relationships**   | Linked to Chat message via chat_id; one log per user message                                                                                                                        |
+| Purpose             | Details                                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Search Tracking** | Records all search queries (web/image) performed during conversations with configurable memory settings                                                                                                                              |
+| **Memory Control**  | Stores how many previous messages were included in context for each AI request (1-1000)                                                                                                                                              |
+| **Reasoning Track** | Records reasoning effort level and reasoning content from AI models                                                                                                                                                                  |
+| **Audit Trail**     | Enables analysis of search patterns, memory usage, reasoning usage, and effectiveness                                                                                                                                                |
+| **Fields**          | id_no (PK int), id_uuid (unique), chat_id (FK), memory_chat_include (int), used_web_search, used_image_search, used_steam, reasoning_effort, reasoning_content, search_context_web (JSON), search_context_picture (JSON), created_at |
+| **Relationships**   | Linked to Chat message via chat_id; one log per user message                                                                                                                                                                         |
 
 #### **User Favorite**
 
@@ -149,12 +153,13 @@ The Axiomancer backend implements the following core entities:
 
 #### **User Selected Models**
 
-| Purpose                   | Details                                                                              |
-| ------------------------- | ------------------------------------------------------------------------------------ |
-| **Model Selection**       | Stores user's selected AI models for specific prompts or general use                 |
-| **Routing Configuration** | Enables custom model selection per prompt profile for personalized routing           |
-| **Fields**                | id, user_uuid (FK), prompt_id (FK), selected_models (text[]), created_at, updated_at |
-| **Relationships**         | Belongs to User; optionally references PromptProfile; many-to-many with AiModel      |
+| Purpose                   | Details                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Model Selection**       | Stores user's selected AI models for specific prompts or general use                                                    |
+| **Preset Management**     | Named presets for different workflows (e.g., "Coding Team", "Research Agents")                                          |
+| **Routing Configuration** | Enables custom model selection per prompt profile for personalized routing                                              |
+| **Fields**                | preset (PK int), user_uuid (FK), preset_name, ai_model_ids (text[]), prompt_id (FK), searchable, created_at, updated_at |
+| **Relationships**         | Belongs to User; optionally references PromptProfile; many-to-many with AiModel                                         |
 
 ### Backend File Structure
 

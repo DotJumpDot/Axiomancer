@@ -71,11 +71,20 @@
 
 - **Web Search** - DuckDuckGo API integration for real-time web results
 - **Image Search** - Pixabay API for high-quality royalty-free images
-- **Configurable Memory** - Adjust conversation context (1-100 previous messages)
+- **Configurable Memory** - Adjust conversation context (1-1000 previous messages)
 - **Search Context Injection** - Results automatically integrated into AI context
 - **Search Logging** - Dedicated tracking of all search queries and results
 - **Toggle Controls** - Enable/disable search per message with intuitive UI
 - **Performance Metrics** - Track search usage and impact on responses
+
+### 🧠 **Reasoning Effort Control**
+
+- **4 Reasoning Levels** - Minimal, Low, Medium, High for supported models
+- **Model-Aware UI** - Reasoning selector only shows for capable models
+- **Reasoning Content Tracking** - Store AI reasoning process when available
+- **Auto-Disable** - Automatically disables when switching to non-reasoning models
+- **Cost/Quality Balance** - Choose between speed and depth of analysis
+- **Visual Indicators** - Color-coded buttons show current reasoning level
 
 ### 🔐 **Authentication & Security**
 
@@ -94,6 +103,7 @@
 - **Search Analytics** - Track web and image search usage patterns
 - **Memory Consumption** - Monitor conversation context size
 - **Cost Tracking** - Calculate token costs per conversation (per 1K tokens)
+- **Reasoning Tracking** - Monitor reasoning effort usage and AI thinking process
 
 ### ⭐ **Favorites System**
 
@@ -143,7 +153,8 @@
 - **Streaming Control** - Enable/disable word-by-word AI responses
 - **Sidebar Toggle** - Show/hide sidebar for more screen space
 - **Auto-Scroll** - Automatic scrolling to new messages
-- **Memory Configuration** - Adjust conversation context per message (1-100)
+- **Memory Configuration** - Adjust conversation context per message (1-1000)
+- **Reasoning Effort** - Configure AI thinking depth per message
 - **Persistent Settings** - All preferences saved to localStorage
 
 ---
@@ -267,6 +278,23 @@ The intelligent routing engine analyzes each user message and selects the optima
    - Token usage limits
    - Response time requirements
    - Model availability
+
+4. Reasoning Effort Integration
+   - Reasoning level passed to final selected model
+   - Not applied to decision/routing model
+```
+
+### **Reasoning Effort System**
+
+Configure how deeply the AI analyzes your queries:
+
+```typescript
+// Reasoning Levels:
+- Disabled: Standard responses, fastest processing
+- Minimal: Light reasoning with basic logic
+- Low: Some problem decomposition
+- Medium: Thorough analysis (recommended for complex tasks)
+- High: Extensive reasoning for research/debugging
 ```
 
 ### **Prompt Profiles**
@@ -284,10 +312,15 @@ Seamlessly augment AI responses with real-time data:
 
 ```typescript
 // Automatic Search Triggering:
-- User asks factual questions → Web search
-- User requests images → Image search
+- User asks factual questions → Web search (DuckDuckGo)
+- User requests images → Image search (Pixabay)
 - Results injected into conversation context
 - AI provides informed, up-to-date responses
+
+// Memory Control (1-1000 messages):
+- Configure how many previous messages AI remembers
+- Balance between context richness and token usage
+- Per-message configuration available
 ```
 
 ---

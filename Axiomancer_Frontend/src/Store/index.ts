@@ -8,6 +8,8 @@ export {
   THEME_VARIANTS,
   THEME_MODES,
   LANGUAGES,
+  FAVORITE_ICONS,
+  FAVORITE_COLORS,
 } from "./settings.svelte";
 export { selectionStore } from "./selection.svelte";
 export { favoriteStore } from "./favorite.svelte";

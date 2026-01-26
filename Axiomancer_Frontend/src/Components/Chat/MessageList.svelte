@@ -9,15 +9,17 @@
 
   let messagesContainer: HTMLDivElement | undefined = $state();
 
-  // Auto-scroll when new messages arrive
+  // Auto-scroll when new messages arrive (respects user setting)
   $effect(() => {
-    if (chatStore.messages.length > 0) {
+    if (chatStore.messages.length > 0 && settingsStore.autoScrollToBottom) {
       setTimeout(() => scrollToBottom(messagesContainer), 100);
     }
   });
 
   onMount(() => {
-    scrollToBottom(messagesContainer);
+    if (settingsStore.autoScrollToBottom) {
+      scrollToBottom(messagesContainer);
+    }
   });
 
   //* Handle quick action button click

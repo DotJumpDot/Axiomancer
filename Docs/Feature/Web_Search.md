@@ -278,20 +278,17 @@ CREATE TABLE chat (
 ### For Users
 
 1. **Configure Memory Count**:
-
    - Use the memory count selector (1-100 messages)
    - Default: 20 messages included in context
    - Higher values provide more context but use more tokens
    - Memory indicator shows: "🧠 20 msgs" (if not default)
 
 2. **Enable Web Search**:
-
    - Toggle the "Web Search" switch in the chat input area
    - The switch turns blue when active
    - Blue dot indicator shows "Web search enabled"
 
 3. **Send Message**:
-
    - Type your question
    - Press Enter to send
    - If web search is enabled, the AI will automatically search for relevant information
@@ -381,13 +378,11 @@ try {
 ### Common Issues
 
 1. **No Results Found**
-
    - API returns empty results array
    - System continues without search context
    - No error shown to user
 
 2. **API Rate Limiting**
-
    - DuckDuckGo may throttle requests
    - Implement exponential backoff if needed
    - Consider caching frequent queries
@@ -491,25 +486,21 @@ ORDER BY usage_count DESC;
 ### Planned Features
 
 1. **Smart Search Detection**
-
    - Automatically enable search for factual questions
    - Use AI to determine when search is needed
    - Keyword-based search triggers
 
 2. **Search Result Caching**
-
    - Cache common queries (e.g., "current date", "weather")
    - Redis integration for distributed caching
    - TTL-based expiration
 
 3. **Multi-Source Search**
-
    - Combine DuckDuckGo with other search APIs
    - Wikipedia API integration
    - News API for current events
 
 4. **Search Result Display**
-
    - Show search results as cards in UI
    - Expandable search context panel
    - Source citation links
@@ -649,9 +640,16 @@ For questions or issues, refer to the AGENTS.md guidelines or check the Docs/ fo
 
 ---
 
-**Last Updated**: January 16, 2026  
-**Version**: 2.0.0  
+**Last Updated**: January 26, 2026  
+**Version**: 2.1.0  
 **Status**: ✅ Production Ready
+
+**New in v2.1**:
+
+- Extended memory count range (1-1000 messages)
+- Reasoning effort integration with web search
+- Steam search toggle placeholder (UI ready)
+- Enhanced search_log table with reasoning fields
 
 **New in v2.0**:
 

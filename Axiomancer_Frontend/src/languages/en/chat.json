@@ -243,7 +243,17 @@
     "maxResponseLength": "Max Response Length",
     "webSearch": "Web Search",
     "imageSearch": "Image Search",
-    "steamSearch": "Steam Search"
+    "steamSearch": "Steam Search",
+    "showMessageTimestamps": "Show Message Timestamps",
+    "showMessageTimestampsDesc": "Display time on each message (e.g., 2:34 PM)",
+    "autoScrollToBottom": "Auto-Scroll to Bottom",
+    "autoScrollToBottomDesc": "Automatically scroll to new messages",
+    "autoSaveDrafts": "Auto-Save Drafts",
+    "autoSaveDraftsDesc": "Save message drafts automatically per conversation",
+    "soundEnabled": "Enable Sound Effects",
+    "soundEnabledDesc": "Play sounds on message send/receive",
+    "soundVolume": "Volume",
+    "soundVolumeDesc": "Adjust sound volume"
   },
   "notification": {
     "success": "Success",
