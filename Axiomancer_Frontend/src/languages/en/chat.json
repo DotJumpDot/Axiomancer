@@ -257,7 +257,13 @@
     "soundEnabled": "Enable Sound Effects",
     "soundEnabledDesc": "Play sounds on message send/receive",
     "soundVolume": "Volume",
-    "soundVolumeDesc": "Adjust sound volume"
+    "soundVolumeDesc": "Adjust sound volume",
+    "enhanceSearchAbility": "Enhanced Search",
+    "enhanceSearchAbilityLabel": "AI-Enhanced Search Queries",
+    "enhanceSearchAbilityDesc": "Use AI to optimize search queries by extracting key terms from your message",
+    "enhanceSearchDisabled": "Disabled",
+    "enhanceSearchServerDefault": "Use Server Default AI",
+    "enhanceSearchCurrentModel": "Use Current Model"
   },
   "notification": {
     "success": "Success",

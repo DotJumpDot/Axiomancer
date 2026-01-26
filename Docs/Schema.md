@@ -122,6 +122,9 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | used_steam             | boolean  | No       | Whether Steam search was used (default false)                |
 | reasoning_effort       | text     | Yes      | Reasoning effort level (minimal/low/medium/high)             |
 | reasoning_content      | text     | Yes      | Reasoning process content from AI models                     |
+| decision_prompt_model  | text     | Yes      | Model key for AI that creates optimized search prompts       |
+| prompt_web_search      | text     | Yes      | AI-optimized prompt used for web search query                |
+| prompt_picture_search  | text     | Yes      | AI-optimized prompt used for picture/image search query      |
 | search_context_web     | json     | Yes      | Web search results context (DuckDuckGo)                      |
 | search_context_picture | json     | Yes      | Image search results context (Pixabay)                       |
 | created_at             | datetime | No       | Record creation timestamp                                    |

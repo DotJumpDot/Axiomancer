@@ -47,6 +47,12 @@ export const FAVORITE_COLORS = [
   { value: "green", label: "Green", color: "#22c55e" },
 ] as const;
 
+export const ENHANCE_SEARCH_MODES = [
+  { value: "disabled", label: "Disabled" },
+  { value: "server-default", label: "Use Server Default AI" },
+  { value: "current-model", label: "Use Current Model" },
+] as const;
+
 // Font size CSS mapping
 const FONT_SIZE_MAP = {
   small: "13px",
@@ -89,7 +95,9 @@ let spellCheck = $state(true);
 let doubleClickFavorite = $state(true);
 let disableClickRename = $state(false);
 let favoriteIcon = $state<"star" | "heart" | "bookmark" | "pin">("star");
-let favoriteColor = $state<"gold" | "red" | "pink" | "purple" | "blue" | "green">("gold");
+let favoriteColor = $state<
+  "gold" | "red" | "pink" | "purple" | "blue" | "green"
+>("gold");
 let showRelativeTime = $state(true);
 
 // New settings - Chat tab
@@ -104,6 +112,11 @@ let autoSaveDrafts = $state(true);
 // Sound notification settings
 let soundEnabled = $state(false);
 let soundVolume = $state(50); // 0-100
+
+// Enhanced search settings
+let enhanceSearchMode = $state<"disabled" | "server-default" | "current-model">(
+  "disabled",
+);
 
 // Persist settings to localStorage
 function saveSettings() {
@@ -130,6 +143,7 @@ function saveSettings() {
     autoSaveDrafts,
     soundEnabled,
     soundVolume,
+    enhanceSearchMode,
   };
   localStorage.setItem("axiomancer_settings", JSON.stringify(settings));
 }
@@ -178,6 +192,7 @@ function loadSettings() {
       autoSaveDrafts = settings.autoSaveDrafts ?? true;
       soundEnabled = settings.soundEnabled ?? false;
       soundVolume = settings.soundVolume ?? 50;
+      enhanceSearchMode = settings.enhanceSearchMode ?? "disabled";
     } catch (e) {
       console.error("Failed to load settings:", e);
     }
@@ -205,7 +220,7 @@ function setThemeVariant(
     | "vaporwave-retro"
     | "rainbow"
     | "terminal"
-    | "github"
+    | "github",
 ) {
   themeVariant = variant;
   applyTheme();
@@ -292,7 +307,9 @@ function setFavoriteIcon(icon: "star" | "heart" | "bookmark" | "pin") {
   saveSettings();
 }
 
-function setFavoriteColor(color: "gold" | "red" | "pink" | "purple" | "blue" | "green") {
+function setFavoriteColor(
+  color: "gold" | "red" | "pink" | "purple" | "blue" | "green",
+) {
   favoriteColor = color;
   saveSettings();
 }
@@ -347,6 +364,13 @@ function setSoundVolume(volume: number) {
   saveSettings();
 }
 
+function setEnhanceSearchMode(
+  mode: "disabled" | "server-default" | "current-model",
+) {
+  enhanceSearchMode = mode;
+  saveSettings();
+}
+
 // * Reset functions for each tab
 function resetGeneralSettings() {
   themeVariant = "classic";
@@ -370,6 +394,7 @@ function resetChatSettings() {
   showMessageTimestamps = true;
   autoScrollToBottom = true;
   autoSaveDrafts = true;
+  enhanceSearchMode = "disabled";
   applyFontSize();
   saveSettings();
 }
@@ -451,6 +476,9 @@ export const settingsStore = {
   get soundVolume() {
     return soundVolume;
   },
+  get enhanceSearchMode() {
+    return enhanceSearchMode;
+  },
 
   loadSettings,
   saveSettings,
@@ -462,6 +490,7 @@ export const settingsStore = {
   LANGUAGES,
   FAVORITE_ICONS,
   FAVORITE_COLORS,
+  ENHANCE_SEARCH_MODES,
   toggleSidebar,
   setSidebarOpen,
   setFontSize,
@@ -483,6 +512,7 @@ export const settingsStore = {
   setAutoSaveDrafts,
   setSoundEnabled,
   setSoundVolume,
+  setEnhanceSearchMode,
   resetGeneralSettings,
   resetChatSettings,
   resetConversationSettings,

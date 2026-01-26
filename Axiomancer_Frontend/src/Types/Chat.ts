@@ -50,6 +50,9 @@ export interface Chat {
     reasoning_content: string | null;
     search_context_web: any | null;
     search_context_picture: any | null;
+    decision_prompt_model: string | null;
+    prompt_web_search: string | null;
+    prompt_picture_search: string | null;
   };
 }
 
@@ -140,6 +143,7 @@ export interface SendMessageOptions {
   memoryCount?: number;
   reasoningEffort?: string;
   reasoning_content?: string;
+  enhanceSearchMode?: string;
 }
 
 // Search Log types

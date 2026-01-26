@@ -11,11 +11,13 @@ import type {
   OpenRouterMessage,
 } from "@/Types";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "http://localhost:4100";
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_BASE_URL || "http://localhost:4100";
 
 const CHAT_ENDPOINTS = {
   conversations: "/api/conversations",
-  messages: (conversationId: string) => `/api/conversations/${conversationId}/messages`,
+  messages: (conversationId: string) =>
+    `/api/conversations/${conversationId}/messages`,
 };
 
 export const chatService = {
@@ -33,13 +35,19 @@ export const chatService = {
   },
 
   async updateConversation(id: string, data: UpdateConversationRequest) {
-    return apiClient.put<Conversation>(`${CHAT_ENDPOINTS.conversations}/${id}`, data);
+    return apiClient.put<Conversation>(
+      `${CHAT_ENDPOINTS.conversations}/${id}`,
+      data,
+    );
   },
 
   async archiveConversation(id: string, archived: boolean) {
-    return apiClient.put<Conversation>(`${CHAT_ENDPOINTS.conversations}/${id}/archive`, {
-      archived,
-    });
+    return apiClient.put<Conversation>(
+      `${CHAT_ENDPOINTS.conversations}/${id}/archive`,
+      {
+        archived,
+      },
+    );
   },
 
   async deleteConversation(id: string) {
@@ -52,15 +60,27 @@ export const chatService = {
   },
 
   async createMessage(data: CreateChatRequest) {
-    return apiClient.post<Chat>(CHAT_ENDPOINTS.messages(data.conversation_id), data);
+    return apiClient.post<Chat>(
+      CHAT_ENDPOINTS.messages(data.conversation_id),
+      data,
+    );
   },
 
-  async updateMessage(conversationId: string, messageId: string, data: UpdateChatRequest) {
-    return apiClient.put<Chat>(`${CHAT_ENDPOINTS.messages(conversationId)}/${messageId}`, data);
+  async updateMessage(
+    conversationId: string,
+    messageId: string,
+    data: UpdateChatRequest,
+  ) {
+    return apiClient.put<Chat>(
+      `${CHAT_ENDPOINTS.messages(conversationId)}/${messageId}`,
+      data,
+    );
   },
 
   async deleteMessage(conversationId: string, messageId: string) {
-    return apiClient.delete<boolean>(`${CHAT_ENDPOINTS.messages(conversationId)}/${messageId}`);
+    return apiClient.delete<boolean>(
+      `${CHAT_ENDPOINTS.messages(conversationId)}/${messageId}`,
+    );
   },
 
   // Send message to AI and get response
@@ -74,7 +94,7 @@ export const chatService = {
       useWebSearch?: boolean;
       useImageSearch?: boolean;
       promptProfileId?: string;
-    }
+    },
   ) {
     return apiClient.post<{ message: Chat; response: Chat }>(
       `${CHAT_ENDPOINTS.conversations}/${conversationId}/send`,
@@ -82,7 +102,7 @@ export const chatService = {
         messages,
         model_key: modelKey,
         ...options,
-      }
+      },
     );
   },
 
@@ -99,11 +119,12 @@ export const chatService = {
       steamSearch?: boolean;
       memoryCount?: number;
       reasoningEffort?: string;
-    }
+      enhanceSearchMode?: string;
+    },
   ) {
     return apiClient.post<{ userMessage: Chat; aiResponse?: ChatAiRespond }>(
       `${CHAT_ENDPOINTS.conversations}/${conversationId}/send`,
-      data
+      data,
     );
   },
 
@@ -120,11 +141,12 @@ export const chatService = {
       steamSearch?: boolean;
       memoryCount?: number;
       reasoningEffort?: string;
+      enhanceSearchMode?: string;
     },
     signal: AbortSignal,
     onChunk: (chunk: string, type?: "content" | "reasoning") => void,
     onDone: (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => void,
-    onError: (error: string) => void
+    onError: (error: string) => void,
   ) {
     // Get auth token from localStorage
     const axmLogin = localStorage.getItem("AxmLogin");
@@ -152,12 +174,14 @@ export const chatService = {
         headers,
         body: JSON.stringify(data),
         signal: signal, // Add abort signal
-      }
+      },
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to start streaming: ${response.status} ${errorText}`);
+      throw new Error(
+        `Failed to start streaming: ${response.status} ${errorText}`,
+      );
     }
 
     const reader = response.body?.getReader();
@@ -211,7 +235,7 @@ export const chatService = {
       max_tokens?: number;
       useWebSearch?: boolean;
       useImageSearch?: boolean;
-    }
+    },
   ) {
     // Use a dummy conversation ID for the endpoint
     return apiClient.post<{ userMessage: Chat; aiResponse: Chat }>(
@@ -220,7 +244,7 @@ export const chatService = {
         message: messages[messages.length - 1]?.content || "", // Last message is the user message
         model_key: modelKey,
         ...options,
-      }
+      },
     );
   },
 

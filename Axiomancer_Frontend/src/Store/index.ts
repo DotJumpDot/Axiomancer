@@ -10,6 +10,7 @@ export {
   LANGUAGES,
   FAVORITE_ICONS,
   FAVORITE_COLORS,
+  ENHANCE_SEARCH_MODES,
 } from "./settings.svelte";
 export { selectionStore } from "./selection.svelte";
 export { favoriteStore } from "./favorite.svelte";

@@ -59,6 +59,9 @@ export interface Chat {
     used_steam: boolean;
     reasoning_effort: string | null;
     reasoning_content: string | null;
+    decision_prompt_model: string | null;
+    prompt_web_search: string | null;
+    prompt_picture_search: string | null;
     search_context_web: any | null;
     search_context_picture: any | null;
   };
@@ -121,6 +124,7 @@ export interface SendMessageRequest {
   imageSearch?: boolean;
   memoryCount?: number;
   reasoningEffort?: string;
+  enhanceSearchMode?: "disabled" | "server-default" | "current-model";
 }
 
 // Search Log types
@@ -134,6 +138,9 @@ export interface SearchLog {
   used_steam: boolean;
   reasoning_effort: string | null;
   reasoning_content: string | null;
+  decision_prompt_model: string | null;
+  prompt_web_search: string | null;
+  prompt_picture_search: string | null;
   search_context_web: any | null;
   search_context_picture: any | null;
   created_at: Date;
@@ -147,6 +154,9 @@ export interface CreateSearchLogRequest {
   used_steam: boolean;
   reasoning_effort?: string | null;
   reasoning_content?: string | null;
+  decision_prompt_model?: string | null;
+  prompt_web_search?: string | null;
+  prompt_picture_search?: string | null;
   search_context_web?: any | null;
   search_context_picture?: any | null;
 }

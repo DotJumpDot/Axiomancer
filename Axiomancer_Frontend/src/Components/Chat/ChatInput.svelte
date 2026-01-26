@@ -191,6 +191,7 @@
       steamSearch: chatStore.steamSearchEnabled,
       memoryCount: chatStore.memoryCount,
       reasoningEffort: hasReasoningCapability && chatStore.reasoningEffort !== "disabled" ? chatStore.reasoningEffort : undefined,
+      enhanceSearchMode: settingsStore.enhanceSearchMode,
     });
   }
 

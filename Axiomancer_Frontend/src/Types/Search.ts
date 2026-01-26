@@ -73,3 +73,12 @@ export interface BatchSearchResponse {
   };
   error?: string;
 }
+
+// Enhanced search settings - AI-optimized search query generation
+export type EnhanceSearchMode = "disabled" | "server-default" | "current-model";
+
+export interface EnhancedSearchPrompts {
+  decision_prompt_model?: string; // Model key used to generate optimized search prompts
+  prompt_web_search?: string; // AI-optimized prompt for web search
+  prompt_picture_search?: string; // AI-optimized prompt for picture/image search
+}

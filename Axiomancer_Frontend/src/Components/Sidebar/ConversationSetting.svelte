@@ -1,7 +1,7 @@
 <script lang="ts">
   import { slide, scale } from "svelte/transition";
   import { cubicOut, elasticOut } from "svelte/easing";
-  import { settingsStore, THEME_VARIANTS, THEME_MODES, LANGUAGES, FAVORITE_ICONS, FAVORITE_COLORS } from "@/Store";
+  import { settingsStore, THEME_VARIANTS, THEME_MODES, LANGUAGES, FAVORITE_ICONS, FAVORITE_COLORS, ENHANCE_SEARCH_MODES } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
 
   // Display name color options
@@ -269,6 +269,27 @@
                     >
                     <span class="toggle-slider"></span>
                   </label>
+                </div>
+              </div>
+
+              <!-- Enhanced Search Settings -->
+              <div class="settings-section">
+                <h3>🔍 {t.conversationSettings.enhanceSearchAbility}</h3>
+
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <span class="setting-label">{t.conversationSettings.enhanceSearchAbilityLabel}</span>
+                    <span class="setting-desc">{t.conversationSettings.enhanceSearchAbilityDesc}</span>
+                  </div>
+                  <select 
+                    id="enhance-search-mode"
+                    value={settingsStore.enhanceSearchMode}
+                    onchange={(e) => settingsStore.setEnhanceSearchMode(e.currentTarget.value as any)}
+                  >
+                    <option value="disabled">{t.conversationSettings.enhanceSearchDisabled}</option>
+                    <option value="server-default">{t.conversationSettings.enhanceSearchServerDefault}</option>
+                    <option value="current-model">{t.conversationSettings.enhanceSearchCurrentModel}</option>
+                  </select>
                 </div>
               </div>
 

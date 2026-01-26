@@ -257,7 +257,13 @@
     "soundEnabled": "เปิดเสียงเตือน",
     "soundEnabledDesc": "เล่นเสียงเมื่อส่ง/รับข้อความ",
     "soundVolume": "ระดับเสียง",
-    "soundVolumeDesc": "ปรับระดับเสียงเตือน"
+    "soundVolumeDesc": "ปรับระดับเสียงเตือน",
+    "enhanceSearchAbility": "ค้นหาอัจฉริยะ",
+    "enhanceSearchAbilityLabel": "ปรับปรุงคำค้นหาด้วย AI",
+    "enhanceSearchAbilityDesc": "ใช้ AI กรองคำสำคัญจากข้อความของคุณก่อนค้นหา",
+    "enhanceSearchDisabled": "ปิด",
+    "enhanceSearchServerDefault": "ใช้ AI ค่าเริ่มต้นเซิร์ฟเวอร์",
+    "enhanceSearchCurrentModel": "ใช้โมเดลปัจจุบัน"
   },
   "notification": {
     "success": "สำเร็จ",
