@@ -20,6 +20,9 @@
 9. **Reasoning Effort Control** - Configurable reasoning levels (minimal/low/medium/high) for supported AI models
 10. **Memory Count Control** - Adjustable conversation context window (1-1000 messages) per request
 11. **Streaming Responses** - Real-time word-by-word AI response streaming with stop functionality
+12. **Conversation Folders** - Organize conversations into custom folders with drag-and-drop support
+13. **Advanced Theme System** - 17+ theme variants with light/dark modes
+14. **Enhanced Search** - AI-powered search query optimization for web/image searches
 
 ### Technology Stack:
 
@@ -161,6 +164,16 @@ The Axiomancer backend implements the following core entities:
 | **Fields**                | preset (PK int), user_uuid (FK), preset_name, ai_model_ids (text[]), prompt_id (FK), searchable, created_at, updated_at |
 | **Relationships**         | Belongs to User; optionally references PromptProfile; many-to-many with AiModel                                         |
 
+#### **User Conversation Folder**
+
+| Purpose                   | Details                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Folder Organization**   | Allows users to organize conversations into custom folders for better management                                                  |
+| **Drag-and-Drop Support** | Conversations can be dragged between folders in the sidebar UI                                                                    |
+| **Collapse/Expand State** | Each folder remembers its collapsed/expanded state for user convenience                                                           |
+| **Fields**                | id (UUID), user_uuid (FK), folder_name, conversation_ids (text[]), is_collapsed (boolean), position (int), created_at, updated_at |
+| **Relationships**         | Belongs to User; many-to-many with Conversation                                                                                   |
+
 ### Backend File Structure
 
 ```
@@ -210,6 +223,11 @@ Axiomancer_Backend/src/
 │   │   ├── selection_service.ts         # Model selection & preset operations
 │   │   ├── selection_query.ts           # Database queries for selections
 │   │   └── selection_type.ts            # TypeScript interfaces (UserSelectedModels, etc.)
+│   ├── folder/                          # Conversation folder management
+│   │   ├── folder_api.ts                # Routes: GET/POST/PUT/DELETE /api/folders
+│   │   ├── folder_service.ts            # Folder operations business logic
+│   │   ├── folder_query.ts              # Database queries for folders
+│   │   └── folder_type.ts               # TypeScript interfaces (UserConversationFolder, etc.)
 │   └── user/                            # User account management
 │       ├── user_api.ts                  # Routes: GET/POST/PUT/DELETE /api/users
 │       ├── user_service.ts              # User profile operations
@@ -338,9 +356,10 @@ Follow these naming patterns:
 
 ### Database
 
-- **SQLite** for development, **PostgreSQL** for production
-- **Schema documentation** in `Docs/Schema.MD`
+- **PostgreSQL** for both development and production
+- **Schema documentation** in `Docs/Schema.md`
 - **Run migrations carefully** — always review SQL before executing
+- **Entity Relationships**: See `Docs/Schema.md` for complete ER diagram
 
 ---
 
@@ -372,7 +391,7 @@ Follow these naming patterns:
 - OpenRouter API (for AI models)
 - DuckDuckGo API (web search)
 - Pixabay API (image search)
-- SQLite/PostgreSQL
+- PostgreSQL
 
 **Frontend Stack:**
 

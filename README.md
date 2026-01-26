@@ -126,8 +126,8 @@
 
 ### 🎨 **Advanced Theme System**
 
-- **7 Theme Variants** - Classic, Monokai, Dracula, Nord, Gruvbox, Solarized, GitHub
-- **Light & Dark Modes** - Each variant supports both modes (14 total themes)
+- **17 Theme Variants** - Classic, Monokai, Dracula, Nord, Gruvbox, Solarized, Cyberpunk, Matrix, Arcade, Arcade Neon, Retro, Vaporwave, Vaporwave Synth, Vaporwave Retro, Rainbow, Terminal, GitHub
+- **Light & Dark Modes** - Each variant supports both modes (34 total themes)
 - **Independent Controls** - Separate theme variant and mode selection
 - **Quick Toggle** - Header button for instant light/dark mode switching
 - **System Detection** - Optional OS theme preference detection
@@ -145,6 +145,18 @@
 - **Auto-Routing Toggle** - Enable/disable auto-routing per conversation
 - **Chronological Log** - `chat_log` array tracks message order
 - **Favorites Integration** - Mark important conversations as favorites
+- **Folder Organization** - Move conversations into custom folders for better management
+
+### 📁 **Conversation Folders**
+
+- **Custom Folders** - Create folders to organize conversations (e.g., "Work", "Personal", "Research")
+- **Drag-and-Drop** - Move conversations between folders with intuitive drag-and-drop
+- **Favorites Folder** - Optional special folder at top that auto-groups favorited conversations
+- **Collapse/Expand** - Folders remember their collapsed state for cleaner sidebar
+- **Auto-Expand** - Automatically expand folders when selecting a conversation inside (configurable)
+- **Folder Renaming** - Double-click to rename folders inline
+- **Position Ordering** - Reorder folders to customize your workflow
+- **Unfiled Section** - Conversations not in any folder appear in main list
 
 ### ⚙️ **Customization & Settings**
 
@@ -155,6 +167,10 @@
 - **Auto-Scroll** - Automatic scrolling to new messages
 - **Memory Configuration** - Adjust conversation context per message (1-1000)
 - **Reasoning Effort** - Configure AI thinking depth per message
+- **Auto-Save Drafts** - Automatically save message drafts per conversation
+- **Sound Notifications** - Toggle sound effects with volume control
+- **Folder Settings** - Auto-expand folders, favorites folder toggle
+- **Enhanced Search** - AI-powered search query optimization
 - **Persistent Settings** - All preferences saved to localStorage
 
 ---

@@ -1,5 +1,20 @@
 # Useful SQL Queries for Axiomancer
 
+A collection of useful SQL queries for managing and analyzing data in the Axiomancer database.
+
+## Table of Contents
+
+- [Chat and AI Response Queries](#chat-and-ai-response-queries)
+- [Conversation Queries](#conversation-queries)
+- [User and Model Queries](#user-and-model-queries)
+- [Search Log Queries](#search-log-queries)
+- [User Favorites Queries](#user-favorites-queries)
+- [Analytics Queries](#analytics-queries)
+- [Maintenance Queries](#maintenance-queries)
+- [Folder Queries](#folder-queries)
+
+---
+
 ## Chat and AI Response Queries
 
 ### Get Chat Messages with AI Responses
