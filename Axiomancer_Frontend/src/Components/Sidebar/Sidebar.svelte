@@ -25,6 +25,7 @@
   let showCreateFolderInput = $state(false);
   let newFolderName = $state('');
   let isFavoriteFolderCollapsed = $state(false);
+  let localCollapsedFolders = $state<Record<string, boolean>>({});
   
   let archivedConversations = $derived(
     Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => c.archived) : []
@@ -303,14 +304,9 @@
     }
   }
 
-  async function handleToggleFolderCollapse(folderId: string) {
-    if (!authStore.currentUser?.uuid) return;
-    
-    try {
-      await folderStore.toggleFolderCollapsed(authStore.currentUser.uuid, folderId);
-    } catch (error) {
-      console.error("Failed to toggle folder:", error);
-    }
+  function handleToggleFolderCollapse(folderId: string) {
+    const currentCollapsed = localCollapsedFolders[folderId] ?? false;
+    localCollapsedFolders[folderId] = !currentCollapsed;
   }
 
   // * Drag and drop handlers
@@ -374,40 +370,15 @@
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }
 
+  // * Get collapsed state for a folder (use local state, fallback to backend state)
+  function getFolderCollapsed(folderId: string): boolean {
+    return localCollapsedFolders[folderId] ?? false;
+  }
+
   // * Load folders on mount
   $effect(() => {
     if (authStore.currentUser?.uuid) {
       folderStore.loadFolders(authStore.currentUser.uuid);
-    }
-  });
-
-  // * Auto expand/collapse folders based on settings on initial load
-  let hasAppliedAutoCollapse = $state(false);
-  $effect(() => {
-    // Only run once when folders are loaded for the first time
-    if (folderStore.folders.length > 0 && !hasAppliedAutoCollapse && authStore.currentUser?.uuid) {
-      hasAppliedAutoCollapse = true;
-      
-      // Apply auto collapse/expand based on setting
-      if (settingsStore.autoOpenCollapse) {
-        // Auto-expand: Set all folders to not collapsed
-        isFavoriteFolderCollapsed = false;
-        // For user folders, we need to update each one that is collapsed
-        folderStore.folders.forEach(async (folder) => {
-          if (folder.is_collapsed) {
-            await folderStore.toggleFolderCollapsed(authStore.currentUser!.uuid, folder.id);
-          }
-        });
-      } else {
-        // Auto-collapse: Set all folders to collapsed
-        isFavoriteFolderCollapsed = true;
-        // For user folders, collapse any that are open
-        folderStore.folders.forEach(async (folder) => {
-          if (!folder.is_collapsed) {
-            await folderStore.toggleFolderCollapsed(authStore.currentUser!.uuid, folder.id);
-          }
-        });
-      }
     }
   });
 </script>
@@ -621,6 +592,7 @@
       <!-- User Folders -->
       {#each folderStore.folders as folder (folder.id)}
         {@const folderConversations = getConversationsForFolder(folder)}
+        {@const isCollapsed = getFolderCollapsed(folder.id)}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div 
           class="folder-section user-folder"
@@ -641,7 +613,7 @@
                 stroke="currentColor" 
                 stroke-width="2"
                 class="chevron"
-                class:collapsed={folder.is_collapsed}
+                class:collapsed={isCollapsed}
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -661,6 +633,14 @@
                 <span 
                   class="folder-name"
                   class:clickable={!settingsStore.disableFolderClickRename}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    if (settingsStore.disableFolderClickRename) {
+                      handleToggleFolderCollapse(folder.id);
+                    } else {
+                      startEditingFolder(folder);
+                    }
+                  }}
                   ondblclick={(e) => {
                     if (settingsStore.disableFolderClickRename) return;
                     e.stopPropagation();
@@ -699,7 +679,7 @@
             </div>
             <span class="folder-count">{folderConversations.length}</span>
           </div>
-          {#if !folder.is_collapsed}
+          {#if !isCollapsed}
             <div class="folder-contents">
               {#each folderConversations as conversation (conversation.id)}
                 {@render conversationItem(conversation, true)}
