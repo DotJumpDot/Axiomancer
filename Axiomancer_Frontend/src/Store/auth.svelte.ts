@@ -258,7 +258,7 @@ async function logout() {
     localStorage.removeItem("AxmLogin");
 
     chatStore.clearCurrentConversation();
-
+    
     // Navigate to root page
     if (typeof window !== "undefined") {
       navigate("/");
