@@ -1,8 +1,21 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { navigate } from "svelte-routing";
   import { Sidebar, ChatHeader, MessageList, ChatInput } from "@/Components";
   import { authStore, chatStore, aiStore, promptStore, settingsStore, favoriteStore } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
+
+  interface Props {
+    conversationId?: string;
+  }
+
+  let { conversationId }: Props = $props();
+
+  // Reactive translations based on current language
+  let translations = $derived(getTranslations(settingsStore.language as LanguageCode));
+
+  // Track last conversation ID to detect actual navigation
+  let lastConversationId = $state<string | null>(null);
 
   // Initialize stores on mount
   onMount(() => {
@@ -14,6 +27,28 @@
     
     // Initialize single mode from localStorage
     chatStore.initializeSingleMode();
+
+    // Load conversation if ID is provided in URL (don't update URL since we're already on it)
+    if (conversationId) {
+      chatStore.loadConversation(conversationId, false);
+      lastConversationId = conversationId;
+    }
+
+    // Listen for back/forward browser navigation
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === "/" && lastConversationId) {
+        // Back button pressed - clear current conversation
+        chatStore.clearCurrentConversation();
+        lastConversationId = null;
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   });
 
   // Load authenticated data when user logs in
@@ -26,11 +61,14 @@
     }
   });
 
-  // Reactive translations based on current language
-  let translations = $derived(getTranslations(settingsStore.language as LanguageCode));
-
   function handleSelectConversation(id: string) {
     chatStore.loadConversation(id);
+    
+    // Only navigate if it's a different conversation
+    if (lastConversationId !== id) {
+      lastConversationId = id;
+      navigate(`/conversation/${id}`);
+    }
   }
 </script>
 

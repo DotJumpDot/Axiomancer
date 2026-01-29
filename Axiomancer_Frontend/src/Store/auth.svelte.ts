@@ -3,6 +3,7 @@ import { authService, userService } from "@/Service";
 import { apiClient } from "@/Service";
 import type { AuthUser, User, LoginRequest, RegisterRequest } from "@/Types";
 import { chatStore } from "./chat.svelte";
+import { navigate } from "svelte-routing";
 
 // Reactive state using Svelte 5 runes
 let isAuthenticated = $state(false);
@@ -257,6 +258,11 @@ async function logout() {
     localStorage.removeItem("AxmLogin");
 
     chatStore.clearCurrentConversation();
+
+    // Navigate to root page
+    if (typeof window !== "undefined") {
+      navigate("/");
+    }
   }
 }
 

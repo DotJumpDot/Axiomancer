@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Router, Route, Link } from "svelte-routing";
   import Chat from '@/pages/Chat.svelte';
   import Notification from '@/Components/Notification.svelte';
   import { authStore } from '@/Store/auth.svelte';
@@ -9,5 +10,13 @@
   // });
 </script>
 
-<Chat />
+<Router>
+  <Route path="/conversation/:id" let:params>
+    <Chat conversationId={params.id} />
+  </Route>
+  <Route path="/">
+    <Chat />
+  </Route>
+</Router>
+
 <Notification />

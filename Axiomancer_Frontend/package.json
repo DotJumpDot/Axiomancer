@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "katex": "^0.16.27",
-    "svelte-i18next": "^2.2.2"
+    "svelte-i18next": "^2.2.2",
+    "svelte-routing": "^2.13.0"
   }
 }

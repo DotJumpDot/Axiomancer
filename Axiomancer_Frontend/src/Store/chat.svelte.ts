@@ -9,9 +9,17 @@ import type {
   ChatAiRespond,
 } from "@/Types";
 import { playNotificationSound } from "@/Function";
+import { navigate } from "svelte-routing";
 
 import authStore from "./auth.svelte";
 import settingsStore from "./settings.svelte";
+
+// Helper function to navigate to conversation without adding to history
+function navigateToConversation(id: string) {
+  if (typeof window !== "undefined") {
+    window.history.replaceState({}, "", `/conversation/${id}`);
+  }
+}
 
 // Reactive state using Svelte 5 runes
 let conversations = $state<Conversation[]>([]);
@@ -73,7 +81,7 @@ async function loadConversations() {
   }
 }
 
-async function loadConversation(id: string) {
+async function loadConversation(id: string, updateUrl: boolean = true) {
   try {
     isLoadingConversation = true;
     error = null;
@@ -82,6 +90,11 @@ async function loadConversation(id: string) {
     if (response.success && response.data) {
       currentConversation = response.data;
       await loadMessages(id);
+
+      // Update URL when loading conversation using replaceState to avoid adding to history
+      if (updateUrl && typeof window !== "undefined") {
+        navigateToConversation(id);
+      }
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load conversation";
@@ -135,6 +148,12 @@ async function createNewConversation(title?: string, systemPrompt?: string) {
       currentConversation = response.data;
       conversations = [response.data, ...conversations];
       messages = [];
+
+      // Navigate to new conversation URL using replaceState
+      if (typeof window !== "undefined") {
+        navigateToConversation(response.data.id);
+      }
+
       return response.data;
     }
   } catch (e) {
@@ -164,9 +183,7 @@ async function updateConversation(id: string, updates: any) {
   try {
     const response = await chatService.updateConversation(id, updates);
     if (response.success && response.data) {
-      conversations = conversations.map((c) =>
-        c.id === id ? response.data : c,
-      );
+      conversations = conversations.map((c) => (c.id === id ? response.data : c));
       if (currentConversation?.id === id) {
         currentConversation = response.data;
       }
@@ -180,9 +197,7 @@ async function archiveConversation(id: string, archived: boolean) {
   try {
     const response = await chatService.archiveConversation(id, archived);
     if (response.success && response.data) {
-      conversations = conversations.map((c) =>
-        c.id === id ? response.data : c,
-      );
+      conversations = conversations.map((c) => (c.id === id ? response.data : c));
       if (currentConversation?.id === id) {
         currentConversation = response.data;
       }
@@ -192,11 +207,7 @@ async function archiveConversation(id: string, archived: boolean) {
   }
 }
 
-async function sendMessage(
-  content: string,
-  modelKey: string,
-  options?: SendMessageOptions,
-) {
+async function sendMessage(content: string, modelKey: string, options?: SendMessageOptions) {
   // For anonymous users, handle differently
   if (!authStore.isAuthenticated) {
     return await sendAnonymousMessage(content, modelKey, options);
@@ -204,9 +215,7 @@ async function sendMessage(
 
   // Ensure conversation exists before sending message
   if (!currentConversation) {
-    const conv = await createNewConversation(
-      generateConversationTitle(content),
-    );
+    const conv = await createNewConversation(generateConversationTitle(content));
     if (!conv) {
       console.error("[ChatStore] Failed to create conversation");
       error = "Failed to create conversation";
@@ -342,7 +351,7 @@ async function sendMessage(
             }
             // Replace the streaming message in the array with the new object
             messages = messages.map((m) =>
-              m.id === streamingAiMessage.id ? streamingAiMessage : m,
+              m.id === streamingAiMessage.id ? streamingAiMessage : m
             );
           }
         },
@@ -384,24 +393,17 @@ async function sendMessage(
           }
 
           // Update conversation title if it's the first message
-          if (
-            messages.filter((m) => m.role === "user").length === 1 &&
-            currentConversation
-          ) {
+          if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
             const newTitle = generateConversationTitle(content);
-            chatService
-              .updateConversation(currentConversation.id, { title: newTitle })
-              .then(() => {
-                currentConversation = {
-                  ...currentConversation!,
-                  title: newTitle,
-                };
-                conversations = conversations.map((c) =>
-                  c.id === currentConversation!.id
-                    ? { ...c, title: newTitle }
-                    : c,
-                );
-              });
+            chatService.updateConversation(currentConversation.id, { title: newTitle }).then(() => {
+              currentConversation = {
+                ...currentConversation!,
+                title: newTitle,
+              };
+              conversations = conversations.map((c) =>
+                c.id === currentConversation!.id ? { ...c, title: newTitle } : c
+              );
+            });
           }
         },
         // onError
@@ -417,7 +419,7 @@ async function sendMessage(
           if (streamingAiMessage) {
             messages = messages.filter((m) => m.id !== streamingAiMessage!.id);
           }
-        },
+        }
       );
 
       return userMessage;
@@ -471,17 +473,14 @@ async function sendMessage(
         }
 
         // Update conversation title if it's the first message
-        if (
-          messages.filter((m) => m.role === "user").length === 1 &&
-          currentConversation
-        ) {
+        if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
           const newTitle = generateConversationTitle(content);
           await chatService.updateConversation(currentConversation.id, {
             title: newTitle,
           });
           currentConversation = { ...currentConversation, title: newTitle };
           conversations = conversations.map((c) =>
-            c.id === currentConversation!.id ? { ...c, title: newTitle } : c,
+            c.id === currentConversation!.id ? { ...c, title: newTitle } : c
           );
         }
 
@@ -505,7 +504,7 @@ function generateConversationTitle(content: string): string {
 async function sendAnonymousMessage(
   content: string,
   modelKey: string,
-  options?: SendMessageOptions,
+  options?: SendMessageOptions
 ) {
   try {
     isSending = true;

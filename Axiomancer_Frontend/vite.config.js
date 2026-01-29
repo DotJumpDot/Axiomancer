@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [svelte()],
   server: {
     port: 4200,
+    historyApiFallback: true,
   },
   resolve: {
     alias: {

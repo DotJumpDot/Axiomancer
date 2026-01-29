@@ -2,6 +2,7 @@
   import { chatStore, settingsStore, authStore, favoriteStore, folderStore, FAVORITE_COLORS } from "@/Store";
   import type { Conversation, UserConversationFolder } from "@/Types";
   import { formatRelativeTime, formatDateTime, truncate, getTranslations, type LanguageCode } from "@/Function";
+  import { navigate } from "svelte-routing";
   import ArchiveDialog from "./ArchiveDialog.svelte";
   import ConversationSetting from "./ConversationSetting.svelte";
 
@@ -87,7 +88,6 @@
     if (onSelectConversation) {
       onSelectConversation(conversation.id);
     }
-    chatStore.loadConversation(conversation.id);
   }
 
   async function handleDelete(e: Event, id: string) {
@@ -135,6 +135,7 @@
 
   function handleNewChat() {
     chatStore.clearCurrentConversation();
+    navigate("/");
   }
 
   function openArchiveModal() {
