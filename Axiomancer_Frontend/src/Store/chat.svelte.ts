@@ -358,13 +358,18 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         // onDone
         (result: { userMessage: Chat; aiResponse?: ChatAiRespond }) => {
           streamAbortController = null;
+          isSending = false;
+
           // Replace temp user message with actual saved message
           messages = messages.filter((m) => m.id !== userMessage.id);
           messages = [...messages, result.userMessage];
 
-          // Replace streaming message with actual AI response
-          if (streamingAiMessage && result.aiResponse) {
-            messages = messages.filter((m) => m.id !== streamingAiMessage!.id);
+          // Replace streaming message with actual AI response (or add it if not started)
+          if (result.aiResponse) {
+            if (streamingAiMessage) {
+              messages = messages.filter((m) => m.id !== streamingAiMessage!.id);
+            }
+
             const aiMessage: Chat = {
               id: result.aiResponse.id,
               conversation_id: currentConversation!.id,
@@ -409,13 +414,18 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         // onError
         (errorMessage: string) => {
           streamAbortController = null;
+          isSending = false;
           error = errorMessage;
           // Play error sound notification
           if (settingsStore.soundEnabled) {
             playNotificationSound("error", settingsStore.soundVolume);
           }
-          // Remove temp message on error
-          messages = messages.filter((m) => !m.id.startsWith("temp-"));
+
+          // Note: We don't remove temp user messages here anymore
+          // to prevent the "disappearing message" issue.
+          // If the backend saved it, it will be updated via onDone.
+          // If not, the user can still see what they sent.
+
           if (streamingAiMessage) {
             messages = messages.filter((m) => m.id !== streamingAiMessage!.id);
           }
@@ -475,7 +485,7 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         // Update conversation title if it's the first message
         if (messages.filter((m) => m.role === "user").length === 1 && currentConversation) {
           const newTitle = generateConversationTitle(content);
-          await chatService.updateConversation(currentConversation.id, {
+          chatService.updateConversation(currentConversation.id, {
             title: newTitle,
           });
           currentConversation = { ...currentConversation, title: newTitle };
@@ -485,10 +495,24 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         }
 
         return response.data.userMessage;
+      } else {
+        // Handle error response from API
+        error = response.error || "Failed to send message";
+        // Play error sound notification
+        if (settingsStore.soundEnabled) {
+          playNotificationSound("error", settingsStore.soundVolume);
+        }
+        // Remove temp message on error
+        messages = messages.filter((m) => !m.id.startsWith("temp-"));
+        return null;
       }
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to send message";
+    // Play error sound notification
+    if (settingsStore.soundEnabled) {
+      playNotificationSound("error", settingsStore.soundVolume);
+    }
     // Remove temp message on error
     messages = messages.filter((m) => !m.id.startsWith("temp-"));
     return null;
