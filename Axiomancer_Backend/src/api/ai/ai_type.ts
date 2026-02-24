@@ -3,6 +3,7 @@ export interface AiModel {
   provider: string;
   model_key: string;
   display_name: string;
+  description: string;
   context_length: number;
   cost_per_1k_token: number;
   capabilities: {
@@ -12,6 +13,9 @@ export interface AiModel {
     fast: boolean;
   };
   enabled: boolean;
+  chat_type_to_type: string;
+  created: number;
+  expiration_date: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -85,11 +89,16 @@ export interface OpenRouterResponse {
 // OpenRouter Models API types
 export interface OpenRouterModel {
   id: string;
+  canonical_slug: string;
+  hugging_face_id: string;
   name: string;
+  created: number;
   description: string;
   context_length: number;
   architecture: {
     modality: string;
+    input_modalities: string[];
+    output_modalities: string[];
     tokenizer: string;
     instruct_type?: string;
   };
@@ -98,6 +107,9 @@ export interface OpenRouterModel {
     completion: string;
     image?: string;
     request?: string;
+    web_search?: string;
+    input_cache_read?: string;
+    input_cache_write?: string;
   };
   top_provider: {
     context_length: number;
@@ -105,6 +117,9 @@ export interface OpenRouterModel {
     is_moderated: boolean;
   };
   per_request_limits?: any;
+  supported_parameters: string[];
+  default_parameters: Record<string, any>;
+  expiration_date: number | null;
 }
 
 export interface OpenRouterModelsResponse {

@@ -75,34 +75,30 @@ export class AiService {
     // Extract provider from model ID (e.g., "anthropic/claude-3-haiku" -> "anthropic")
     const provider = openRouterModel.id.split("/")[0] || "unknown";
 
-    // Calculate cost per 1k tokens (convert from pricing strings)
+    // Calculate cost per 1k tokens (pricing is already per token, multiply by 1000)
     const promptCost = parseFloat(openRouterModel.pricing.prompt) || 0;
     const completionCost = parseFloat(openRouterModel.pricing.completion) || 0;
-    const avgCostPer1k = ((promptCost + completionCost) / 2) * 1000; // Convert to per 1k tokens
+    const costPer1k = (promptCost + completionCost) * 1000;
 
-    // Determine capabilities based on model name and description
+    // Determine capabilities based on OpenRouter API data
     const modelName = openRouterModel.id.toLowerCase();
     const description = openRouterModel.description.toLowerCase();
+    const supportedParams = openRouterModel.supported_parameters || [];
+    const inputModalities = openRouterModel.architecture?.input_modalities || [];
 
     const capabilities = {
       reasoning:
-        description.includes("reasoning") ||
-        modelName.includes("claude") ||
-        modelName.includes("gpt-4"),
+        supportedParams.includes("reasoning") || supportedParams.includes("include_reasoning"),
       coding:
         description.includes("code") ||
         description.includes("programming") ||
         modelName.includes("codellama") ||
         modelName.includes("starcoder"),
-      vision:
-        description.includes("vision") ||
-        description.includes("image") ||
-        modelName.includes("vision") ||
-        modelName.includes("gpt-4v"),
+      vision: inputModalities.includes("image"),
       fast:
         description.includes("fast") ||
         modelName.includes("haiku") ||
-        modelName.includes("3.5") ||
+        modelName.includes("mini") ||
         openRouterModel.context_length < 8000,
     };
 
@@ -111,10 +107,14 @@ export class AiService {
       provider,
       model_key: openRouterModel.id,
       display_name: openRouterModel.name || openRouterModel.id,
+      description: openRouterModel.description || "",
       context_length: openRouterModel.context_length,
-      cost_per_1k_token: avgCostPer1k,
+      cost_per_1k_token: costPer1k,
       capabilities,
-      enabled: true, // All OpenRouter models are enabled by default
+      enabled: true,
+      chat_type_to_type: openRouterModel.architecture?.modality || "unknown",
+      created: openRouterModel.created || 0,
+      expiration_date: openRouterModel.expiration_date || null,
       created_at: new Date(),
       updated_at: new Date(),
     };

@@ -1,10 +1,6 @@
 import { ChatQuery } from "./chat_query";
 import { openRouterClient, OpenRouterClient } from "@/api/ai/ai_openrouter";
-import {
-  getAiModelByModelKey,
-  getAiModels,
-  getOrCreateAiModel,
-} from "@/api/ai/ai_query";
+import { getAiModelByModelKey, getAiModels, getOrCreateAiModel } from "@/api/ai/ai_query";
 import { getPromptProfileById } from "@/api/prompt/prompt_query";
 import { getUserById } from "@/api/user/user_query";
 import { decryptApiKey } from "@/api/user/user_service";
@@ -44,7 +40,7 @@ export class ChatService {
   static async createConversation(
     conversation: CreateConversationRequest,
     userUuid?: string,
-    autoRouting?: boolean,
+    autoRouting?: boolean
   ): Promise<Conversation> {
     try {
       // Validate required fields
@@ -53,25 +49,18 @@ export class ChatService {
       }
 
       // Single mode defaults to auto_routing = false, auto mode = true
-      const effectiveAutoRouting =
-        autoRouting ?? conversation.auto_routing_enabled ?? false;
+      const effectiveAutoRouting = autoRouting ?? conversation.auto_routing_enabled ?? false;
 
-      return await ChatQuery.createConversation(
-        conversation,
-        userUuid,
-        effectiveAutoRouting,
-      );
+      return await ChatQuery.createConversation(conversation, userUuid, effectiveAutoRouting);
     } catch (error) {
       console.error("Error creating conversation:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to create conversation");
+      throw error instanceof Error ? error : new Error("Failed to create conversation");
     }
   }
 
   static async updateConversation(
     id: string,
-    updates: UpdateConversationRequest,
+    updates: UpdateConversationRequest
   ): Promise<Conversation | null> {
     try {
       // Validate conversation exists
@@ -88,9 +77,7 @@ export class ChatService {
       return await ChatQuery.updateConversation(id, updates);
     } catch (error) {
       console.error("Error updating conversation:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to update conversation");
+      throw error instanceof Error ? error : new Error("Failed to update conversation");
     }
   }
 
@@ -109,24 +96,17 @@ export class ChatService {
     }
   }
 
-  static async archiveConversation(
-    id: string,
-    archived: boolean,
-  ): Promise<Conversation | null> {
+  static async archiveConversation(id: string, archived: boolean): Promise<Conversation | null> {
     try {
       return await this.updateConversation(id, { archived });
     } catch (error) {
       console.error("Error archiving conversation:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to archive conversation");
+      throw error instanceof Error ? error : new Error("Failed to archive conversation");
     }
   }
 
   // Chat message management
-  static async getChatsByConversationId(
-    conversationId: string,
-  ): Promise<Chat[]> {
+  static async getChatsByConversationId(conversationId: string): Promise<Chat[]> {
     try {
       // Validate conversation exists
       const conversation = await ChatQuery.getConversationById(conversationId);
@@ -137,9 +117,7 @@ export class ChatService {
       return await ChatQuery.getChatsByConversationId(conversationId);
     } catch (error) {
       console.error("Error getting chats:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to retrieve chat messages");
+      throw error instanceof Error ? error : new Error("Failed to retrieve chat messages");
     }
   }
 
@@ -155,9 +133,7 @@ export class ChatService {
   static async createChat(chat: CreateChatRequest): Promise<Chat> {
     try {
       // Validate conversation exists
-      const conversation = await ChatQuery.getConversationById(
-        chat.conversation_id,
-      );
+      const conversation = await ChatQuery.getConversationById(chat.conversation_id);
       if (!conversation) {
         throw new Error("Conversation not found");
       }
@@ -169,24 +145,17 @@ export class ChatService {
 
       // Validate role
       if (!["user", "assistant", "system"].includes(chat.role)) {
-        throw new Error(
-          "Invalid chat role. Must be 'user', 'assistant', or 'system'",
-        );
+        throw new Error("Invalid chat role. Must be 'user', 'assistant', or 'system'");
       }
 
       return await ChatQuery.createChat(chat);
     } catch (error) {
       console.error("Error creating chat:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to create chat message");
+      throw error instanceof Error ? error : new Error("Failed to create chat message");
     }
   }
 
-  static async updateChat(
-    id: string,
-    updates: UpdateChatRequest,
-  ): Promise<Chat | null> {
+  static async updateChat(id: string, updates: UpdateChatRequest): Promise<Chat | null> {
     try {
       // Validate chat exists
       const existing = await ChatQuery.getChatById(id);
@@ -195,13 +164,8 @@ export class ChatService {
       }
 
       // Validate role if provided
-      if (
-        updates.role !== undefined &&
-        !["user", "assistant", "system"].includes(updates.role)
-      ) {
-        throw new Error(
-          "Invalid chat role. Must be 'user', 'assistant', or 'system'",
-        );
+      if (updates.role !== undefined && !["user", "assistant", "system"].includes(updates.role)) {
+        throw new Error("Invalid chat role. Must be 'user', 'assistant', or 'system'");
       }
 
       // Validate content if provided
@@ -212,9 +176,7 @@ export class ChatService {
       return await ChatQuery.updateChat(id, updates);
     } catch (error) {
       console.error("Error updating chat:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to update chat message");
+      throw error instanceof Error ? error : new Error("Failed to update chat message");
     }
   }
 
@@ -271,7 +233,7 @@ export class ChatService {
       reasoningEffort?: string;
       enhanceSearchMode?: "disabled" | "server-default" | "current-model";
     },
-    userId?: number,
+    userId?: number
   ): Promise<{
     userMessage: Chat;
     aiResponse?: ChatAiRespond;
@@ -299,14 +261,10 @@ export class ChatService {
       }
 
       // Determine which OpenRouter client to use
-      const activeClient = userApiKey
-        ? new OpenRouterClient(userApiKey)
-        : openRouterClient;
+      const activeClient = userApiKey ? new OpenRouterClient(userApiKey) : openRouterClient;
 
       if (!activeClient) {
-        throw new Error(
-          "OpenRouter API key not configured. Please add your API key in settings.",
-        );
+        throw new Error("OpenRouter API key not configured. Please add your API key in settings.");
       }
 
       // Get the AI model details if modelKey provided - auto-create if missing
@@ -362,8 +320,7 @@ export class ChatService {
           // Determine which model to use for enhanced search
           let enhanceModelKey: string;
           if (options.enhanceSearchMode === "server-default") {
-            enhanceModelKey =
-              process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
+            enhanceModelKey = process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
           } else {
             // current-model
             enhanceModelKey = actualModelKey || "openai/gpt-oss-120b:free";
@@ -388,8 +345,7 @@ Optimized search query:`;
             messages: [{ role: "user", content: enhancePrompt }],
           };
 
-          const enhanceResponse =
-            await activeClient.chatCompletion(enhanceRequest);
+          const enhanceResponse = await activeClient.chatCompletion(enhanceRequest);
           const optimizedQuery =
             enhanceResponse.choices[0]?.message?.content?.trim() || userMessage;
 
@@ -398,13 +354,10 @@ Optimized search query:`;
           enhancedImageQuery = optimizedQuery;
 
           console.log(
-            `[EnhancedSearch] Original: "${userMessage}" -> Optimized: "${optimizedQuery}"`,
+            `[EnhancedSearch] Original: "${userMessage}" -> Optimized: "${optimizedQuery}"`
           );
         } catch (enhanceError) {
-          console.error(
-            "Enhanced search optimization failed, using original query:",
-            enhanceError,
-          );
+          console.error("Enhanced search optimization failed, using original query:", enhanceError);
           // Fall back to original message if enhancement fails
         }
       }
@@ -416,10 +369,7 @@ Optimized search query:`;
       if (options?.webSearch) {
         try {
           promptWebSearch = enhancedWebQuery;
-          const searchResponse = await DuckDuckGoService.search(
-            enhancedWebQuery,
-            5,
-          );
+          const searchResponse = await DuckDuckGoService.search(enhancedWebQuery, 5);
 
           if (searchResponse.success && searchResponse.results.length > 0) {
             searchContextWeb = {
@@ -439,11 +389,7 @@ Optimized search query:`;
       if (options?.imageSearch) {
         try {
           promptPictureSearch = enhancedImageQuery;
-          const imageResponse = await PixabayService.search(
-            enhancedImageQuery,
-            5,
-            "photo",
-          );
+          const imageResponse = await PixabayService.search(enhancedImageQuery, 5, "photo");
           if (imageResponse.success && imageResponse.results.length > 0) {
             searchContextPicture = {
               query: enhancedImageQuery,
@@ -472,10 +418,7 @@ Optimized search query:`;
           searchContextPicture = {
             query: enhancedImageQuery,
             results: [],
-            error:
-              imageError instanceof Error
-                ? imageError.message
-                : "Image search failed",
+            error: imageError instanceof Error ? imageError.message : "Image search failed",
           };
         }
       }
@@ -485,9 +428,7 @@ Optimized search query:`;
 
       // Normalize reasoning effort - convert "disabled" to "none" for storage
       const normalizedReasoningEffort =
-        options?.reasoningEffort === "disabled"
-          ? "none"
-          : options?.reasoningEffort || null;
+        options?.reasoningEffort === "disabled" ? "none" : options?.reasoningEffort || null;
 
       //* Create search log record
       const searchLog = await ChatQuery.createSearchLog({
@@ -510,11 +451,11 @@ Optimized search query:`;
       });
       savedUserMessage.search_log_uuid = searchLog.id_uuid;
 
-      // Get conversation history for context
-      const previousMessages =
-        await ChatQuery.getChatsByConversationId(conversationId);
+      // Get conversation history for context (exclude the current user message)
+      const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+      const historyMessages = previousMessages.filter((msg) => msg.id !== savedUserMessage?.id);
 
-      // Build messages array for OpenRouter (excluding the just-added user message)
+      // Build messages array for OpenRouter
       const openRouterMessages: {
         role: "user" | "assistant" | "system";
         content: string;
@@ -541,19 +482,29 @@ Optimized search query:`;
         });
       }
 
-      // Add conversation history (limit to memoryCount messages for context)
-      const recentMessages = previousMessages.slice(-memoryCount);
+      // Add conversation history (limit to memoryCount messages for context, excluding current message)
+      const recentHistory = historyMessages.slice(-memoryCount);
 
       // Add context instruction if there are previous messages
-      if (recentMessages.length > 0) {
+      if (recentHistory.length > 0) {
         openRouterMessages.push({
           role: "system",
-          content: `[CONVERSATION HISTORY - For context only]
-The following ${recentMessages.length} message(s) are from the previous conversation. Use them ONLY to understand the context and maintain conversation continuity. Do NOT directly respond to or acknowledge these historical messages. Focus your response ONLY on the final/latest user message that follows after this history.`,
+          content: `[CONVERSATION HISTORY - READ ONLY FOR CONTEXT]
+The following ${recentHistory.length} message(s) are from previous conversation turns. They are provided ONLY for you to understand context, tone, and continuity.
+
+CRITICAL INSTRUCTIONS:
+- DO NOT respond to any questions or requests in the history
+- DO NOT answer, explain, or address anything from the historical messages
+- IGNORE any questions, tasks, or prompts in the history
+- Your response must address ONLY the very last user message (the one immediately after this system message)
+- The historical messages are NOT active requests - they are closed conversation turns
+
+After this system message, you will see the conversation history followed by the current user message. You must ONLY respond to the current user message. Treat the history as background reference material, not as active input requiring a response.`,
         });
       }
 
-      for (const msg of recentMessages) {
+      // Add historical messages
+      for (const msg of recentHistory) {
         if (msg.role === "user" || msg.role === "assistant") {
           openRouterMessages.push({
             role: msg.role,
@@ -562,9 +513,14 @@ The following ${recentMessages.length} message(s) are from the previous conversa
         }
       }
 
+      // Add the current user message separately at the end
+      openRouterMessages.push({
+        role: "user",
+        content: userMessage,
+      });
+
       //* Auto-routing logic: Use decision model to select the best model
-      let routingInfo: { selectedModel: string; reasoning: string } | null =
-        null;
+      let routingInfo: { selectedModel: string; reasoning: string } | null = null;
 
       if (options?.autoRouting && promptProfileId) {
         try {
@@ -588,17 +544,13 @@ The following ${recentMessages.length} message(s) are from the previous conversa
             messages: decisionMessages,
           };
 
-          const decisionResponse =
-            await activeClient.chatCompletion(decisionRequest);
-          const decisionContent =
-            decisionResponse.choices[0]?.message?.content || "";
+          const decisionResponse = await activeClient.chatCompletion(decisionRequest);
+          const decisionContent = decisionResponse.choices[0]?.message?.content || "";
 
           // Try to parse JSON response
           try {
             // Remove markdown code blocks if present
-            const cleanedContent = decisionContent
-              .replace(/```json\s*|\s*```/g, "")
-              .trim();
+            const cleanedContent = decisionContent.replace(/```json\s*|\s*```/g, "").trim();
             const parsedDecision = JSON.parse(cleanedContent);
 
             if (parsedDecision.selected_model && parsedDecision.reasoning) {
@@ -613,7 +565,7 @@ The following ${recentMessages.length} message(s) are from the previous conversa
 
               // Try exact match first
               let selectedModel = allModels.find(
-                (m: any) => m.display_name === parsedDecision.selected_model,
+                (m: any) => m.display_name === parsedDecision.selected_model
               );
 
               // If no exact match, try case-insensitive partial match
@@ -622,32 +574,20 @@ The following ${recentMessages.length} message(s) are from the previous conversa
                 selectedModel = allModels.find((m: any) => {
                   const displayLower = m.display_name.toLowerCase();
                   // Remove " (free)" suffix for better matching
-                  const cleanSearch = searchLower
-                    .replace(/\s*\(free\)\s*$/i, "")
-                    .trim();
-                  const cleanDisplay = displayLower
-                    .replace(/\s*\(free\)\s*$/i, "")
-                    .trim();
-                  return (
-                    cleanDisplay === cleanSearch ||
-                    displayLower.includes(cleanSearch)
-                  );
+                  const cleanSearch = searchLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  const cleanDisplay = displayLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  return cleanDisplay === cleanSearch || displayLower.includes(cleanSearch);
                 });
               }
 
               if (selectedModel) {
                 actualModelKey = selectedModel.model_key;
               } else {
-                console.warn(
-                  `Could not find model for: ${parsedDecision.selected_model}`,
-                );
+                console.warn(`Could not find model for: ${parsedDecision.selected_model}`);
               }
             }
           } catch (parseError) {
-            console.error(
-              "Failed to parse decision model response:",
-              parseError,
-            );
+            console.error("Failed to parse decision model response:", parseError);
             // Continue with original model if parsing fails
           }
         } catch (decisionError) {
@@ -679,8 +619,7 @@ The following ${recentMessages.length} message(s) are from the previous conversa
       const latencyMs = Date.now() - startTime;
 
       // Extract AI response content
-      let aiContent =
-        aiResponse.choices[0]?.message?.content || "No response generated";
+      let aiContent = aiResponse.choices[0]?.message?.content || "No response generated";
 
       // Prepend routing info if available
       if (routingInfo) {
@@ -720,9 +659,7 @@ The following ${recentMessages.length} message(s) are from the previous conversa
       savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
 
       // Fetch the complete message with joined search_log data
-      const completeUserMessage = await ChatQuery.getChatById(
-        savedUserMessage.id,
-      );
+      const completeUserMessage = await ChatQuery.getChatById(savedUserMessage.id);
 
       return {
         userMessage: completeUserMessage || savedUserMessage,
@@ -765,9 +702,7 @@ The following ${recentMessages.length} message(s) are from the previous conversa
         }
       }
 
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to send message");
+      throw error instanceof Error ? error : new Error("Failed to send message");
     }
   }
 
@@ -787,7 +722,7 @@ The following ${recentMessages.length} message(s) are from the previous conversa
       enhanceSearchMode?: "disabled" | "server-default" | "current-model";
     },
     userId?: number,
-    onChunk?: (chunk: string, type?: "content" | "reasoning") => void,
+    onChunk?: (chunk: string, type?: "content" | "reasoning") => void
   ): Promise<{
     userMessage: Chat;
     aiResponse?: ChatAiRespond;
@@ -816,14 +751,10 @@ The following ${recentMessages.length} message(s) are from the previous conversa
       }
 
       // Determine which OpenRouter client to use
-      const activeClient = userApiKey
-        ? new OpenRouterClient(userApiKey)
-        : openRouterClient;
+      const activeClient = userApiKey ? new OpenRouterClient(userApiKey) : openRouterClient;
 
       if (!activeClient) {
-        throw new Error(
-          "OpenRouter API key not configured. Please add your API key in settings.",
-        );
+        throw new Error("OpenRouter API key not configured. Please add your API key in settings.");
       }
 
       // Get the AI model details if modelKey provided - auto-create if missing
@@ -879,8 +810,7 @@ The following ${recentMessages.length} message(s) are from the previous conversa
           // Determine which model to use for enhanced search
           let enhanceModelKey: string;
           if (options.enhanceSearchMode === "server-default") {
-            enhanceModelKey =
-              process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
+            enhanceModelKey = process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
           } else {
             // current-model
             enhanceModelKey = actualModelKey || "openai/gpt-oss-120b:free";
@@ -905,8 +835,7 @@ Optimized search query:`;
             messages: [{ role: "user", content: enhancePrompt }],
           };
 
-          const enhanceResponse =
-            await activeClient.chatCompletion(enhanceRequest);
+          const enhanceResponse = await activeClient.chatCompletion(enhanceRequest);
           const optimizedQuery =
             enhanceResponse.choices[0]?.message?.content?.trim() || userMessage;
 
@@ -915,13 +844,10 @@ Optimized search query:`;
           enhancedImageQuery = optimizedQuery;
 
           console.log(
-            `[EnhancedSearch-Stream] Original: "${userMessage}" -> Optimized: "${optimizedQuery}"`,
+            `[EnhancedSearch-Stream] Original: "${userMessage}" -> Optimized: "${optimizedQuery}"`
           );
         } catch (enhanceError) {
-          console.error(
-            "Enhanced search optimization failed, using original query:",
-            enhanceError,
-          );
+          console.error("Enhanced search optimization failed, using original query:", enhanceError);
           // Fall back to original message if enhancement fails
         }
       }
@@ -933,10 +859,7 @@ Optimized search query:`;
       if (options?.webSearch) {
         try {
           promptWebSearch = enhancedWebQuery;
-          const searchResponse = await DuckDuckGoService.search(
-            enhancedWebQuery,
-            5,
-          );
+          const searchResponse = await DuckDuckGoService.search(enhancedWebQuery, 5);
 
           if (searchResponse.success && searchResponse.results.length > 0) {
             searchContextWeb = {
@@ -955,11 +878,7 @@ Optimized search query:`;
       if (options?.imageSearch) {
         try {
           promptPictureSearch = enhancedImageQuery;
-          const imageResponse = await PixabayService.search(
-            enhancedImageQuery,
-            5,
-            "photo",
-          );
+          const imageResponse = await PixabayService.search(enhancedImageQuery, 5, "photo");
           if (imageResponse.success && imageResponse.results.length > 0) {
             searchContextPicture = {
               query: enhancedImageQuery,
@@ -986,10 +905,7 @@ Optimized search query:`;
           searchContextPicture = {
             query: enhancedImageQuery,
             results: [],
-            error:
-              imageError instanceof Error
-                ? imageError.message
-                : "Image search failed",
+            error: imageError instanceof Error ? imageError.message : "Image search failed",
           };
         }
       }
@@ -999,9 +915,7 @@ Optimized search query:`;
 
       // Normalize reasoning effort - convert "disabled" to "none" for storage
       const normalizedReasoningEffort =
-        options?.reasoningEffort === "disabled"
-          ? "none"
-          : options?.reasoningEffort || null;
+        options?.reasoningEffort === "disabled" ? "none" : options?.reasoningEffort || null;
 
       const searchLog = await ChatQuery.createSearchLog({
         chat_id: savedUserMessage.id,
@@ -1023,9 +937,9 @@ Optimized search query:`;
       });
       savedUserMessage.search_log_uuid = searchLog.id_uuid;
 
-      // Get conversation history for context
-      const previousMessages =
-        await ChatQuery.getChatsByConversationId(conversationId);
+      // Get conversation history for context (exclude the current user message)
+      const previousMessages = await ChatQuery.getChatsByConversationId(conversationId);
+      const historyMessages = previousMessages.filter((msg) => msg.id !== savedUserMessage?.id);
 
       // Build messages array for OpenRouter
       const openRouterMessages: {
@@ -1053,17 +967,27 @@ Optimized search query:`;
         });
       }
 
-      const recentMessages = previousMessages.slice(-memoryCount);
+      const recentHistory = historyMessages.slice(-memoryCount);
 
       // Add context instruction if there are previous messages
-      if (recentMessages.length > 0) {
+      if (recentHistory.length > 0) {
         openRouterMessages.push({
           role: "system",
-          content: `[CONVERSATION HISTORY - For context only]\nThe following ${recentMessages.length} message(s) are from the previous conversation. Use them ONLY to understand the context and maintain conversation continuity. Do NOT directly respond to or acknowledge these historical messages. Focus your response ONLY on the final/latest user message that follows after this history.`,
+          content: `[CONVERSATION HISTORY - READ ONLY FOR CONTEXT]
+The following ${recentHistory.length} message(s) are from previous conversation turns. They are provided ONLY for you to understand context, tone, and continuity.
+
+CRITICAL INSTRUCTIONS:
+- DO NOT respond to any questions or requests in the history
+- DO NOT answer, explain, or address anything from the historical messages
+- IGNORE any questions, tasks, or prompts in the history
+- Your response must address ONLY the very last user message (the one immediately after this system message)
+- The historical messages are NOT active requests - they are closed conversation turns
+
+After this system message, you will see the conversation history followed by the current user message. You must ONLY respond to the current user message. Treat the history as background reference material, not as active input requiring a response.`,
         });
       }
 
-      for (const msg of recentMessages) {
+      for (const msg of recentHistory) {
         if (msg.role === "user" || msg.role === "assistant") {
           openRouterMessages.push({
             role: msg.role,
@@ -1072,9 +996,14 @@ Optimized search query:`;
         }
       }
 
+      // Add the current user message separately at the end
+      openRouterMessages.push({
+        role: "user",
+        content: userMessage,
+      });
+
       //* Auto-routing logic for streaming: Use decision model to select the best model
-      let routingInfo: { selectedModel: string; reasoning: string } | null =
-        null;
+      let routingInfo: { selectedModel: string; reasoning: string } | null = null;
 
       if (options?.autoRouting && promptProfileId) {
         try {
@@ -1098,17 +1027,13 @@ Optimized search query:`;
             messages: decisionMessages,
           };
 
-          const decisionResponse =
-            await activeClient.chatCompletion(decisionRequest);
-          const decisionContent =
-            decisionResponse.choices[0]?.message?.content || "";
+          const decisionResponse = await activeClient.chatCompletion(decisionRequest);
+          const decisionContent = decisionResponse.choices[0]?.message?.content || "";
 
           // Try to parse JSON response
           try {
             // Remove markdown code blocks if present
-            const cleanedContent = decisionContent
-              .replace(/```json\s*|\s*```/g, "")
-              .trim();
+            const cleanedContent = decisionContent.replace(/```json\s*|\s*```/g, "").trim();
             const parsedDecision = JSON.parse(cleanedContent);
 
             if (parsedDecision.selected_model && parsedDecision.reasoning) {
@@ -1123,7 +1048,7 @@ Optimized search query:`;
 
               // Try exact match first
               let selectedModel = allModels.find(
-                (m: any) => m.display_name === parsedDecision.selected_model,
+                (m: any) => m.display_name === parsedDecision.selected_model
               );
 
               // If no exact match, try case-insensitive partial match
@@ -1132,32 +1057,20 @@ Optimized search query:`;
                 selectedModel = allModels.find((m: any) => {
                   const displayLower = m.display_name.toLowerCase();
                   // Remove " (free)" suffix for better matching
-                  const cleanSearch = searchLower
-                    .replace(/\s*\(free\)\s*$/i, "")
-                    .trim();
-                  const cleanDisplay = displayLower
-                    .replace(/\s*\(free\)\s*$/i, "")
-                    .trim();
-                  return (
-                    cleanDisplay === cleanSearch ||
-                    displayLower.includes(cleanSearch)
-                  );
+                  const cleanSearch = searchLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  const cleanDisplay = displayLower.replace(/\s*\(free\)\s*$/i, "").trim();
+                  return cleanDisplay === cleanSearch || displayLower.includes(cleanSearch);
                 });
               }
 
               if (selectedModel) {
                 actualModelKey = selectedModel.model_key;
               } else {
-                console.warn(
-                  `Could not find model for: ${parsedDecision.selected_model}`,
-                );
+                console.warn(`Could not find model for: ${parsedDecision.selected_model}`);
               }
             }
           } catch (parseError) {
-            console.error(
-              "Failed to parse decision model response:",
-              parseError,
-            );
+            console.error("Failed to parse decision model response:", parseError);
             // Continue with original model if parsing fails
           }
         } catch (decisionError) {
@@ -1194,9 +1107,7 @@ Optimized search query:`;
       const startTime = Date.now();
       let reasoningContent = "";
       let tokenUsage: any = null;
-      for await (const chunk of activeClient.streamChatCompletion(
-        openRouterRequest,
-      )) {
+      for await (const chunk of activeClient.streamChatCompletion(openRouterRequest)) {
         if (chunk.type === "reasoning") {
           reasoningContent += chunk.data;
           // Send reasoning chunk to frontend for streaming display
@@ -1216,13 +1127,8 @@ Optimized search query:`;
 
       // Update search log with reasoning content if available
       if (reasoningContent && searchLog) {
-        await ChatQuery.updateSearchLogReasoningContent(
-          searchLog.id_uuid,
-          reasoningContent,
-        );
-        console.log(
-          `[Chat Service] Saved reasoning content to search log ${searchLog.id_uuid}`,
-        );
+        await ChatQuery.updateSearchLogReasoningContent(searchLog.id_uuid, reasoningContent);
+        console.log(`[Chat Service] Saved reasoning content to search log ${searchLog.id_uuid}`);
       }
 
       // Create chat_ai_respond record
@@ -1252,9 +1158,7 @@ Optimized search query:`;
 
       savedUserMessage.chat_ai_respond_id = chatAiRespond.id;
 
-      const completeUserMessage = await ChatQuery.getChatById(
-        savedUserMessage.id,
-      );
+      const completeUserMessage = await ChatQuery.getChatById(savedUserMessage.id);
 
       return {
         userMessage: completeUserMessage || savedUserMessage,
@@ -1294,17 +1198,12 @@ Optimized search query:`;
         }
       }
 
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to send message");
+      throw error instanceof Error ? error : new Error("Failed to send message");
     }
   }
 
   // Send anonymous message (no database storage)
-  static async sendAnonymousMessage(body: {
-    message: string;
-    model_key?: string;
-  }): Promise<{
+  static async sendAnonymousMessage(body: { message: string; model_key?: string }): Promise<{
     message: Chat;
     response: Chat;
   }> {
@@ -1315,15 +1214,10 @@ Optimized search query:`;
 
       const userMessage = body.message;
       const modelKey =
-        body.model_key ||
-        process.env.SERVER_ANON_MODEL ||
-        "openai/gpt-oss-120b:free"; // Default model
+        body.model_key || process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free"; // Default model
 
       // Get AI response
-      const aiContent = await openRouterClient.simpleChat(
-        modelKey,
-        userMessage,
-      );
+      const aiContent = await openRouterClient.simpleChat(modelKey, userMessage);
 
       // Create Chat objects for response
       const userChat: Chat = {
@@ -1362,9 +1256,7 @@ Optimized search query:`;
       };
     } catch (error) {
       console.error("Error sending anonymous message:", error);
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to send anonymous message");
+      throw error instanceof Error ? error : new Error("Failed to send anonymous message");
     }
   }
 }
