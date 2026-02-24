@@ -16,11 +16,31 @@ import type {
 } from "./auth_type";
 import type { User } from "@/api/user/user_type";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
-const JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET || "your-super-secret-refresh-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "30d";
+
+const parseTime = (timeStr: string): number => {
+  const value = parseInt(timeStr, 10);
+  const unit = timeStr.slice(-1).toLowerCase();
+  switch (unit) {
+    case "h":
+      return value * 3600;
+    case "d":
+      return value * 86400;
+    default:
+      return value;
+  }
+};
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+
+if (!process.env.JWT_REFRESH_SECRET) {
+  throw new Error("JWT_REFRESH_SECRET environment variable is required");
+}
 
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -191,7 +211,10 @@ export class AuthService {
   static async validateApiKey(apiKey: string): Promise<ValidateApiKeyResponse> {
     try {
       // Allow default API key for anonymous access
-      const defaultApiKey = process.env.X_API_KEY;
+      const defaultApiKey = process.env.X_API_KEY!;
+      if (!process.env.X_API_KEY) {
+        throw new Error("X_API_KEY environment variable is required");
+      }
       if (defaultApiKey && apiKey === defaultApiKey) {
         return {
           valid: true,

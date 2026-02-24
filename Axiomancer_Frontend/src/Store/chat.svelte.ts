@@ -148,12 +148,12 @@ async function createNewConversation(title?: string, systemPrompt?: string) {
       currentConversation = response.data;
       conversations = [response.data, ...conversations];
       messages = [];
-      
+
       // Navigate to new conversation URL using replaceState
       if (typeof window !== "undefined") {
         navigateToConversation(response.data.id);
       }
-      
+
       return response.data;
     }
   } catch (e) {

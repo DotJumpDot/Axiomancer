@@ -3,7 +3,17 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import type { User, CreateUserRequest, UpdateUserRequest } from "./user_type";
 
-const SALT_ROUNDS = 10;
+const BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS;
+
+if (!BCRYPT_SALT_ROUNDS) {
+  throw new Error("BCRYPT_SALT_ROUNDS environment variable is required");
+}
+
+const SALT_ROUNDS = parseInt(BCRYPT_SALT_ROUNDS);
+
+if (SALT_ROUNDS < 4 || SALT_ROUNDS > 31) {
+  throw new Error("BCRYPT_SALT_ROUNDS must be between 4 and 31 (bcrypt specification)");
+}
 
 export async function getUsers(): Promise<User[]> {
   const result = await sql`
@@ -51,12 +61,12 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   const result = await sql`
     INSERT INTO "user" (uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at)
     VALUES (${uuid}, ${data.username}, ${hashedPassword}, ${data.email}, ${
-    data.firstname ?? null
-  }, ${data.lastname ?? null}, ${data.nickname ?? null}, ${data.role ?? "user"}, ${
-    data.tel ?? null
-  }, 'userUnidentified.png', ${
-    data.openrouter_api_key ?? null
-  }, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      data.firstname ?? null
+    }, ${data.lastname ?? null}, ${data.nickname ?? null}, ${data.role ?? "user"}, ${
+      data.tel ?? null
+    }, 'userUnidentified.png', ${
+      data.openrouter_api_key ?? null
+    }, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     RETURNING id, uuid, username, password, email, firstname, lastname, nickname, role, tel, picture_url, openrouter_api_key, created_at, updated_at
   `;
   return result[0] as unknown as User;

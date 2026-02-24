@@ -25,13 +25,16 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 // ============ Encryption Configuration ============
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
-const SALT_LENGTH = 64;
-const TAG_LENGTH = 16;
+// const SALT_LENGTH = 64;
+// const TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 const ITERATIONS = 100000;
-
 // Get encryption salt from environment
-const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT || "default-salt-change-in-production";
+const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT!;
+
+if (!process.env.ENCRYPTION_SALT) {
+  throw new Error("ENCRYPTION_SALT environment variable is required");
+}
 
 /**
  * Derives an encryption key from the salt using PBKDF2

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Chat } from "@/Types";
   import { processMarkdown, formatLatency, formatTokens, copyToClipboard, getTranslations, type LanguageCode, type MarkdownResult, formatMessageTime } from "@/Function";
-  import { settingsStore } from "@/Store";
+  import { chatStore, aiStore, settingsStore } from "@/Store";
   import CodeBlock from "./MessageMarkdown/CodeBlock.svelte";
   import MathBlock from "./MessageMarkdown/MathBlock.svelte";
 
@@ -70,7 +70,7 @@
   // Simplified content for error messages
   const displayContentForError = $derived(
     hasError && message.role !== "user"
-      ? "Failed to send AI response"
+      ? message.content || "Failed to send AI response"
       : displayContent
   );
 
@@ -78,6 +78,31 @@
     await copyToClipboard(displayContentForError);
     copied = true;
     setTimeout(() => (copied = false), 2000);
+  }
+
+  // * Resend the message with current settings
+  async function handleResend() {
+    if (!isUser) return;
+    if (chatStore.isSending) return;
+
+    // Check if in single mode or auto-routing mode
+    const isAutoRouting = aiStore.autoRoutingEnabled;
+
+    // Determine model key to use
+    let modelKey: string;
+    if (!isAutoRouting) {
+      // Single mode - use selected model or fallback to default
+      modelKey = chatStore.currentModelKey || "auto";
+    } else {
+      // Auto mode - use selected model
+      modelKey = aiStore.selectedModel?.model_key || "auto";
+    }
+
+    // Send message with current prompt (if selected) or backend will use default
+    await chatStore.sendMessage(message.content, modelKey, {
+      autoRouting: isAutoRouting,
+      promptProfileId: chatStore.currentPromptProfileId || undefined,
+    });
   }
 
   const isUser = $derived(message.role === "user");
@@ -231,6 +256,15 @@
       <span class="model-badge">{message.ai_model_key || message.model_id}</span>
     {/if}
     <div class="message-actions">
+      {#if isUser}
+        <button class="action-btn" onclick={handleResend} title="Resend message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <polyline points="23 20 23 14 17 14"></polyline>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+          </svg>
+        </button>
+      {/if}
       <button class="action-btn" onclick={handleCopy} title="Copy message">
         {#if copied}
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -355,8 +389,8 @@
 
   {#if !isUser && hasError}
     <div class="message-reminder error">
-      <span class="reminder-text" title={displayContent.replace(/^Error:\s*/, '')}>
-        ⚠️ {displayContent.replace(/^Error:\s*/, '')}
+      <span class="reminder-text" title={displayContentForError.replace(/^Error:\s*/, '')}>
+        ⚠️ {displayContentForError.replace(/^Error:\s*/, '')}
       </span>
     </div>
   {:else if !isUser && hasCodeInContent && hasMathInContent}

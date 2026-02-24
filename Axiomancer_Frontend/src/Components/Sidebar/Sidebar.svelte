@@ -454,7 +454,7 @@
             }
           }}
         >
-          {truncate(conversation.title, 25)}
+          {truncate(conversation.title, 24)}
         </span>
       {/if}
     </span>
