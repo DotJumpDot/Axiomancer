@@ -108,11 +108,11 @@
             <div class="tab-pane">
               <!-- Theme Settings -->
               <div class="settings-section">
-                <h3>🎨 Theme</h3>
+                <h3>🎨 {t.conversationSettings.theme}</h3>
 
                 <div class="setting-item theme-mode-row">
                   <!-- svelte-ignore a11y_label_has_associated_control -->
-                  <label>Theme Style & Mode</label>
+                  <label>{t.conversationSettings.themeStyleAndMode}</label>
                   <div class="theme-mode-selectors">
                     <select 
                       id="theme-variant" 
@@ -140,10 +140,10 @@
 
               <!-- Language Settings -->
               <div class="settings-section">
-                <h3>🌐 Language</h3>
+                <h3>🌐 {t.conversationSettings.language}</h3>
 
                 <div class="setting-item">
-                  <label for="language">Interface Language</label>
+                  <label for="language">{t.conversationSettings.interfaceLanguage}</label>
                   <select 
                     id="language"
                     bind:value={settingsStore.language}
@@ -158,12 +158,12 @@
 
               <!-- Input Behavior -->
               <div class="settings-section">
-                <h3>⌨️ Input Behavior</h3>
+                <h3>⌨️ {t.conversationSettings.inputBehavior}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Send on Enter</span>
-                    <span class="setting-desc">Press Enter to send, Shift+Enter for new line</span>
+                    <span class="setting-label">{t.conversationSettings.sendOnEnter}</span>
+                    <span class="setting-desc">{t.conversationSettings.sendOnEnterDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -177,8 +177,8 @@
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Spell Check</span>
-                    <span class="setting-desc">Enable browser spell checking in input fields</span>
+                    <span class="setting-label">{t.conversationSettings.spellCheck}</span>
+                    <span class="setting-desc">{t.conversationSettings.spellCheckDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -193,12 +193,12 @@
 
               <!-- Sound Notifications -->
               <div class="settings-section">
-                <h3>🔔 Sound Notifications</h3>
+                <h3>🔔 {t.conversationSettings.soundNotifications}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Enable Sound Effects</span>
-                    <span class="setting-desc">Play sounds on message send/receive</span>
+                    <span class="setting-label">{t.conversationSettings.enableSoundEffects}</span>
+                    <span class="setting-desc">{t.conversationSettings.playSoundsDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -212,8 +212,8 @@
 
                 <div class="setting-item" class:disabled={!settingsStore.soundEnabled}>
                   <div class="setting-info">
-                    <span class="setting-label">Volume</span>
-                    <span class="setting-desc">Adjust sound volume ({settingsStore.soundVolume}%)</span>
+                    <span class="setting-label">{t.conversationSettings.volume}</span>
+                    <span class="setting-desc">{t.conversationSettings.adjustVolumeDesc} ({settingsStore.soundVolume}%)</span>
                   </div>
                   <div class="volume-slider-wrapper">
                     <input
@@ -233,10 +233,10 @@
               <div class="reset-section">
                 {#if resetConfirmTab === 'general'}
                   <div class="reset-confirm" transition:slide={{ duration: 200, easing: cubicOut }}>
-                    <span>Reset all General settings to default?</span>
+                    <span>{t.conversationSettings.resetGeneralConfirm}</span>
                     <div class="reset-buttons">
-                      <button class="reset-cancel-btn" transition:scale={{ duration: 150, easing: cubicOut }} onclick={handleResetCancel}>Cancel</button>
-                      <button class="reset-confirm-btn" transition:scale={{ duration: 150, delay: 50, easing: elasticOut }} onclick={() => handleResetConfirm('general')}>Confirm</button>
+                      <button class="reset-cancel-btn" transition:scale={{ duration: 150, easing: cubicOut }} onclick={handleResetCancel}>{t.common.cancel}</button>
+                      <button class="reset-confirm-btn" transition:scale={{ duration: 150, delay: 50, easing: elasticOut }} onclick={() => handleResetConfirm('general')}>{t.conversationSettings.confirm}</button>
                     </div>
                   </div>
                 {:else}
@@ -245,7 +245,7 @@
                       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                       <path d="M3 3v5h5"></path>
                     </svg>
-                    Reset to Default
+                    {t.conversationSettings.resetToDefault}
                   </button>
                 {/if}
               </div>
@@ -254,12 +254,12 @@
             <div class="tab-pane">
               <!-- AI Response Settings -->
               <div class="settings-section">
-                <h3>🤖 AI Responses</h3>
+                <h3>🤖 {t.conversationSettings.aiResponses}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
                     <span class="setting-label">{t.conversationSettings.streamResponses}</span>
-                    <span class="setting-desc">Show AI response word-by-word as it generates</span>
+                    <span class="setting-desc">{t.conversationSettings.showAiResponseWordByWord}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -295,25 +295,25 @@
 
               <!-- Interface Settings -->
               <div class="settings-section">
-                <h3>💬 Chat Interface</h3>
+                <h3>💬 {t.conversationSettings.chatInterface}</h3>
 
                 <div class="setting-item">
-                  <label for="font-size">Font Size</label>
+                  <label for="font-size">{t.conversationSettings.fontSize}</label>
                   <select 
                     id="font-size"
                     bind:value={settingsStore.fontSize}
                     onchange={(e) => settingsStore.setFontSize(e.currentTarget.value as any)}
                   >
-                    <option value="small">Small</option>
-                    <option value="medium">Medium</option>
-                    <option value="large">Large</option>
+                    <option value="small">{t.conversationSettings.fontSizeSmall}</option>
+                    <option value="medium">{t.conversationSettings.fontSizeMedium}</option>
+                    <option value="large">{t.conversationSettings.fontSizeLarge}</option>
                   </select>
                 </div>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Show Message Timestamps</span>
-                    <span class="setting-desc">Display time on each message (e.g., 2:34 PM)</span>
+                    <span class="setting-label">{t.conversationSettings.showMessageTimestamps}</span>
+                    <span class="setting-desc">{t.conversationSettings.showMessageTimestampsDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -327,8 +327,8 @@
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Auto-Scroll to Bottom</span>
-                    <span class="setting-desc">Automatically scroll to new messages</span>
+                    <span class="setting-label">{t.conversationSettings.autoScrollToBottom}</span>
+                    <span class="setting-desc">{t.conversationSettings.autoScrollToBottomDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -342,8 +342,8 @@
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Auto-Save Drafts</span>
-                    <span class="setting-desc">Save message drafts automatically per conversation</span>
+                    <span class="setting-label">{t.conversationSettings.autoSaveDrafts}</span>
+                    <span class="setting-desc">{t.conversationSettings.autoSaveDraftsDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -358,19 +358,19 @@
 
               <!-- Display Names -->
               <div class="settings-section">
-                <h3>🏷️ Display Names</h3>
+                <h3>🏷️ {t.conversationSettings.displayNames}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Your Name</span>
-                    <span class="setting-desc">How your messages are labeled in chat</span>
+                    <span class="setting-label">{t.conversationSettings.yourName}</span>
+                    <span class="setting-desc">{t.conversationSettings.yourNameDesc}</span>
                   </div>
                   <div class="name-input-group">
                     <input
                       type="text"
                       class="text-input"
                       value={settingsStore.userDisplayName}
-                      placeholder="You"
+                      placeholder={t.conversationSettings.yourNamePlaceholder}
                       maxlength="20"
                       onchange={(e) => settingsStore.setUserDisplayName((e.target as HTMLInputElement).value)}
                     >
@@ -380,7 +380,7 @@
                         class="color-picker"
                         value={settingsStore.userDisplayNameColor}
                         onchange={(e) => settingsStore.setUserDisplayNameColor((e.target as HTMLInputElement).value)}
-                        title="Your name color"
+                        title={t.conversationSettings.yourName}
                       >
                     </div>
                   </div>
@@ -388,15 +388,15 @@
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">AI Name</span>
-                    <span class="setting-desc">How AI messages are labeled in chat</span>
+                    <span class="setting-label">{t.conversationSettings.aiName}</span>
+                    <span class="setting-desc">{t.conversationSettings.aiNameDesc}</span>
                   </div>
                   <div class="name-input-group">
                     <input
                       type="text"
                       class="text-input"
                       value={settingsStore.aiDisplayName}
-                      placeholder="AI"
+                      placeholder={t.conversationSettings.aiNamePlaceholder}
                       maxlength="20"
                       onchange={(e) => settingsStore.setAiDisplayName((e.target as HTMLInputElement).value)}
                     >
@@ -406,7 +406,7 @@
                         class="color-picker"
                         value={settingsStore.aiDisplayNameColor}
                         onchange={(e) => settingsStore.setAiDisplayNameColor((e.target as HTMLInputElement).value)}
-                        title="AI name color"
+                        title={t.conversationSettings.aiName}
                       >
                     </div>
                   </div>
@@ -417,10 +417,10 @@
               <div class="reset-section">
                 {#if resetConfirmTab === 'chat'}
                   <div class="reset-confirm" transition:slide={{ duration: 200, easing: cubicOut }}>
-                    <span>Reset all Chat settings to default?</span>
+                    <span>{t.conversationSettings.resetChatConfirm}</span>
                     <div class="reset-buttons">
-                      <button class="reset-cancel-btn" transition:scale={{ duration: 150, easing: cubicOut }} onclick={handleResetCancel}>Cancel</button>
-                      <button class="reset-confirm-btn" transition:scale={{ duration: 150, delay: 50, easing: elasticOut }} onclick={() => handleResetConfirm('chat')}>Confirm</button>
+                      <button class="reset-cancel-btn" transition:scale={{ duration: 150, easing: cubicOut }} onclick={handleResetCancel}>{t.common.cancel}</button>
+                      <button class="reset-confirm-btn" transition:scale={{ duration: 150, delay: 50, easing: elasticOut }} onclick={() => handleResetConfirm('chat')}>{t.conversationSettings.confirm}</button>
                     </div>
                   </div>
                 {:else}
@@ -429,7 +429,7 @@
                       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                       <path d="M3 3v5h5"></path>
                     </svg>
-                    Reset to Default
+                    {t.conversationSettings.resetToDefault}
                   </button>
                 {/if}
               </div>
@@ -438,12 +438,12 @@
             <div class="tab-pane">
               <!-- Favorite Settings -->
               <div class="settings-section">
-                <h3>⭐ Favorites</h3>
+                <h3>⭐ {t.conversationSettings.favorites}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Double-Click to Favorite</span>
-                    <span class="setting-desc">Double-click a conversation to toggle favorite status</span>
+                    <span class="setting-label">{t.conversationSettings.doubleClickFavorite}</span>
+                    <span class="setting-desc">{t.conversationSettings.doubleClickFavoriteDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -456,7 +456,7 @@
                 </div>
 
                 <div class="setting-item">
-                  <label for="favorite-icon">Favorite Icon</label>
+                  <label for="favorite-icon">{t.conversationSettings.favoriteIcon}</label>
                   <select 
                     id="favorite-icon"
                     bind:value={settingsStore.favoriteIcon}
@@ -469,7 +469,7 @@
                 </div>
 
                 <div class="setting-item">
-                  <label for="favorite-color">Favorite Color</label>
+                  <label for="favorite-color">{t.conversationSettings.favoriteColor}</label>
                   <div class="color-select-wrapper">
                     <select 
                       id="favorite-color"
@@ -487,12 +487,12 @@
 
               <!-- Conversation Behavior -->
               <div class="settings-section">
-                <h3>📝 Behavior</h3>
+                <h3>📝 {t.conversationSettings.behavior}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Disable Click-to-Rename</span>
-                    <span class="setting-desc">Prevent accidental renaming when clicking conversation titles</span>
+                    <span class="setting-label">{t.conversationSettings.disableClickRename}</span>
+                    <span class="setting-desc">{t.conversationSettings.disableClickRenameDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -507,12 +507,12 @@
 
               <!-- Date Display -->
               <div class="settings-section">
-                <h3>📅 Date Display</h3>
+                <h3>📅 {t.conversationSettings.dateDisplay}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Show Relative Time</span>
-                    <span class="setting-desc">Show "5d ago" instead of full date</span>
+                    <span class="setting-label">{t.conversationSettings.showRelativeTime}</span>
+                    <span class="setting-desc">{t.conversationSettings.showRelativeTimeDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -527,12 +527,12 @@
 
               <!-- Folder Settings -->
               <div class="settings-section">
-                <h3>📁 Folders</h3>
+                <h3>📁 {t.conversationSettings.folders}</h3>
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Auto Expand Folder</span>
-                    <span class="setting-desc">Auto-expand collapsed folders when selecting a conversation inside</span>
+                    <span class="setting-label">{t.conversationSettings.autoExpandFolderLabel}</span>
+                    <span class="setting-desc">{t.conversationSettings.autoExpandFolderDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -546,8 +546,8 @@
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Show Favorites Folder</span>
-                    <span class="setting-desc">Group favorited conversations in a special folder at the top</span>
+                    <span class="setting-label">{t.conversationSettings.showFavoritesFolderLabel}</span>
+                    <span class="setting-desc">{t.conversationSettings.showFavoritesFolderLabelDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -561,8 +561,8 @@
 
                 <div class="setting-item">
                   <div class="setting-info">
-                    <span class="setting-label">Disable Folder Click-to-Rename</span>
-                    <span class="setting-desc">Prevent accidental renaming when double-clicking folder names</span>
+                    <span class="setting-label">{t.conversationSettings.disableFolderClickRename}</span>
+                    <span class="setting-desc">{t.conversationSettings.disableFolderClickRenameDesc}</span>
                   </div>
                   <label class="toggle-switch">
                     <input
@@ -579,10 +579,10 @@
               <div class="reset-section">
                 {#if resetConfirmTab === 'conversation'}
                   <div class="reset-confirm" transition:slide={{ duration: 200, easing: cubicOut }}>
-                    <span>Reset all Conversation settings to default?</span>
+                    <span>{t.conversationSettings.resetConversationConfirm}</span>
                     <div class="reset-buttons">
-                      <button class="reset-cancel-btn" transition:scale={{ duration: 150, easing: cubicOut }} onclick={handleResetCancel}>Cancel</button>
-                      <button class="reset-confirm-btn" transition:scale={{ duration: 150, delay: 50, easing: elasticOut }} onclick={() => handleResetConfirm('conversation')}>Confirm</button>
+                      <button class="reset-cancel-btn" transition:scale={{ duration: 150, easing: cubicOut }} onclick={handleResetCancel}>{t.common.cancel}</button>
+                      <button class="reset-confirm-btn" transition:scale={{ duration: 150, delay: 50, easing: elasticOut }} onclick={() => handleResetConfirm('conversation')}>{t.conversationSettings.confirm}</button>
                     </div>
                   </div>
                 {:else}
@@ -591,7 +591,7 @@
                       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                       <path d="M3 3v5h5"></path>
                     </svg>
-                    Reset to Default
+                    {t.conversationSettings.resetToDefault}
                   </button>
                 {/if}
               </div>
