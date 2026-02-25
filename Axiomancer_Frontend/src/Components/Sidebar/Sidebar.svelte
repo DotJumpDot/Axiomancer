@@ -28,6 +28,40 @@
   let isFavoriteFolderCollapsed = $state(false);
   let localCollapsedFolders = $state<Record<string, boolean>>({});
   
+  // * Sidebar resize state
+  const SIDEBAR_MIN_WIDTH = 200;
+  const SIDEBAR_MAX_WIDTH = 500;
+  const SIDEBAR_DEFAULT_WIDTH = 260;
+  let sidebarWidth = $state(SIDEBAR_DEFAULT_WIDTH);
+  let isResizing = $state(false);
+  
+  // * Calculate dynamic truncate length based on sidebar width
+  let titleTruncateLength = $derived(Math.floor((sidebarWidth - 80) / 8));
+  
+  // * Resize handlers
+  function startResize(e: MouseEvent) {
+    e.preventDefault();
+    isResizing = true;
+    document.addEventListener('mousemove', handleResize);
+    document.addEventListener('mouseup', stopResize);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+  
+  function handleResize(e: MouseEvent) {
+    if (!isResizing) return;
+    const newWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, e.clientX));
+    sidebarWidth = newWidth;
+  }
+  
+  function stopResize() {
+    isResizing = false;
+    document.removeEventListener('mousemove', handleResize);
+    document.removeEventListener('mouseup', stopResize);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }
+  
   let archivedConversations = $derived(
     Array.isArray(chatStore.conversations) ? chatStore.conversations.filter(c => c.archived) : []
   );
@@ -453,7 +487,7 @@
             }
           }}
         >
-          {truncate(conversation.title, 24)}
+          {truncate(conversation.title, titleTruncateLength)}
         </span>
       {/if}
     </span>
@@ -523,7 +557,10 @@
   </div>
 {/snippet}
 
-<aside class="sidebar" class:collapsed={!settingsStore.sidebarOpen}>
+<aside class="sidebar" class:collapsed={!settingsStore.sidebarOpen} class:resizing={isResizing} style="width: {settingsStore.sidebarOpen ? sidebarWidth + 'px' : '0px'}">
+  {#if settingsStore.sidebarOpen}
+    <div class="resize-handle" onmousedown={startResize}></div>
+  {/if}
   <div class="sidebar-header">
     <button class="new-chat-btn" onclick={handleNewChat}>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -797,7 +834,6 @@
 
 <style>
   .sidebar {
-    width: 260px;
     height: 100%;
     background: var(--sidebar-bg, #1a1a1a);
     border-right: 1px solid var(--border-color, #2d2d2d);
@@ -805,10 +841,32 @@
     flex-direction: column;
     transition: width 0.2s ease;
     overflow: hidden;
+    position: relative;
+    min-width: 0;
+  }
+
+  .sidebar.resizing {
+    transition: none;
+  }
+
+  .resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 10;
+    transition: background 0.2s;
+  }
+
+  .resize-handle:hover {
+    background: var(--primary-color, #6366f1);
   }
 
   .sidebar.collapsed {
-    width: 0px;
+    width: 0px !important;
     border-right: none;
   }
 
@@ -829,6 +887,10 @@
   }
 
   .sidebar.collapsed .sidebar-footer {
+    display: none;
+  }
+
+  .sidebar.collapsed .resize-handle {
     display: none;
   }
 
