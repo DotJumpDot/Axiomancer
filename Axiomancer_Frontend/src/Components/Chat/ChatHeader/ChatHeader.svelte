@@ -12,6 +12,7 @@
   import PromptEdit from "./PromptEdit.svelte";
   import UserSetting from "./UserSetting.svelte";
   import SearchDialog from "./SearchDialog.svelte";
+  import AnalyticsDialog from "@/Components/Analytics/AnalyticsDialog.svelte";
   import type { User, AiModel } from "@/Types";
 
   // Reactive translations
@@ -25,6 +26,7 @@
   let showPromptEditor = $state(false);
   let showLanguageDropdown = $state(false);
   let showSearchDialog = $state(false);
+  let showAnalyticsDialog = $state(false);
   let storedUser = $state<User | null>(null);
   let currentMode = $state<'auto' | 'single'>('auto');
   let currentPresetName = $state<string | null>(null);
@@ -637,6 +639,21 @@
   </div>
 
   <div class="header-right">
+    <!-- Analytics Button -->
+    {#if authStore.isAuthenticated}
+      <button 
+        class="analytics-btn"
+        onclick={() => showAnalyticsDialog = true}
+        title={t.analytics?.title || "Analytics"}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+      </button>
+    {/if}
+
     <!-- Search Button -->
     {#if authStore.isAuthenticated}
       <button 
@@ -814,6 +831,8 @@
   <UserSetting bind:this={userSettingDialog} />
   <!-- Search Dialog -->
   <SearchDialog bind:isOpen={showSearchDialog} onClose={() => showSearchDialog = false} />
+  <!-- Analytics Dialog -->
+  <AnalyticsDialog bind:isOpen={showAnalyticsDialog} onClose={() => showAnalyticsDialog = false} />
 
   <style>
     /* Import split CSS files */

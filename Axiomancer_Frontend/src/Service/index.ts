@@ -9,3 +9,4 @@ export { default as userService } from "./userService";
 export { selectionService } from "./selectionService";
 export { favoriteService } from "./favoriteService";
 export { folderService } from "./folderService";
+export { analyticsService, type AnalyticsData } from "./analyticsService";

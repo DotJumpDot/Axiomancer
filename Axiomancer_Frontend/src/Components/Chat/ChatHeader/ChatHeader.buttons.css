@@ -1,5 +1,5 @@
 /* ChatHeader - Buttons and Controls */
-.search-btn {
+.search-btn, .analytics-btn {
   padding: 8px;
   background: transparent;
   border: 1px solid var(--border-color, #3d3d3d);
@@ -12,7 +12,7 @@
   transition: all 0.2s;
 }
 
-.search-btn:hover {
+.search-btn:hover, .analytics-btn:hover {
   background: var(--hover-bg, #2d2d2d);
   color: var(--primary-color, #6366f1);
   border-color: var(--primary-color, #6366f1);

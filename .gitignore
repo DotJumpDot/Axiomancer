@@ -121,3 +121,7 @@ desktop.ini
 
 # Logs
 logs
+
+.kilocode
+*.kilocode
+.kelocode/

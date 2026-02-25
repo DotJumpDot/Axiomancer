@@ -14,6 +14,7 @@ import { searchApi } from "./api/search/search_api";
 import { selectionApi } from "./api/selection/selection_api";
 import { favoriteApi } from "./api/favorite/favorite_api";
 import { folderApi } from "./api/folder/folder_api";
+import { analyticsApi } from "./api/analytics/analytics_api";
 import { AuthService } from "./api/auth/auth_service";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,6 +90,7 @@ const app = new Elysia()
   .use(selectionApi)
   .use(favoriteApi)
   .use(folderApi)
+  .use(analyticsApi)
   .get("/", () => "Hello Elysia")
   .get("/test-db", async () => {
     try {

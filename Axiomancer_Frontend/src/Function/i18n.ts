@@ -27,6 +27,7 @@ interface Translations {
   chat: Record<string, string>;
   auth: Record<string, string>;
   errors: Record<string, string>;
+  analytics: Record<string, string>;
 }
 
 const translations: Record<LanguageCode, Translations> = {
