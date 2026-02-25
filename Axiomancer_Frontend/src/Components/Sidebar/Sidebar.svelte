@@ -307,7 +307,11 @@
 
   function handleToggleFolderCollapse(folderId: string) {
     const currentCollapsed = localCollapsedFolders[folderId] ?? false;
-    localCollapsedFolders[folderId] = !currentCollapsed;
+    // Create new object reference to trigger Svelte 5 reactivity
+    localCollapsedFolders = {
+      ...localCollapsedFolders,
+      [folderId]: !currentCollapsed
+    };
   }
 
   // * Drag and drop handlers
@@ -369,11 +373,6 @@
       .map(id => chatStore.conversations.find(c => c.id === id))
       .filter((c): c is Conversation => c !== undefined && !c.archived)
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }
-
-  // * Get collapsed state for a folder (use local state, fallback to backend state)
-  function getFolderCollapsed(folderId: string): boolean {
-    return localCollapsedFolders[folderId] ?? false;
   }
 
   // * Load folders on mount
@@ -593,7 +592,6 @@
       <!-- User Folders -->
       {#each folderStore.folders as folder (folder.id)}
         {@const folderConversations = getConversationsForFolder(folder)}
-        {@const isCollapsed = getFolderCollapsed(folder.id)}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div 
           class="folder-section user-folder"
@@ -614,7 +612,7 @@
                 stroke="currentColor" 
                 stroke-width="2"
                 class="chevron"
-                class:collapsed={isCollapsed}
+                class:collapsed={localCollapsedFolders[folder.id] ?? false}
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -680,7 +678,7 @@
             </div>
             <span class="folder-count">{folderConversations.length}</span>
           </div>
-          {#if !isCollapsed}
+          {#if !(localCollapsedFolders[folder.id] ?? false)}
             <div class="folder-contents">
               {#each folderConversations as conversation (conversation.id)}
                 {@render conversationItem(conversation, true)}
@@ -1265,7 +1263,6 @@
   .favorites-folder {
     margin-bottom: 8px;
     border-radius: 10px;
-    overflow: hidden;
   }
 
   .favorites-folder .folder-header {
