@@ -55,7 +55,7 @@
   let hasLoadedPreset = $state(false);
 
   // Derived state for API key status - defaults to true until we know otherwise
-  let hasApiKey = $derived(authStore.currentUser ? !!authStore.currentUser.openrouter_api_key : true);
+  let hasApiKey = $derived(authStore.currentUser ? authStore.currentUser.has_api_key : true);
 
   onMount(async () => {
     // Initialize single mode selections from localStorage
@@ -419,7 +419,7 @@
   // Ensure reactivity to API key changes
   $effect(() => {
     // This effect ensures the component reacts to API key changes
-    const hasApiKey = !!authStore.currentUser?.openrouter_api_key;
+    const hasApiKey = authStore.currentUser?.has_api_key ?? true;
     // Force reactivity by accessing the value
     if (hasApiKey) {
       // API key is available

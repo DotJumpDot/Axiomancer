@@ -271,14 +271,20 @@ export class UserService {
     }
   }
 
-  static getPublicUser(user: User): Omit<User, "password" | "openrouter_api_key"> {
+  static getPublicUser(
+    user: User
+  ): Omit<User, "password" | "openrouter_api_key"> & { has_api_key: boolean } {
     const { password, openrouter_api_key, ...publicUser } = user;
 
     // NOTE: openrouter_api_key is intentionally NOT returned to frontend
     // It is stored encrypted in DB and only used internally by backend
     // when making calls to OpenRouter API
+    // Instead, we return a boolean indicating if a key exists
 
-    return publicUser;
+    return {
+      ...publicUser,
+      has_api_key: !!openrouter_api_key && openrouter_api_key.length > 0,
+    };
   }
 
   static async validateUser(user: User): Promise<{ valid: boolean; errors: string[] }> {

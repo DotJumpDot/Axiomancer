@@ -23,7 +23,7 @@ export interface AuthUser {
   nickname?: string;
   role: string;
   picture_url: string;
-  openrouter_api_key?: string | null;
+  has_api_key: boolean;
 }
 
 export interface AuthResponse {
@@ -83,7 +83,7 @@ export interface ValidateTokenResponse {
     role: string;
     nickname?: string;
     picture_url?: string;
-    openrouter_api_key: string | null;
+    has_api_key: boolean;
   };
   error?: string;
 }

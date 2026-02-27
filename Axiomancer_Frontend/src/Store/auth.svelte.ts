@@ -154,7 +154,7 @@ async function loadUserData(userUuid: string) {
         role: response.data.role,
         nickname: response.data.nickname,
         picture_url: response.data.picture_url || "",
-        openrouter_api_key: response.data.openrouter_api_key || null,
+        has_api_key: response.data.has_api_key ?? false,
       };
     } else {
       console.error("Failed to load user data:", response.error);
@@ -168,6 +168,7 @@ async function loadUserData(userUuid: string) {
         role: "user",
         nickname: "User",
         picture_url: "",
+        has_api_key: false,
       };
     }
   } catch (error) {
@@ -182,6 +183,7 @@ async function loadUserData(userUuid: string) {
       role: "user",
       nickname: "User",
       picture_url: "",
+      has_api_key: false,
     };
   }
 }
@@ -294,7 +296,7 @@ async function refreshProfile() {
         email: userData.email,
         role: userData.role,
         picture_url: userData.picture_url,
-        openrouter_api_key: (userData as any).openrouter_api_key || "",
+        has_api_key: (userData as any).has_api_key ?? false,
       };
     }
   } catch (e) {

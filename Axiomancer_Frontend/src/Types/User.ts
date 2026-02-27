@@ -10,7 +10,7 @@ export interface User {
   role: string;
   tel: string | null;
   picture_url: string;
-  openrouter_api_key: string | null;
+  has_api_key: boolean;
   created_at: Date;
   updated_at: Date | null;
 }
