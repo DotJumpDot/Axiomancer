@@ -3,8 +3,20 @@ import { PromptService } from "./prompt_service";
 import type { CreatePromptProfileRequest, UpdatePromptProfileRequest } from "./prompt_type";
 
 export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
-  .get("/prompts", async () => {
+  // All routes require dual authentication (JWT + API Key)
+  // Auth context is set by global middleware in index.ts
+
+  .get("/prompts", async (context: any) => {
     try {
+      const { auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const profiles = await PromptService.getAllPromptProfiles();
       return { success: true, data: profiles };
     } catch (error) {
@@ -14,8 +26,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .get("/prompts/user/:user_uuid", async ({ params }) => {
+
+  .get("/prompts/user/:user_uuid", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const profiles = await PromptService.getAllProfiles(params.user_uuid);
       return { success: true, data: profiles };
     } catch (error) {
@@ -25,8 +47,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .get("/prompt/:id", async ({ params }) => {
+
+  .get("/prompt/:id", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const profile = await PromptService.getProfileById(params.id);
       if (!profile) {
         return { success: false, error: "Profile not found" };
@@ -39,9 +71,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .get("/prompt/by-name/:name", async ({ params, ...context }: any) => {
-    const { auth } = context;
+
+  .get("/prompt/by-name/:name", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const userUuid = auth?.user?.uuid;
       const profile = await PromptService.getProfileByName(
         decodeURIComponent(params.name),
@@ -58,9 +99,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .post("/prompt/create", async ({ body, ...context }: any) => {
-    const { auth } = context;
+
+  .post("/prompt/create", async (context: any) => {
     try {
+      const { body, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const userUuid = auth?.user?.uuid;
       const profile = await PromptService.createProfile(
         body as CreatePromptProfileRequest,
@@ -74,8 +124,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .post("/prompts/user/:user_uuid", async ({ params, body }) => {
+
+  .post("/prompts/user/:user_uuid", async (context: any) => {
     try {
+      const { params, body, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const profile = await PromptService.createProfile(
         body as CreatePromptProfileRequest,
         params.user_uuid
@@ -88,9 +148,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .put("/prompt/:id", async ({ params, body, ...context }: any) => {
-    const { auth } = context;
+
+  .put("/prompt/:id", async (context: any) => {
     try {
+      const { params, body, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const userUuid = auth?.user?.uuid;
       const existing = await PromptService.getProfileById(params.id);
 
@@ -114,9 +183,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .delete("/prompt/:id", async ({ params, ...context }: any) => {
-    const { auth } = context;
+
+  .delete("/prompt/:id", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const userUuid = auth?.user?.uuid;
       const existing = await PromptService.getProfileById(params.id);
 
@@ -134,8 +212,18 @@ export const promptApi = new Elysia({ prefix: "/api", tags: ["Prompt"] })
       };
     }
   })
-  .post("/prompt/:id/validate", async ({ params }) => {
+
+  .post("/prompt/:id/validate", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const profile = await PromptService.getProfileById(params.id);
       if (!profile) {
         return { success: false, error: "Profile not found" };

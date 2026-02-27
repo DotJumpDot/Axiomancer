@@ -3,9 +3,21 @@ import { AiService } from "./ai_service";
 import type { CreateAiModelRequest, UpdateAiModelRequest } from "./ai_type";
 
 export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
-  // AI Models routes
-  .get("/ai/models", async () => {
+  // AI Models routes - all require dual authentication (JWT + API Key)
+  // Auth context is set by global middleware in index.ts
+
+  .get("/ai/models", async (context: any) => {
     try {
+      const { auth } = context;
+      // Check authentication
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const models = await AiService.getAllModels();
       return { success: true, data: models };
     } catch (error) {
@@ -15,8 +27,18 @@ export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
       };
     }
   })
-  .get("/ai/models/enabled", async () => {
+
+  .get("/ai/models/enabled", async (context: any) => {
     try {
+      const { auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const models = await AiService.getEnabledModels();
       return { success: true, data: models };
     } catch (error) {
@@ -26,8 +48,18 @@ export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
       };
     }
   })
-  .get("/ai/models/:id", async ({ params }) => {
+
+  .get("/ai/models/:id", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const model = await AiService.getModelById(params.id);
       if (!model) {
         return { success: false, error: "Model not found" };
@@ -40,8 +72,18 @@ export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
       };
     }
   })
-  .post("/ai/models", async ({ body }) => {
+
+  .post("/ai/models", async (context: any) => {
     try {
+      const { body, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const model = await AiService.createModel(body as CreateAiModelRequest);
       return { success: true, data: model };
     } catch (error) {
@@ -51,8 +93,18 @@ export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
       };
     }
   })
-  .put("/ai/models/:id", async ({ params, body }) => {
+
+  .put("/ai/models/:id", async (context: any) => {
     try {
+      const { params, body, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const model = await AiService.updateModel(params.id, body as UpdateAiModelRequest);
       if (!model) {
         return { success: false, error: "Model not found" };
@@ -65,8 +117,18 @@ export const aiApi = new Elysia({ prefix: "/api", tags: ["AI"] })
       };
     }
   })
-  .delete("/ai/models/:id", async ({ params }) => {
+
+  .delete("/ai/models/:id", async (context: any) => {
     try {
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const deleted = await AiService.deleteModel(params.id);
       return { success: true, deleted };
     } catch (error) {

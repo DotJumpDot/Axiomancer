@@ -411,6 +411,9 @@
     "notFound": "Resource not found",
     "unauthorized": "Unauthorized access",
     "forbidden": "Access forbidden",
+    "rateLimit": "Rate limit exceeded",
+    "rateLimitMessage": "You can send {count} messages per hour. Please try again in {minutes} minutes.",
+    "rateLimitRetry": "Too many requests. Please wait a moment before sending another message.",
     "unknownError": "Unknown error occurred"
   }
 }

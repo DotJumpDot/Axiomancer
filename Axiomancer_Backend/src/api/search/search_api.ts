@@ -17,16 +17,41 @@ import { duckduckgoApi } from "./duckduckgo/duckduckgo_api";
 import { pixabayApi } from "./pixabay/pixabay_api";
 import { DuckDuckGoService } from "./duckduckgo/duckduckgo_service";
 import { PixabayService } from "./pixabay/pixabay_service";
+import { createSearchRateLimit } from "../../middleware/rateLimit";
 
 export const searchApi = new Elysia({ prefix: "/api/search", tags: ["Search"] })
   // Register sub-APIs
   .use(duckduckgoApi)
   .use(pixabayApi)
   // Batch Search (both DuckDuckGo and Pixabay)
+  // Requires dual authentication (JWT + API Key)
   .post(
     "/batch",
-    async ({ body }) => {
+    async (context: any) => {
       try {
+        const { body, auth, request } = context;
+
+        // Check authentication
+        if (!auth?.user) {
+          return {
+            success: false,
+            error: "Authentication required. Please provide both JWT token and API key.",
+            status: 401,
+          };
+        }
+
+        // Rate limiting: 200 searches per hour per user
+        const rateLimitFn = createSearchRateLimit(auth.user.uuid);
+        const rateLimitResult = await rateLimitFn(request);
+        if (!rateLimitResult.allowed) {
+          return {
+            success: false,
+            error: "Rate limit exceeded. You can perform 200 searches per hour.",
+            retryAfter: rateLimitResult.retryAfter,
+            status: 429,
+          };
+        }
+
         const query = body.query as string;
         const includeDuckDuckGo = body.includeDuckDuckGo !== false;
         const includePixabay = body.includePixabay || false;
@@ -84,7 +109,7 @@ export const searchApi = new Elysia({ prefix: "/api/search", tags: ["Search"] })
       } catch (error) {
         return {
           success: false,
-          query: (body.query || "") as string,
+          query: (context.body.query || "") as string,
           error: error instanceof Error ? error.message : "Unknown error",
         };
       }

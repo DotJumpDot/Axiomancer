@@ -7,10 +7,33 @@ import type {
 } from "./selection_type";
 
 export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
+  // All routes require dual authentication (JWT + API Key)
+  // Auth context is set by global middleware in index.ts
+
   // Get all presets for a user
-  .get("/presets/user/:user_uuid", async ({ params: { user_uuid } }) => {
+  .get("/presets/user/:user_uuid", async (context: any) => {
     try {
-      const presets = await SelectionService.getSelectionsByUserUUID(user_uuid);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required. Please provide both JWT token and API key.",
+          }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user can only access their own presets
+      if (auth.user.uuid !== params.user_uuid) {
+        return new Response(
+          JSON.stringify({
+            error: "Unauthorized. You can only access your own presets.",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const presets = await SelectionService.getSelectionsByUserUUID(params.user_uuid);
       return { presets };
     } catch (error) {
       return new Response(
@@ -23,9 +46,29 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   })
 
   // Get selection by user UUID (backwards compatibility - returns first preset)
-  .get("/selection/user/:user_uuid", async ({ params: { user_uuid } }) => {
+  .get("/selection/user/:user_uuid", async (context: any) => {
     try {
-      const selection = await SelectionService.getSelectionByUserUUID(user_uuid);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required. Please provide both JWT token and API key.",
+          }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user can only access their own selection
+      if (auth.user.uuid !== params.user_uuid) {
+        return new Response(
+          JSON.stringify({
+            error: "Unauthorized. You can only access your own selection.",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const selection = await SelectionService.getSelectionByUserUUID(params.user_uuid);
       if (!selection) {
         return new Response(JSON.stringify({ error: "Selection not found" }), {
           status: 404,
@@ -44,9 +87,19 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   })
 
   // Get selection by preset ID
-  .get("/selection/:preset", async ({ params: { preset } }) => {
+  .get("/selection/:preset", async (context: any) => {
     try {
-      const presetId = parseInt(preset);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required. Please provide both JWT token and API key.",
+          }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const presetId = parseInt(params.preset);
       if (isNaN(presetId)) {
         return new Response(JSON.stringify({ error: "Invalid preset ID" }), {
           status: 400,
@@ -61,6 +114,17 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      // Verify user owns this selection
+      if (selection.user_uuid !== auth.user.uuid) {
+        return new Response(
+          JSON.stringify({
+            error: "Unauthorized. You can only access your own selections.",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       return { selection };
     } catch (error) {
       return new Response(
@@ -73,8 +137,18 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   })
 
   // Get all selections
-  .get("/selections", async () => {
+  .get("/selections", async (context: any) => {
     try {
+      const { auth } = context;
+      if (!auth?.user) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required. Please provide both JWT token and API key.",
+          }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       const selections = await SelectionService.getAllSelections();
       return { selections };
     } catch (error) {
@@ -90,8 +164,28 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   // Create selection
   .post(
     "/selection",
-    async ({ body }: { body: CreateSelectionRequest }) => {
+    async (context: any) => {
       try {
+        const { body, auth } = context;
+        if (!auth?.user) {
+          return new Response(
+            JSON.stringify({
+              error: "Authentication required. Please provide both JWT token and API key.",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify user can only create selections for themselves
+        if (body.user_uuid !== auth.user.uuid) {
+          return new Response(
+            JSON.stringify({
+              error: "Unauthorized. You can only create selections for yourself.",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         const selection = await SelectionService.createSelection(body);
         return { selection, status: 201 };
       } catch (error) {
@@ -117,8 +211,28 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   // Create preset with model validation
   .post(
     "/preset",
-    async ({ body }: { body: CreatePresetWithModelsRequest }) => {
+    async (context: any) => {
       try {
+        const { body, auth } = context;
+        if (!auth?.user) {
+          return new Response(
+            JSON.stringify({
+              error: "Authentication required. Please provide both JWT token and API key.",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify user can only create presets for themselves
+        if (body.user_uuid !== auth.user.uuid) {
+          return new Response(
+            JSON.stringify({
+              error: "Unauthorized. You can only create presets for yourself.",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         const preset = await SelectionService.createPresetWithModels(body);
         return { preset, status: 201 };
       } catch (error) {
@@ -145,15 +259,19 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   // Update selection
   .put(
     "/selection/:preset",
-    async ({
-      params: { preset },
-      body,
-    }: {
-      params: { preset: string };
-      body: UpdateSelectionRequest;
-    }) => {
+    async (context: any) => {
       try {
-        const presetId = parseInt(preset);
+        const { params, body, auth } = context;
+        if (!auth?.user) {
+          return new Response(
+            JSON.stringify({
+              error: "Authentication required. Please provide both JWT token and API key.",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const presetId = parseInt(params.preset);
         if (isNaN(presetId)) {
           return new Response(JSON.stringify({ error: "Invalid preset ID" }), {
             status: 400,
@@ -161,13 +279,25 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
           });
         }
 
-        const selection = await SelectionService.updateSelection(presetId, body);
-        if (!selection) {
+        // Check if user owns this selection
+        const existingSelection = await SelectionService.getSelectionByPreset(presetId);
+        if (!existingSelection) {
           return new Response(JSON.stringify({ error: "Selection not found" }), {
             status: 404,
             headers: { "Content-Type": "application/json" },
           });
         }
+
+        if (existingSelection.user_uuid !== auth.user.uuid) {
+          return new Response(
+            JSON.stringify({
+              error: "Unauthorized. You can only update your own selections.",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const selection = await SelectionService.updateSelection(presetId, body);
         return { selection };
       } catch (error) {
         return new Response(
@@ -191,15 +321,19 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   // Update preset with model validation
   .put(
     "/preset/:preset",
-    async ({
-      params: { preset },
-      body,
-    }: {
-      params: { preset: string };
-      body: UpdateSelectionRequest & { openrouter_api_key?: string };
-    }) => {
+    async (context: any) => {
       try {
-        const presetId = parseInt(preset);
+        const { params, body, auth } = context;
+        if (!auth?.user) {
+          return new Response(
+            JSON.stringify({
+              error: "Authentication required. Please provide both JWT token and API key.",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const presetId = parseInt(params.preset);
         if (isNaN(presetId)) {
           return new Response(JSON.stringify({ error: "Invalid preset ID" }), {
             status: 400,
@@ -207,13 +341,25 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
           });
         }
 
-        const preset_result = await SelectionService.updatePresetWithModels(presetId, body);
-        if (!preset_result) {
+        // Check if user owns this preset
+        const existingPreset = await SelectionService.getSelectionByPreset(presetId);
+        if (!existingPreset) {
           return new Response(JSON.stringify({ error: "Preset not found" }), {
             status: 404,
             headers: { "Content-Type": "application/json" },
           });
         }
+
+        if (existingPreset.user_uuid !== auth.user.uuid) {
+          return new Response(
+            JSON.stringify({
+              error: "Unauthorized. You can only update your own presets.",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        const preset_result = await SelectionService.updatePresetWithModels(presetId, body);
         return { preset: preset_result };
       } catch (error) {
         return new Response(
@@ -238,8 +384,28 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   // Upsert selection (create or update)
   .post(
     "/selection/upsert",
-    async ({ body }: { body: CreateSelectionRequest }) => {
+    async (context: any) => {
       try {
+        const { body, auth } = context;
+        if (!auth?.user) {
+          return new Response(
+            JSON.stringify({
+              error: "Authentication required. Please provide both JWT token and API key.",
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify user can only upsert selections for themselves
+        if (body.user_uuid !== auth.user.uuid) {
+          return new Response(
+            JSON.stringify({
+              error: "Unauthorized. You can only upsert selections for yourself.",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         const selection = await SelectionService.upsertSelection(body);
         return { selection };
       } catch (error) {
@@ -263,9 +429,19 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   )
 
   // Delete selection by preset
-  .delete("/selection/:preset", async ({ params: { preset } }) => {
+  .delete("/selection/:preset", async (context: any) => {
     try {
-      const presetId = parseInt(preset);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required. Please provide both JWT token and API key.",
+          }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const presetId = parseInt(params.preset);
       if (isNaN(presetId)) {
         return new Response(JSON.stringify({ error: "Invalid preset ID" }), {
           status: 400,
@@ -273,13 +449,25 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
         });
       }
 
-      const success = await SelectionService.deleteSelection(presetId);
-      if (!success) {
+      // Check if user owns this selection
+      const existingSelection = await SelectionService.getSelectionByPreset(presetId);
+      if (!existingSelection) {
         return new Response(JSON.stringify({ error: "Selection not found" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      if (existingSelection.user_uuid !== auth.user.uuid) {
+        return new Response(
+          JSON.stringify({
+            error: "Unauthorized. You can only delete your own selections.",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const success = await SelectionService.deleteSelection(presetId);
       return { success: true };
     } catch (error) {
       return new Response(
@@ -292,9 +480,29 @@ export const selectionApi = new Elysia({ prefix: "/api", tags: ["Selection"] })
   })
 
   // Delete selection by user UUID
-  .delete("/selection/user/:user_uuid", async ({ params: { user_uuid } }) => {
+  .delete("/selection/user/:user_uuid", async (context: any) => {
     try {
-      const success = await SelectionService.deleteSelectionByUserUUID(user_uuid);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required. Please provide both JWT token and API key.",
+          }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user can only delete their own selections
+      if (params.user_uuid !== auth.user.uuid) {
+        return new Response(
+          JSON.stringify({
+            error: "Unauthorized. You can only delete your own selections.",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const success = await SelectionService.deleteSelectionByUserUUID(params.user_uuid);
       if (!success) {
         return new Response(JSON.stringify({ error: "Selection not found" }), {
           status: 404,

@@ -3,7 +3,13 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import type { ApiKey, CreateApiKeyRequest } from "./auth_type";
 
-const API_KEY_SALT_ROUNDS = 10;
+// API Key salt rounds from environment (default: 10)
+// WARNING: Changing this value will invalidate all existing API keys!
+const API_KEY_SALT_ROUNDS = parseInt(process.env.API_KEY_SALT_ROUNDS || "10", 10);
+
+if (isNaN(API_KEY_SALT_ROUNDS) || API_KEY_SALT_ROUNDS < 4 || API_KEY_SALT_ROUNDS > 31) {
+  throw new Error("API_KEY_SALT_ROUNDS must be a number between 4 and 31");
+}
 
 // API Key operations
 export async function createApiKey(
@@ -21,8 +27,8 @@ export async function createApiKey(
   const result = await sql`
     INSERT INTO api_key (id, user_id, name, key_hash, permissions, expires_at, created_at, updated_at)
     VALUES (${keyId}, ${userId}, ${data.name}, ${keyHash}, ${JSON.stringify(
-    data.permissions
-  )}, ${expiresAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      data.permissions
+    )}, ${expiresAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     RETURNING id, user_id, name, key_hash, permissions, expires_at, last_used_at, created_at, updated_at
   `;
 

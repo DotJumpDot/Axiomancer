@@ -8,11 +8,28 @@ import type {
   OpenRouterMessage,
   ChatAiRespond,
 } from "@/Types";
-import { playNotificationSound } from "@/Function";
+import { playNotificationSound, getTranslations, type LanguageCode } from "@/Function";
 import { navigate } from "svelte-routing";
 
 import authStore from "./auth.svelte";
 import settingsStore from "./settings.svelte";
+
+// Helper to show rate limit notification
+function showRateLimitNotification(retryAfter?: number, lang: LanguageCode = "en") {
+  const t = getTranslations(lang);
+  const notification = (window as any).notification;
+  if (notification) {
+    if (retryAfter && retryAfter > 0) {
+      const minutes = Math.ceil(retryAfter / 60);
+      const message = t.errors.rateLimitMessage
+        .replace("{count}", "500")
+        .replace("{minutes}", minutes.toString());
+      notification.warning(t.errors.rateLimit, message, { duration: 8000 });
+    } else {
+      notification.warning(t.errors.rateLimit, t.errors.rateLimitRetry, { duration: 5000 });
+    }
+  }
+}
 
 // Helper function to navigate to conversation without adding to history
 function navigateToConversation(id: string) {
@@ -421,6 +438,11 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
             playNotificationSound("error", settingsStore.soundVolume);
           }
 
+          // Check if it's a rate limit error
+          if (errorMessage.includes("Rate limit exceeded") || errorMessage.includes("429")) {
+            showRateLimitNotification(undefined, settingsStore.language as LanguageCode);
+          }
+
           // Note: We don't remove temp user messages here anymore
           // to prevent the "disappearing message" issue.
           // If the backend saved it, it will be updated via onDone.
@@ -498,6 +520,15 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       } else {
         // Handle error response from API
         error = response.error || "Failed to send message";
+
+        // Check if it's a rate limit error from API response
+        if (response.error?.includes("Rate limit exceeded") || response.error?.includes("429")) {
+          // Extract retryAfter from error message if available
+          const retryMatch = response.error?.match(/retryAfter["\s:]+(\d+)/);
+          const retryAfter = retryMatch ? parseInt(retryMatch[1]) : undefined;
+          showRateLimitNotification(retryAfter, settingsStore.language as LanguageCode);
+        }
+
         // Play error sound notification
         if (settingsStore.soundEnabled) {
           playNotificationSound("error", settingsStore.soundVolume);
@@ -508,7 +539,20 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
       }
     }
   } catch (e) {
-    error = e instanceof Error ? e.message : "Failed to send message";
+    const errorMessage = e instanceof Error ? e.message : "Failed to send message";
+    error = errorMessage;
+
+    // Check if it's a rate limit error
+    const isRateLimit =
+      (e as any)?.isRateLimit === true ||
+      errorMessage.includes("Rate limit exceeded") ||
+      errorMessage.includes("429");
+
+    if (isRateLimit) {
+      const retryAfter = (e as any)?.retryAfter as number | undefined;
+      showRateLimitNotification(retryAfter, settingsStore.language as LanguageCode);
+    }
+
     // Play error sound notification
     if (settingsStore.soundEnabled) {
       playNotificationSound("error", settingsStore.soundVolume);
@@ -556,7 +600,20 @@ async function sendAnonymousMessage(
 
     return userMessage;
   } catch (e) {
-    error = e instanceof Error ? e.message : "Failed to send message";
+    const errorMessage = e instanceof Error ? e.message : "Failed to send message";
+    error = errorMessage;
+
+    // Check if it's a rate limit error
+    const isRateLimit =
+      (e as any)?.isRateLimit === true ||
+      errorMessage.includes("Rate limit exceeded") ||
+      errorMessage.includes("429");
+
+    if (isRateLimit) {
+      const retryAfter = (e as any)?.retryAfter as number | undefined;
+      showRateLimitNotification(retryAfter, settingsStore.language as LanguageCode);
+    }
+
     // Remove temp message on error
     messages = messages.filter((m) => !m.id.startsWith("temp-"));
     return null;

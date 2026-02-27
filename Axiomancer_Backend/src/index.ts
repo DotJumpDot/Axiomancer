@@ -15,7 +15,7 @@ import { selectionApi } from "./api/selection/selection_api";
 import { favoriteApi } from "./api/favorite/favorite_api";
 import { folderApi } from "./api/folder/folder_api";
 import { analyticsApi } from "./api/analytics/analytics_api";
-import { AuthService } from "./api/auth/auth_service";
+import { requireDualAuth } from "./api/auth/auth_middleware";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,54 +33,18 @@ const app = new Elysia()
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-API-KEY"],
       credentials: true,
-    }),
+    })
   )
   .use(swagger({ path: "/w" }))
-  // Auth API (no authentication required - used to get tokens/API keys)
+  // Auth API (no authentication required for login/register - they need API key only)
   .use(authApi)
-  // Optional authentication middleware - sets auth context if valid credentials provided
+  // Health check (public)
+  .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+  // Protected APIs - require BOTH JWT token AND API key
   .derive(async ({ request }) => {
-    let auth = null;
-
-    // Check JWT token from Authorization header (primary auth method)
-    const authHeader = request.headers.get("Authorization");
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      try {
-        const tokenValidation = await AuthService.validateToken(token);
-        if (tokenValidation.valid) {
-          auth = {
-            user: tokenValidation.user,
-            authMethod: "jwt",
-          };
-        }
-      } catch (error) {
-        console.error("JWT validation error:", error);
-        // Continue without auth - let route handlers decide if auth is required
-      }
-    }
-
-    // Fallback to API key from X-API-KEY header
-    if (!auth) {
-      const apiKey = request.headers.get("X-API-KEY");
-      if (apiKey) {
-        try {
-          const apiKeyValidation = await AuthService.validateApiKey(apiKey);
-          if (apiKeyValidation.valid) {
-            auth = {
-              user: apiKeyValidation.user,
-              authMethod: "apikey",
-            };
-          }
-        } catch (error) {
-          console.error("API key validation error:", error);
-          // Continue without auth - let route handlers decide if auth is required
-        }
-      }
-    }
-
-    // Return auth context (null if no valid authentication provided)
-    return { auth };
+    // Apply dual authentication middleware
+    const result = await requireDualAuth(request);
+    return { auth: result.auth };
   })
   .use(chatApi)
   .use(aiApi)

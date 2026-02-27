@@ -7,28 +7,22 @@ import type {
   UploadResponse,
 } from "./user_type";
 
-// Middleware to extract token from Authorization header
-const authMiddleware = async (request: Request) => {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-  const { AuthService } = await import("../auth/auth_service");
-  const validation = await AuthService.validateToken(token);
-
-  if (!validation.valid) {
-    throw new Error("Invalid token");
-  }
-
-  return validation.user;
-};
-
 export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
+  // All routes require dual authentication (JWT + API Key)
+  // Auth context is set by global middleware in index.ts
+
   // Get all users
-  .get("/users", async () => {
+  .get("/users", async (context: any) => {
     try {
+      const { auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
       const users = await UserService.getAllUsers();
       return { success: true, data: users.map((user) => UserService.getPublicUser(user)) };
     } catch (error) {
@@ -41,9 +35,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   })
 
   // Get user by ID
-  .get("/user/:id", async ({ params: { id } }) => {
+  .get("/user/:id", async (context: any) => {
     try {
-      const userId = parseInt(id);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      const userId = parseInt(params.id);
       if (isNaN(userId)) {
         return { success: false, error: "Invalid user ID", status: 400 };
       }
@@ -64,9 +67,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   })
 
   // Get user by UUID
-  .get("/user/uuid/:uuid", async ({ params: { uuid } }) => {
+  .get("/user/uuid/:uuid", async (context: any) => {
     try {
-      const user = await UserService.getUserByUUID(uuid);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      const user = await UserService.getUserByUUID(params.uuid);
       if (!user) {
         return { success: false, error: "User not found", status: 404 };
       }
@@ -84,8 +96,17 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Create user
   .post(
     "/user/create",
-    async ({ body }: { body: CreateUserRequest }) => {
+    async (context: any) => {
       try {
+        const { body, auth } = context;
+        if (!auth?.user) {
+          return {
+            success: false,
+            error: "Authentication required. Please provide both JWT token and API key.",
+            status: 401,
+          };
+        }
+
         const user = await UserService.createUser(body);
         return {
           success: true,
@@ -116,9 +137,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Update user
   .put(
     "/user/:id",
-    async ({ params: { id }, body }: { params: { id: string }; body: UpdateUserRequest }) => {
+    async (context: any) => {
       try {
-        const userId = parseInt(id);
+        const { params, body, auth } = context;
+        if (!auth?.user) {
+          return {
+            success: false,
+            error: "Authentication required. Please provide both JWT token and API key.",
+            status: 401,
+          };
+        }
+
+        const userId = parseInt(params.id);
         if (isNaN(userId)) {
           return { error: "Invalid user ID", status: 400 };
         }
@@ -154,9 +184,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   )
 
   // Delete user
-  .delete("/user/:id", async ({ params: { id } }) => {
+  .delete("/user/:id", async (context: any) => {
     try {
-      const userId = parseInt(id);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      const userId = parseInt(params.id);
       if (isNaN(userId)) {
         return { error: "Invalid user ID", status: 400 };
       }
@@ -178,9 +217,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Upload profile picture
   .post(
     "/user/:id/upload-profile",
-    async ({ params: { id }, body }) => {
+    async (context: any) => {
       try {
-        const userId = parseInt(id);
+        const { params, body, auth } = context;
+        if (!auth?.user) {
+          return {
+            success: false,
+            error: "Authentication required. Please provide both JWT token and API key.",
+            status: 401,
+          };
+        }
+
+        const userId = parseInt(params.id);
         if (isNaN(userId)) {
           return { error: "Invalid user ID", status: 400 };
         }
@@ -222,9 +270,18 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   )
 
   // Get user profile picture URL
-  .get("/user/:id/profile-picture", async ({ params: { id } }) => {
+  .get("/user/:id/profile-picture", async (context: any) => {
     try {
-      const userId = parseInt(id);
+      const { params, auth } = context;
+      if (!auth?.user) {
+        return {
+          success: false,
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      const userId = parseInt(params.id);
       if (isNaN(userId)) {
         return { error: "Invalid user ID", status: 400 };
       }
@@ -248,14 +305,14 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // ============ Current User Routes (/me) ============
 
   // Get current user profile
-  .get("/user/me", async ({ request }) => {
+  .get("/user/me", async (context: any) => {
     try {
-      const user = await authMiddleware(request);
-      if (!user) {
+      const { auth } = context;
+      if (!auth?.user) {
         return { success: false, error: "Unauthorized", status: 401 };
       }
 
-      const fullUser = await UserService.getUserById(user.id);
+      const fullUser = await UserService.getUserById(auth.user.id);
       if (!fullUser) {
         return { success: false, error: "User not found", status: 404 };
       }
@@ -273,14 +330,14 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Update current user profile
   .put(
     "/user/me",
-    async ({ request, body }: { request: Request; body: UpdateUserRequest }) => {
+    async (context: any) => {
       try {
-        const user = await authMiddleware(request);
-        if (!user) {
+        const { body, auth } = context;
+        if (!auth?.user) {
           return { success: false, error: "Unauthorized", status: 401 };
         }
 
-        const updatedUser = await UserService.updateUser(user.id, body);
+        const updatedUser = await UserService.updateUser(auth.user.id, body);
         if (!updatedUser) {
           return { success: false, error: "Failed to update profile", status: 500 };
         }
@@ -310,14 +367,14 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   )
 
   // Delete current user account
-  .delete("/user/me", async ({ request }) => {
+  .delete("/user/me", async (context: any) => {
     try {
-      const user = await authMiddleware(request);
-      if (!user) {
+      const { auth } = context;
+      if (!auth?.user) {
         return { success: false, error: "Unauthorized", status: 401 };
       }
 
-      const deleted = await UserService.deleteUser(user.id);
+      const deleted = await UserService.deleteUser(auth.user.id);
       if (!deleted) {
         return { success: false, error: "Failed to delete account", status: 500 };
       }
@@ -335,10 +392,10 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
   // Upload profile picture for current user
   .post(
     "/user/me/upload-profile",
-    async ({ request, body }) => {
+    async (context: any) => {
       try {
-        const user = await authMiddleware(request);
-        if (!user) {
+        const { body, auth } = context;
+        if (!auth?.user) {
           return { success: false, error: "Unauthorized", status: 401 };
         }
 
@@ -347,7 +404,7 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
           return { success: false, error: "No file provided", status: 400 };
         }
 
-        const result = await UserService.uploadProfilePicture(user.id, file);
+        const result = await UserService.uploadProfilePicture(auth.user.id, file);
         if (!result.success) {
           return { success: false, error: result.error, status: 400 };
         }
@@ -355,7 +412,6 @@ export const userApi = new Elysia({ prefix: "/api", tags: ["User"] })
         return {
           success: true,
           message: "Profile picture uploaded successfully",
-          filename: result.filename,
           url: result.url,
         };
       } catch (error) {

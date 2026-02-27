@@ -2,17 +2,52 @@ import { Elysia, t } from "elysia";
 import * as favoriteService from "./favorite_service";
 
 export const favoriteApi = new Elysia({ prefix: "/api/favorites", tags: ["Favorite"] })
+  // All routes require dual authentication (JWT + API Key)
+  // Auth context is set by global middleware in index.ts
+
   // Get user favorites
-  .get("/:userUuid", async ({ params: { userUuid } }) => {
-    const favorites = await favoriteService.getOrCreateFavorites(userUuid);
+  .get("/:userUuid", async (context: any) => {
+    const { params, auth } = context;
+    if (!auth?.user) {
+      return {
+        error: "Authentication required. Please provide both JWT token and API key.",
+        status: 401,
+      };
+    }
+
+    // Verify user can only access their own favorites
+    if (auth.user.uuid !== params.userUuid) {
+      return {
+        error: "Unauthorized. You can only access your own favorites.",
+        status: 403,
+      };
+    }
+
+    const favorites = await favoriteService.getOrCreateFavorites(params.userUuid);
     return favorites;
   })
 
   // Update user favorites (full replace)
   .put(
     "/:userUuid",
-    async ({ params: { userUuid }, body }) => {
-      const favorites = await favoriteService.updateFavorites(userUuid, body as any);
+    async (context: any) => {
+      const { params, body, auth } = context;
+      if (!auth?.user) {
+        return {
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      // Verify user can only update their own favorites
+      if (auth.user.uuid !== params.userUuid) {
+        return {
+          error: "Unauthorized. You can only update your own favorites.",
+          status: 403,
+        };
+      }
+
+      const favorites = await favoriteService.updateFavorites(params.userUuid, body);
       return favorites;
     },
     {
@@ -27,8 +62,24 @@ export const favoriteApi = new Elysia({ prefix: "/api/favorites", tags: ["Favori
   // Add to favorites
   .post(
     "/:userUuid/add",
-    async ({ params: { userUuid }, body }) => {
-      const favorites = await favoriteService.addToFavorite(userUuid, body as any);
+    async (context: any) => {
+      const { params, body, auth } = context;
+      if (!auth?.user) {
+        return {
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      // Verify user can only modify their own favorites
+      if (auth.user.uuid !== params.userUuid) {
+        return {
+          error: "Unauthorized. You can only modify your own favorites.",
+          status: 403,
+        };
+      }
+
+      const favorites = await favoriteService.addToFavorite(params.userUuid, body);
       return favorites;
     },
     {
@@ -43,8 +94,24 @@ export const favoriteApi = new Elysia({ prefix: "/api/favorites", tags: ["Favori
   // Remove from favorites
   .post(
     "/:userUuid/remove",
-    async ({ params: { userUuid }, body }) => {
-      const favorites = await favoriteService.removeFromFavorite(userUuid, body as any);
+    async (context: any) => {
+      const { params, body, auth } = context;
+      if (!auth?.user) {
+        return {
+          error: "Authentication required. Please provide both JWT token and API key.",
+          status: 401,
+        };
+      }
+
+      // Verify user can only modify their own favorites
+      if (auth.user.uuid !== params.userUuid) {
+        return {
+          error: "Unauthorized. You can only modify your own favorites.",
+          status: 403,
+        };
+      }
+
+      const favorites = await favoriteService.removeFromFavorite(params.userUuid, body);
       return favorites;
     },
     {
@@ -57,7 +124,23 @@ export const favoriteApi = new Elysia({ prefix: "/api/favorites", tags: ["Favori
   )
 
   // Delete user favorites
-  .delete("/:userUuid", async ({ params: { userUuid } }) => {
-    await favoriteService.deleteFavorites(userUuid);
+  .delete("/:userUuid", async (context: any) => {
+    const { params, auth } = context;
+    if (!auth?.user) {
+      return {
+        error: "Authentication required. Please provide both JWT token and API key.",
+        status: 401,
+      };
+    }
+
+    // Verify user can only delete their own favorites
+    if (auth.user.uuid !== params.userUuid) {
+      return {
+        error: "Unauthorized. You can only delete your own favorites.",
+        status: 403,
+      };
+    }
+
+    await favoriteService.deleteFavorites(params.userUuid);
     return { message: "Favorites deleted successfully" };
   });

@@ -78,6 +78,12 @@ function initialize() {
     try {
       const loginData = JSON.parse(axmLogin);
 
+      // Restore API key if saved
+      if (loginData.api_key) {
+        apiClient.setApiKey(loginData.api_key);
+        currentApiKey = loginData.api_key;
+      }
+
       // Check token validity before initializing
       if (loginData.token) {
         if (isTokenExpired(loginData.token)) {
@@ -195,10 +201,17 @@ async function login(credentials: LoginRequest) {
         apiClient.setAuthToken(response.data.token);
       }
 
-      // Store login data with token and optional refresh_token
+      // Get current API key from apiClient (either from env or stored)
+      const apiKey = apiClient.getApiKey();
+      if (apiKey) {
+        currentApiKey = apiKey;
+      }
+
+      // Store login data with token, API key and optional refresh_token
       const loginData: any = {
         user: currentUser.uuid,
         token: response.data.token,
+        api_key: apiKey, // Save API key for dual-auth on protected routes
       };
 
       if (response.data.refresh_token) {
@@ -258,7 +271,7 @@ async function logout() {
     localStorage.removeItem("AxmLogin");
 
     chatStore.clearCurrentConversation();
-    
+
     // Navigate to root page
     if (typeof window !== "undefined") {
       navigate("/");

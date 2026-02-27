@@ -271,19 +271,12 @@ export class UserService {
     }
   }
 
-  static getPublicUser(user: User): Omit<User, "password"> {
-    const { password, ...publicUser } = user;
+  static getPublicUser(user: User): Omit<User, "password" | "openrouter_api_key"> {
+    const { password, openrouter_api_key, ...publicUser } = user;
 
-    // Decrypt API key if it exists
-    if (publicUser.openrouter_api_key) {
-      try {
-        publicUser.openrouter_api_key = decryptApiKey(publicUser.openrouter_api_key);
-      } catch (error) {
-        console.error("Failed to decrypt API key for user:", user.username, error);
-        // Keep the key as-is if decryption fails (might be already plain text)
-        // Don't set to null - let the caller handle it
-      }
-    }
+    // NOTE: openrouter_api_key is intentionally NOT returned to frontend
+    // It is stored encrypted in DB and only used internally by backend
+    // when making calls to OpenRouter API
 
     return publicUser;
   }

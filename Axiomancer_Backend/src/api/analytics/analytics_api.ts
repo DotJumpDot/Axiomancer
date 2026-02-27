@@ -2,6 +2,9 @@ import { Elysia } from "elysia";
 import { AnalyticsService } from "./analytics_service";
 
 export const analyticsApi = new Elysia({ prefix: "/api", tags: ["Analytics"] })
+  // All routes require dual authentication (JWT + API Key)
+  // Auth context is set by global middleware in index.ts
+
   .get("/analytics", async (context: any) => {
     const { auth, query } = context;
 
@@ -10,7 +13,7 @@ export const analyticsApi = new Elysia({ prefix: "/api", tags: ["Analytics"] })
         return new Response(
           JSON.stringify({
             success: false,
-            error: "Authentication required",
+            error: "Authentication required. Please provide both JWT token and API key.",
           }),
           { status: 401, headers: { "Content-Type": "application/json" } }
         );
@@ -34,6 +37,7 @@ export const analyticsApi = new Elysia({ prefix: "/api", tags: ["Analytics"] })
       );
     }
   })
+
   .get("/analytics/models/count", async (context: any) => {
     const { auth } = context;
 
@@ -42,7 +46,7 @@ export const analyticsApi = new Elysia({ prefix: "/api", tags: ["Analytics"] })
         return new Response(
           JSON.stringify({
             success: false,
-            error: "Authentication required",
+            error: "Authentication required. Please provide both JWT token and API key.",
           }),
           { status: 401, headers: { "Content-Type": "application/json" } }
         );
