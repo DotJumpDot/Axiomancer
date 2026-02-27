@@ -89,11 +89,15 @@
 ### 🔐 **Authentication & Security**
 
 - **JWT Authentication** - Secure token-based authentication with refresh tokens
-- **Personal API Keys** - Store OpenRouter API keys per user (encrypted)
+- **Dual Authentication** - Requires both JWT token AND API key for protected endpoints
+- **Personal API Keys** - Store OpenRouter API keys per user (encrypted with AES-256-GCM)
+- **Rate Limiting** - Per-IP and per-user rate limits (500 messages/hour, 20 login attempts/10min)
+- **Retry Logic** - Automatic 3 retries with exponential backoff for OpenRouter API calls
 - **Profile Management** - Update profile info, avatar, contact details
 - **Guest Mode** - Chat without account (limited features)
 - **Account Controls** - Secure account deletion and data management
 - **Session Persistence** - Auto-login with stored credentials
+- **Bilingual Notifications** - Rate limit warnings in English and Thai
 
 ### 📊 **Performance Analytics & Tracking**
 

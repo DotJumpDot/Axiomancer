@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes all security improvements made to the Axiomancer project, including JWT Bearer token authentication fixes and rate limiting implementation.
+This document summarizes all security improvements made to the Axiomancer project, including JWT Bearer token authentication, rate limiting implementation, and retry logic for external API calls.
 
 ---
 
@@ -70,6 +70,7 @@ headers: {
 **3. Updated `chatService.ts`**
 
 - Fixed `sendMessageStream()` to include API key header
+- Added rate limit error detection (429 status)
 
 ---
 
@@ -125,11 +126,24 @@ Simple in-memory rate limiting with the following configuration:
 
 ### Implementation Pattern
 
-**Auth Routes** (IP-based):
+**Auth Routes** (IP-based with inline checks):
 
 ```typescript
-.onBeforeHandle(rateLimitMiddleware(loginRateLimit))
-.post("/login", ...)
+.post("/login", async ({ body, request }) => {
+  // Check rate limit first
+  const rateLimitResult = await loginRateLimit(request);
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Rate limit exceeded...",
+        retryAfter: rateLimitResult.retryAfter,
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  // ... continue with login logic
+})
 ```
 
 **Protected Routes** (User-based):
@@ -139,7 +153,48 @@ Simple in-memory rate limiting with the following configuration:
 const rateLimitFn = createSendMessageRateLimit(auth.user.uuid);
 const rateLimitResult = await rateLimitFn(request);
 if (!rateLimitResult.allowed) {
-  return { success: false, error: "Rate limit exceeded", retryAfter: ... };
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: "Rate limit exceeded. You can send 500 messages per hour.",
+      retryAfter: rateLimitResult.retryAfter,
+    }),
+    { status: 429, headers: { "Content-Type": "application/json" } }
+  );
+}
+```
+
+### Frontend Rate Limit Handling
+
+**Translations Added** (`languages/en/chat.json` and `languages/th/chat.json`):
+
+```json
+{
+  "errors": {
+    "rateLimit": "Rate limit exceeded",
+    "rateLimitMessage": "You can send {count} messages per hour. Please try again in {minutes} minutes.",
+    "rateLimitRetry": "Too many requests. Please wait a moment before sending another message."
+  }
+}
+```
+
+**Store Integration** (`chat.svelte.ts`):
+
+```typescript
+function showRateLimitNotification(retryAfter?: number, lang: LanguageCode = "en") {
+  const t = getTranslations(lang);
+  const notification = (window as any).notification;
+  if (notification) {
+    if (retryAfter && retryAfter > 0) {
+      const minutes = Math.ceil(retryAfter / 60);
+      const message = t.errors.rateLimitMessage
+        .replace("{count}", "500")
+        .replace("{minutes}", minutes.toString());
+      notification.warning(t.errors.rateLimit, message, { duration: 8000 });
+    } else {
+      notification.warning(t.errors.rateLimit, t.errors.rateLimitRetry, { duration: 5000 });
+    }
+  }
 }
 ```
 
@@ -149,10 +204,46 @@ if (!rateLimitResult.allowed) {
 - Includes `retryAfter` seconds in response
 - Auto-cleans expired entries every 5 minutes
 - In-memory storage (consider Redis for production)
+- Frontend shows bilingual notification with retry time
 
 ---
 
-## 4. Other Security Checks
+## 4. Retry Logic for OpenRouter API
+
+### Implementation (`ai_openrouter.ts`)
+
+Added automatic retry logic with exponential backoff for all OpenRouter API calls:
+
+```typescript
+const MAX_RETRIES = 3;
+const INITIAL_DELAY_MS = 1000;
+const MAX_DELAY_MS = 10000;
+
+function getRetryDelay(attempt: number): number {
+  const exponentialDelay = INITIAL_DELAY_MS * Math.pow(2, attempt - 1);
+  const jitter = Math.random() * 0.3 * exponentialDelay;
+  return Math.min(exponentialDelay + jitter, MAX_DELAY_MS);
+}
+```
+
+### Retry Behavior
+
+- **3 retry attempts** for failed requests
+- **Exponential backoff**: 1s → 2s → 4s delays
+- **Jitter**: Random 0-30% variation prevents thundering herd
+- **Smart error detection**:
+  - ✅ Retries on: 5xx server errors, 429 rate limits, network failures
+  - ❌ No retry on: 4xx client errors (bad requests, auth failures)
+
+### Applied to All API Methods
+
+- `chatCompletion()` - Non-streaming requests
+- `streamChatCompletion()` - Streaming with SSE
+- `getModels()` - Model list fetching
+
+---
+
+## 5. Other Security Checks
 
 ### SQL Injection Prevention ✓
 
@@ -188,17 +279,23 @@ if (!rateLimitResult.allowed) {
 
 ---
 
-## 5. Environment Variables Required
+## 6. Environment Variables Required
 
 ```bash
 # Database
 DATABASE_URL=postgresql://username:password@localhost:5432/dbname
+DB_HOST=localhost
+DB_PORT=5433
+DB_USER=postgres
+DB_PASSWORD=your-db-password
+DB_NAME=Axiomancer
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long
 JWT_EXPIRES_IN=24h
 
 # API Keys
+SERVER_OPENROUTER_API_KEY=your-openrouter-api-key
 DUCKDUCKGO_API_KEY=your-duckduckgo-key
 PIXABAY_API_KEY=your-pixabay-key
 
@@ -206,32 +303,38 @@ PIXABAY_API_KEY=your-pixabay-key
 API_KEY_SALT_ROUNDS=12
 ENCRYPTION_KEY=your-32-character-encryption-key
 
+# Server
+SERVER_PORT=4100
+SERVER_CORS_ORIGIN=http://localhost:5173
+
 # Frontend (Vite)
-VITE_API_URL=http://localhost:3000
-VITE_API_KEY=your-hardcoded-api-key-for-dev
+VITE_BACKEND_BASE_URL=http://localhost:4100
+VITE_API_KEY=your-frontend-api-key
 ```
 
 ---
 
-## 6. Security Checklist
+## 7. Security Checklist
 
-| Item                     | Status         | Notes                     |
-| ------------------------ | -------------- | ------------------------- |
-| Dual Authentication      | ✅ Fixed       | JWT + API Key required    |
-| API Key Encryption       | ✅ Working     | AES-256-GCM               |
-| Password Hashing         | ✅ Working     | bcrypt 10 rounds          |
-| Rate Limiting            | ✅ Implemented | In-memory, per IP/user    |
-| SQL Injection Prevention | ✅ Working     | Parameterized queries     |
-| XSS Protection           | ✅ Working     | No unsafe HTML            |
-| CORS Configuration       | ✅ Working     | Proper origins set        |
-| File Upload Security     | ✅ Working     | Type/size validation      |
-| Error Handling           | ✅ Working     | No sensitive leaks        |
-| API Key Exposure         | ✅ Fixed       | Not returned in responses |
-| Hardcoded Secrets        | ✅ Fixed       | Moved to env vars         |
+| Item                     | Status         | Notes                         |
+| ------------------------ | -------------- | ----------------------------- |
+| Dual Authentication      | ✅ Fixed       | JWT + API Key required        |
+| API Key Encryption       | ✅ Working     | AES-256-GCM                   |
+| Password Hashing         | ✅ Working     | bcrypt 10 rounds              |
+| Rate Limiting            | ✅ Implemented | In-memory, per IP/user        |
+| Retry Logic              | ✅ Implemented | 3 retries with backoff        |
+| SQL Injection Prevention | ✅ Working     | Parameterized queries         |
+| XSS Protection           | ✅ Working     | No unsafe HTML                |
+| CORS Configuration       | ✅ Working     | Proper origins set            |
+| File Upload Security     | ✅ Working     | Type/size validation          |
+| Error Handling           | ✅ Working     | No sensitive leaks            |
+| API Key Exposure         | ✅ Fixed       | Not returned in responses     |
+| Hardcoded Secrets        | ✅ Fixed       | Moved to env vars             |
+| Frontend Notifications   | ✅ Implemented | Bilingual rate limit warnings |
 
 ---
 
-## 7. Recommendations for Production
+## 8. Recommendations for Production
 
 1. **Redis for Rate Limiting**: Replace in-memory store with Redis for distributed systems
 2. **HTTPS Only**: Ensure all traffic uses HTTPS in production
@@ -239,28 +342,32 @@ VITE_API_KEY=your-hardcoded-api-key-for-dev
 4. **Monitoring**: Add security event logging and alerting
 5. **API Key Rotation**: Support API key expiration and rotation
 6. **Rate Limit Headers**: Add X-RateLimit-Remaining headers for client awareness
+7. **Queue System**: Consider adding a job queue for high-load scenarios (100+ concurrent users)
 
 ---
 
-## 8. Files Modified
+## 9. Files Modified
 
 ### Backend
 
 - `src/index.ts` - Global auth middleware
-- `src/api/auth/auth_middleware.ts` - Created
-- `src/api/auth/auth_api.ts` - Rate limiting for login/register
+- `src/api/auth/auth_middleware.ts` - Dual auth implementation
+- `src/api/auth/auth_api.ts` - Rate limiting for login/register (inline checks)
 - `src/api/auth/auth_query.ts` - Salt rounds from env
+- `src/api/ai/ai_openrouter.ts` - Retry logic with exponential backoff
 - `src/api/user/user_service.ts` - Fixed getPublicUser
 - `src/api/chat/chat_api.ts` - Rate limiting for messages
 - `src/api/search/search_api.ts` - Rate limiting for search
-- `src/middleware/rateLimit.ts` - Created
+- `src/middleware/rateLimit.ts` - Rate limiting implementation
 
 ### Frontend
 
 - `src/Service/apiClient.ts` - Dual headers
 - `src/Service/authService.ts` - API key persistence
-- `src/Service/chatService.ts` - Fixed streaming auth
-- `src/Service/secureStorage.ts` - Created (documentation)
+- `src/Service/chatService.ts` - Fixed streaming auth, rate limit error detection
+- `src/Store/chat.svelte.ts` - Rate limit notification handling
+- `src/languages/en/chat.json` - Rate limit translations
+- `src/languages/th/chat.json` - Rate limit translations
 
 ### Environment
 
@@ -274,9 +381,10 @@ VITE_API_KEY=your-hardcoded-api-key-for-dev
 The Axiomancer project now implements a robust security model:
 
 1. **Dual Authentication**: Both JWT and API key required for protected endpoints
-2. **Rate Limiting**: Protects against brute force and abuse
-3. **Encryption**: OpenRouter API keys encrypted at rest
-4. **Proper Secrets Management**: No hardcoded credentials
-5. **Standard Security Practices**: XSS, SQL injection, and CORS protection
+2. **Rate Limiting**: Protects against brute force and abuse with frontend notifications
+3. **Retry Logic**: Automatic retries with exponential backoff for external API failures
+4. **Encryption**: OpenRouter API keys encrypted at rest
+5. **Proper Secrets Management**: No hardcoded credentials
+6. **Standard Security Practices**: XSS, SQL injection, and CORS protection
 
-The system is now production-ready from an authentication and rate limiting perspective.
+The system is now production-ready from an authentication, rate limiting, and reliability perspective.

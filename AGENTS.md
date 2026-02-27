@@ -60,6 +60,7 @@ to ensure smooth development with Hot Module Replacement (HMR) and proper servic
 - **Usage Pattern**: `let t = $derived(getTranslations(settingsStore.language as LanguageCode))`
 - **Reactive Updates**: UI automatically updates when `settingsStore.language` changes
 - **When Adding UI Text**: Always add corresponding translations to both `en/` and `th/` JSON files
+- **Rate Limit Errors**: Add rate limit error messages to `errors.rateLimit`, `errors.rateLimitMessage`, `errors.rateLimitRetry` keys
 
 ### Database
 
@@ -233,9 +234,49 @@ Axiomancer_Backend/src/
 │       ├── user_service.ts              # User profile operations
 │       ├── user_query.ts                # Database queries for users
 │       └── user_type.ts                 # TypeScript interfaces (User, CreateUserRequest, etc.)
-└── database/
-    └── db.ts                            # PostgreSQL connection (using Postgres driver)
+├── database/
+│   └── db.ts                            # PostgreSQL connection (using Postgres driver)
+└── middleware/
+    └── rateLimit.ts                     # Rate limiting with in-memory store
 ```
+
+### Rate Limiting
+
+The backend implements in-memory rate limiting:
+
+| Endpoint     | Limit        | Window          | Key Type  |
+| ------------ | ------------ | --------------- | --------- |
+| Login        | 20 attempts  | 10 min per IP   | IP-based  |
+| Register     | 20 attempts  | 1 hour per IP   | IP-based  |
+| Send Message | 500 messages | 1 hour per user | User UUID |
+| Search       | 200 requests | 1 hour per user | User UUID |
+| General API  | 1000 req     | 1 hour per IP   | IP-based  |
+
+**Implementation Pattern** (inline checks):
+
+```typescript
+// In route handler
+const rateLimitResult = await loginRateLimit(request);
+if (!rateLimitResult.allowed) {
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: "Rate limit exceeded",
+      retryAfter: rateLimitResult.retryAfter,
+    }),
+    { status: 429, headers: { "Content-Type": "application/json" } }
+  );
+}
+```
+
+### Retry Logic (OpenRouter API)
+
+All OpenRouter API calls include automatic retry logic:
+
+- **3 retry attempts** with exponential backoff (1s → 2s → 4s)
+- **Jitter**: Random 0-30% variation to prevent thundering herd
+- **Retryable errors**: 5xx server errors, 429 rate limits, network failures
+- **No retry**: 4xx client errors (except 429)
 
 ## 3. Keep Dependencies in Sync
 
@@ -275,6 +316,7 @@ Follow these strict naming patterns for consistency:
 | Queries    | `{feature}_query.ts`   | `chat_query.ts`, `user_query.ts`             |
 | Types      | `{feature}_type.ts`    | `ai_type.ts`, `chat_type.ts`, `user_type.ts` |
 | Database   | `db.ts`                | Database connection module                   |
+| Middleware | `camelCase.ts`         | `rateLimit.ts`                               |
 
 **Rules:**
 
