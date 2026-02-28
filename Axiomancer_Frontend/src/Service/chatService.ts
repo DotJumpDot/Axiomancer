@@ -100,6 +100,7 @@ export const chatService = {
       memoryCount?: number;
       reasoningEffort?: string;
       enhanceSearchMode?: string;
+      enhanceSearchModel?: string;
     }
   ) {
     return apiClient.post<{ userMessage: Chat; aiResponse?: ChatAiRespond }>(
@@ -122,6 +123,7 @@ export const chatService = {
       memoryCount?: number;
       reasoningEffort?: string;
       enhanceSearchMode?: string;
+      enhanceSearchModel?: string;
     },
     signal: AbortSignal,
     onChunk: (chunk: string, type?: "content" | "reasoning") => void,

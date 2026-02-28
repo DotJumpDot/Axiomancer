@@ -291,7 +291,11 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
           steamSearch: steamSearchEnabled,
           memoryCount: options?.memoryCount ?? memoryCount,
           reasoningEffort: options?.reasoningEffort || reasoningEffort,
-          enhanceSearchMode: options?.enhanceSearchMode,
+          enhanceSearchMode: options?.enhanceSearchMode || settingsStore.enhanceSearchMode,
+          enhanceSearchModel:
+            settingsStore.enhanceSearchMode === "user-selected"
+              ? settingsStore.enhanceSearchModel
+              : undefined,
         },
         streamAbortController.signal,
         // onChunk
@@ -467,7 +471,11 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
         steamSearch: steamSearchEnabled,
         memoryCount: options?.memoryCount ?? memoryCount,
         reasoningEffort: options?.reasoningEffort || reasoningEffort,
-        enhanceSearchMode: options?.enhanceSearchMode,
+        enhanceSearchMode: options?.enhanceSearchMode || settingsStore.enhanceSearchMode,
+        enhanceSearchModel:
+          settingsStore.enhanceSearchMode === "user-selected"
+            ? settingsStore.enhanceSearchModel
+            : undefined,
       });
 
       if (response.success && response.data) {

@@ -127,6 +127,23 @@ export interface SendMessageRequest {
   enhanceSearchMode?: "disabled" | "server-default" | "current-model";
 }
 
+// Decision Info type for enhanced search model usage
+export interface DecisionInfo {
+  model_key: string;
+  display_name?: string;
+  provider?: string;
+  token_usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  cost_usd?: number;
+  latency_ms?: number;
+  is_free: boolean;
+  used_for: "web_search" | "image_search" | "both";
+  timestamp: string;
+}
+
 // Search Log types
 export interface SearchLog {
   id_no: number;
@@ -143,6 +160,7 @@ export interface SearchLog {
   prompt_picture_search: string | null;
   search_context_web: any | null;
   search_context_picture: any | null;
+  decision_info: DecisionInfo | null;
   created_at: Date;
 }
 
@@ -159,4 +177,5 @@ export interface CreateSearchLogRequest {
   prompt_picture_search?: string | null;
   search_context_web?: any | null;
   search_context_picture?: any | null;
+  decision_info?: DecisionInfo | null;
 }

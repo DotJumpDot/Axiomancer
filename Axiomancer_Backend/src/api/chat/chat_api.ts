@@ -347,6 +347,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
             memoryCount: body.memoryCount,
             reasoningEffort: body.reasoningEffort,
             enhanceSearchMode: body.enhanceSearchMode,
+            enhanceSearchModel: body.enhanceSearchModel,
           },
           auth.user.id
         );
@@ -386,6 +387,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         memoryCount: t.Optional(t.Number()),
         reasoningEffort: t.Optional(t.String()),
         enhanceSearchMode: t.Optional(t.String()),
+        enhanceSearchModel: t.Optional(t.String()),
       }),
     }
   )
@@ -442,6 +444,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
                   memoryCount: body.memoryCount,
                   reasoningEffort: body.reasoningEffort,
                   enhanceSearchMode: body.enhanceSearchMode,
+                  enhanceSearchModel: body.enhanceSearchModel,
                 },
                 auth.user.id,
                 (chunk, type) => {
@@ -494,6 +497,7 @@ export const chatApi = new Elysia({ prefix: "/api", tags: ["Chat"] })
         memoryCount: t.Optional(t.Number()),
         reasoningEffort: t.Optional(t.String()),
         enhanceSearchMode: t.Optional(t.String()),
+        enhanceSearchModel: t.Optional(t.String()),
       }),
     }
   )

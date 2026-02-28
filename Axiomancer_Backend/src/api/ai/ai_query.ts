@@ -3,7 +3,7 @@ import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "./ai_t
 
 export async function getAiModels(): Promise<AiModel[]> {
   const result = await sql`
-    SELECT id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
+    SELECT id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
     FROM ai_model
     ORDER BY created_at DESC
   `;
@@ -12,7 +12,7 @@ export async function getAiModels(): Promise<AiModel[]> {
 
 export async function getAiModelById(id: string): Promise<AiModel | null> {
   const result = await sql`
-    SELECT id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
+    SELECT id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
     FROM ai_model
     WHERE id = ${id}
   `;
@@ -22,7 +22,7 @@ export async function getAiModelById(id: string): Promise<AiModel | null> {
 
 export async function getAiModelByModelKey(model_key: string): Promise<AiModel | null> {
   const result = await sql`
-    SELECT id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
+    SELECT id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
     FROM ai_model
     WHERE model_key = ${model_key}
     ORDER BY created_at DESC
@@ -35,13 +35,13 @@ export async function getAiModelByModelKey(model_key: string): Promise<AiModel |
 export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel> {
   const id = crypto.randomUUID();
   const result = await sql`
-    INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at)
-    VALUES (${id}, ${data.provider}, ${data.model_key}, ${data.display_name}, ${
+    INSERT INTO ai_model (id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at)
+    VALUES (${id}, ${data.provider}, ${data.model_key}, ${data.display_name}, ${data.description ?? ""}, ${
       data.context_length
     }, ${data.cost_per_1k_token}, ${sql.json(data.capabilities)}, ${
       data.enabled ?? true
-    }, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    RETURNING id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at
+    }, ${data.chat_type_to_type ?? "unknown"}, ${data.created ?? 0}, ${data.expiration_date ?? null}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
   `;
   return result[0] as unknown as AiModel;
 }
@@ -64,6 +64,10 @@ export async function updateAiModel(
     setParts.push("display_name = $" + (values.length + 1));
     values.push(data.display_name);
   }
+  if (data.description !== undefined) {
+    setParts.push("description = $" + (values.length + 1));
+    values.push(data.description);
+  }
   if (data.context_length !== undefined) {
     setParts.push("context_length = $" + (values.length + 1));
     values.push(data.context_length);
@@ -80,12 +84,24 @@ export async function updateAiModel(
     setParts.push("enabled = $" + (values.length + 1));
     values.push(data.enabled);
   }
+  if (data.chat_type_to_type !== undefined) {
+    setParts.push("chat_type_to_type = $" + (values.length + 1));
+    values.push(data.chat_type_to_type);
+  }
+  if (data.created !== undefined) {
+    setParts.push("created = $" + (values.length + 1));
+    values.push(data.created);
+  }
+  if (data.expiration_date !== undefined) {
+    setParts.push("expiration_date = $" + (values.length + 1));
+    values.push(data.expiration_date);
+  }
   if (setParts.length === 0) return getAiModelById(id);
 
   setParts.push("updated_at = CURRENT_TIMESTAMP");
   const query = `UPDATE ai_model SET ${setParts.join(", ")} WHERE id = $${
     values.length + 1
-  } RETURNING id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at, updated_at`;
+  } RETURNING id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at`;
   values.push(id);
   const result = await sql.unsafe(query, values);
   if (result.length === 0) return null;

@@ -48,9 +48,9 @@ export const FAVORITE_COLORS = [
 ] as const;
 
 export const ENHANCE_SEARCH_MODES = [
-  { value: "disabled", label: "Disabled" },
-  { value: "server-default", label: "Use Server Default AI" },
-  { value: "current-model", label: "Use Current Model" },
+  { value: "disabled", label: "No model (server uses free model)" },
+  { value: "server-default", label: "Auto Server model (default)" },
+  { value: "user-selected", label: "Select Model by user" },
 ] as const;
 
 // Font size CSS mapping
@@ -95,9 +95,7 @@ let spellCheck = $state(true);
 let doubleClickFavorite = $state(true);
 let disableClickRename = $state(false);
 let favoriteIcon = $state<"star" | "heart" | "bookmark" | "pin">("star");
-let favoriteColor = $state<
-  "gold" | "red" | "pink" | "purple" | "blue" | "green"
->("gold");
+let favoriteColor = $state<"gold" | "red" | "pink" | "purple" | "blue" | "green">("gold");
 let showRelativeTime = $state(true);
 
 // New settings - Chat tab
@@ -114,9 +112,8 @@ let soundEnabled = $state(false);
 let soundVolume = $state(50); // 0-100
 
 // Enhanced search settings
-let enhanceSearchMode = $state<"disabled" | "server-default" | "current-model">(
-  "disabled",
-);
+let enhanceSearchMode = $state<"disabled" | "server-default" | "user-selected">("disabled");
+let enhanceSearchModel = $state<string>(""); // User-selected model for enhance search (empty = not set)
 
 // Folder settings
 let autoOpenCollapse = $state(true); // Auto open collapsed folders when clicking conversation
@@ -149,6 +146,7 @@ function saveSettings() {
     soundEnabled,
     soundVolume,
     enhanceSearchMode,
+    enhanceSearchModel,
     autoOpenCollapse,
     favoriteFolderEnabled,
     disableFolderClickRename,
@@ -201,6 +199,7 @@ function loadSettings() {
       soundEnabled = settings.soundEnabled ?? false;
       soundVolume = settings.soundVolume ?? 50;
       enhanceSearchMode = settings.enhanceSearchMode ?? "disabled";
+      enhanceSearchModel = settings.enhanceSearchModel ?? "";
       autoOpenCollapse = settings.autoOpenCollapse ?? true;
       favoriteFolderEnabled = settings.favoriteFolderEnabled ?? true;
       disableFolderClickRename = settings.disableFolderClickRename ?? true;
@@ -231,7 +230,7 @@ function setThemeVariant(
     | "vaporwave-retro"
     | "rainbow"
     | "terminal"
-    | "github",
+    | "github"
 ) {
   themeVariant = variant;
   applyTheme();
@@ -318,9 +317,7 @@ function setFavoriteIcon(icon: "star" | "heart" | "bookmark" | "pin") {
   saveSettings();
 }
 
-function setFavoriteColor(
-  color: "gold" | "red" | "pink" | "purple" | "blue" | "green",
-) {
+function setFavoriteColor(color: "gold" | "red" | "pink" | "purple" | "blue" | "green") {
   favoriteColor = color;
   saveSettings();
 }
@@ -375,10 +372,13 @@ function setSoundVolume(volume: number) {
   saveSettings();
 }
 
-function setEnhanceSearchMode(
-  mode: "disabled" | "server-default" | "current-model",
-) {
+function setEnhanceSearchMode(mode: "disabled" | "server-default" | "user-selected") {
   enhanceSearchMode = mode;
+  saveSettings();
+}
+
+function setEnhanceSearchModel(modelKey: string) {
+  enhanceSearchModel = modelKey;
   saveSettings();
 }
 
@@ -421,6 +421,7 @@ function resetChatSettings() {
   autoScrollToBottom = true;
   autoSaveDrafts = true;
   enhanceSearchMode = "disabled";
+  enhanceSearchModel = "";
   applyFontSize();
   saveSettings();
 }
@@ -508,6 +509,9 @@ export const settingsStore = {
   get enhanceSearchMode() {
     return enhanceSearchMode;
   },
+  get enhanceSearchModel() {
+    return enhanceSearchModel;
+  },
   get autoOpenCollapse() {
     return autoOpenCollapse;
   },
@@ -551,6 +555,7 @@ export const settingsStore = {
   setSoundEnabled,
   setSoundVolume,
   setEnhanceSearchMode,
+  setEnhanceSearchModel,
   setAutoOpenCollapse,
   setFavoriteFolderEnabled,
   setDisableFolderClickRename,

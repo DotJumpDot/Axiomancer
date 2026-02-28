@@ -18,9 +18,7 @@ export class ChatQuery {
   // ===========================
 
   //* Create AI respond record
-  static async createChatAiRespond(
-    respond: CreateChatAiRespondRequest,
-  ): Promise<ChatAiRespond> {
+  static async createChatAiRespond(respond: CreateChatAiRespondRequest): Promise<ChatAiRespond> {
     const id = crypto.randomUUID();
     const now = new Date();
 
@@ -79,7 +77,7 @@ export class ChatQuery {
   static async createConversation(
     conversation: CreateConversationRequest,
     userUuid?: string,
-    autoRouting?: boolean,
+    autoRouting?: boolean
   ): Promise<Conversation> {
     const id = crypto.randomUUID();
     const now = new Date();
@@ -101,7 +99,7 @@ export class ChatQuery {
   //* Update conversation including chat_log
   static async updateConversation(
     id: string,
-    updates: UpdateConversationRequest,
+    updates: UpdateConversationRequest
   ): Promise<Conversation | null> {
     const now = new Date();
     const setClause = [];
@@ -144,10 +142,7 @@ export class ChatQuery {
   }
 
   //* Append chat ID to conversation's chat_log
-  static async appendToChatLog(
-    conversationId: string,
-    chatId: string,
-  ): Promise<void> {
+  static async appendToChatLog(conversationId: string, chatId: string): Promise<void> {
     await sql`
       UPDATE conversation
       SET chat_log = array_append(chat_log, ${chatId}),
@@ -169,9 +164,7 @@ export class ChatQuery {
   }
 
   // Chat queries
-  static async getChatsByConversationId(
-    conversationId: string,
-  ): Promise<Chat[]> {
+  static async getChatsByConversationId(conversationId: string): Promise<Chat[]> {
     const result = await sql`
       SELECT
         c.*,
@@ -327,10 +320,7 @@ export class ChatQuery {
   }
 
   // Update chat message
-  static async updateChat(
-    id: string,
-    updates: UpdateChatRequest,
-  ): Promise<Chat | null> {
+  static async updateChat(id: string, updates: UpdateChatRequest): Promise<Chat | null> {
     const now = new Date();
     const setClause = [];
     const values = [];
@@ -397,9 +387,7 @@ export class ChatQuery {
   }
 
   // Delete all chats for a conversation
-  static async deleteChatsByConversationId(
-    conversationId: string,
-  ): Promise<number> {
+  static async deleteChatsByConversationId(conversationId: string): Promise<number> {
     const result = await sql`
       DELETE FROM chat
       WHERE conversation_id = ${conversationId}
@@ -412,9 +400,7 @@ export class ChatQuery {
   // ===========================
 
   //* Create search log record
-  static async createSearchLog(
-    log: CreateSearchLogRequest,
-  ): Promise<SearchLog> {
+  static async createSearchLog(log: CreateSearchLogRequest): Promise<SearchLog> {
     const id_uuid = crypto.randomUUID();
     const now = new Date();
 
@@ -422,7 +408,7 @@ export class ChatQuery {
       INSERT INTO search_log (
         id_uuid, chat_id, memory_chat_include, used_web_search, used_image_search, used_steam,
         reasoning_effort, reasoning_content, decision_prompt_model, prompt_web_search, prompt_picture_search,
-        search_context_web, search_context_picture, created_at
+        search_context_web, search_context_picture, decision_info, created_at
       ) VALUES (
         ${id_uuid}, ${log.chat_id}, ${log.memory_chat_include},
         ${log.used_web_search}, ${log.used_image_search}, ${log.used_steam},
@@ -430,6 +416,7 @@ export class ChatQuery {
         ${log.decision_prompt_model || null}, ${log.prompt_web_search || null}, ${log.prompt_picture_search || null},
         ${log.search_context_web ? sql.json(log.search_context_web) : null},
         ${log.search_context_picture ? sql.json(log.search_context_picture) : null},
+        ${log.decision_info ? sql.json(log.decision_info as any) : null},
         ${now}
       )
       RETURNING *
@@ -459,7 +446,7 @@ export class ChatQuery {
   //* Update search log reasoning content
   static async updateSearchLogReasoningContent(
     id_uuid: string,
-    reasoningContent: string,
+    reasoningContent: string
   ): Promise<void> {
     await sql`
       UPDATE search_log

@@ -15,6 +15,7 @@
     - [Chat AI Respond](#chat-ai-respond)
     - [User Selected Models](#user-selected-models)
     - [User Favorite](#user-favorite)
+    - [User Conversation Folder](#user-conversation-folder)
   - [Entity Relationships](#entity-relationships)
   - [SQL Schema](#sql-schema)
     - [Create Tables](#create-tables)
@@ -73,10 +74,14 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | provider          | str      | No       | AI provider (e.g., openrouter)                       |
 | model_key         | str      | No       | Model identifier (e.g., mistral, gpt-4.1)            |
 | display_name      | str      | No       | Human-readable model name                            |
+| description       | str      | Yes      | Model description from OpenRouter                    |
 | context_length    | int      | No       | Maximum context length in tokens                     |
 | cost_per_1k_token | decimal  | No       | Cost per 1000 tokens                                 |
 | capabilities      | json     | No       | Model capabilities (reasoning, coding, vision, fast) |
 | enabled           | boolean  | No       | Whether model is enabled for use                     |
+| chat_type_to_type | str      | No       | Model modality type (e.g., text->text, text+image->text) |
+| created           | int      | No       | Unix timestamp when model was created (from OpenRouter) |
+| expiration_date   | int      | Yes      | Unix timestamp when model expires (null if no expiration) |
 | created_at        | datetime | No       | Record creation timestamp                            |
 | updated_at        | datetime | No       | Record last update timestamp                         |
 
@@ -127,7 +132,27 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | prompt_picture_search  | text     | Yes      | AI-optimized prompt used for picture/image search query      |
 | search_context_web     | json     | Yes      | Web search results context (DuckDuckGo)                      |
 | search_context_picture | json     | Yes      | Image search results context (Pixabay)                       |
+| decision_info          | jsonb    | Yes      | Detailed info about enhance model usage (tokens, cost, etc.) |
 | created_at             | datetime | No       | Record creation timestamp                                    |
+
+**decision_info JSON Structure:**
+```json
+{
+  "model_key": "openai/gpt-4o-mini",
+  "display_name": "GPT-4o Mini",
+  "provider": "openai",
+  "token_usage": {
+    "prompt_tokens": 150,
+    "completion_tokens": 25,
+    "total_tokens": 175
+  },
+  "cost_usd": 0.0000525,
+  "latency_ms": 420,
+  "is_free": false,
+  "used_for": "both",
+  "timestamp": "2025-01-15T10:30:00.000Z"
+}
+```
 
 ### Chat AI Respond
 
@@ -259,10 +284,14 @@ CREATE TABLE ai_model (
     provider TEXT NOT NULL,
     model_key TEXT NOT NULL,
     display_name TEXT NOT NULL,
+    description TEXT,
     context_length INTEGER NOT NULL,
     cost_per_1k_token DECIMAL(14,10) NOT NULL,
     capabilities JSONB NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    chat_type_to_type TEXT NOT NULL DEFAULT 'unknown',
+    created INTEGER NOT NULL DEFAULT 0,
+    expiration_date INTEGER,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -322,8 +351,12 @@ CREATE TABLE search_log (
     used_steam BOOLEAN NOT NULL DEFAULT FALSE,
     reasoning_effort TEXT,
     reasoning_content TEXT,
+    decision_prompt_model TEXT,
+    prompt_web_search TEXT,
+    prompt_picture_search TEXT,
     search_context_web JSONB,
     search_context_picture JSONB,
+    decision_info JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (chat_id) REFERENCES chat(id)
 );
@@ -397,10 +430,10 @@ INSERT INTO "user" (uuid, username, password, email, firstname, lastname, nickna
 VALUES ('550e8400-e29b-41d4-a716-446655440000', 'admin', '1234', 'admin@example.com', 'John', 'Doe', 'Johnny', 'user', '+1234567890', 'john.jpg', NULL, CURRENT_TIMESTAMP);
 
 -- Insert sample AI models
-INSERT INTO ai_model (id, provider, model_key, display_name, context_length, cost_per_1k_token, capabilities, enabled, created_at) VALUES
-('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'mistral-7b', 'Mistral 7B', 4096, 0.000100, '{"reasoning": true, "coding": true, "vision": false, "fast": true}', TRUE, CURRENT_TIMESTAMP),
-('6ba7b811-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'gpt-4', 'GPT-4', 8192, 0.030000, '{"reasoning": true, "coding": true, "vision": true, "fast": false}', TRUE, CURRENT_TIMESTAMP),
-('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 32768, 0.001400, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', TRUE, CURRENT_TIMESTAMP);
+INSERT INTO ai_model (id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at) VALUES
+('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'mistral-7b', 'Mistral 7B', 'Mistral 7B is a powerful language model', 4096, 0.000100, '{"reasoning": true, "coding": true, "vision": false, "fast": true}', TRUE, 'text->text', 1700000000, NULL, CURRENT_TIMESTAMP),
+('6ba7b811-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'gpt-4', 'GPT-4', 'GPT-4 is OpenAI most capable model', 8192, 0.030000, '{"reasoning": true, "coding": true, "vision": true, "fast": false}', TRUE, 'text+image->text', 1700000000, NULL, CURRENT_TIMESTAMP),
+('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'openrouter', 'deepseek-coder', 'DeepSeek Coder', 'DeepSeek Coder is specialized for programming tasks', 32768, 0.001400, '{"reasoning": true, "coding": true, "vision": false, "fast": false}', TRUE, 'text->text', 1700000000, NULL, CURRENT_TIMESTAMP);
 
 -- Insert sample prompt profiles
 INSERT INTO prompt_profile (id, user_uuid, name, description, system_prompt, created_at) VALUES

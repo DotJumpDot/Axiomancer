@@ -20,7 +20,7 @@ export class AnalyticsService {
       if (msg.token_usage) {
         const tokenUsage =
           typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage;
-        return sum + (tokenUsage.total || 0);
+        return sum + (tokenUsage.total_tokens || 0);
       }
       return sum;
     }, 0);
@@ -31,7 +31,7 @@ export class AnalyticsService {
       if (msg.model_key && msg.token_usage) {
         const tokenUsage =
           typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage;
-        const tokens = tokenUsage.total || 0;
+        const tokens = tokenUsage.total_tokens || 0;
         const costPer1k = msg.cost_per_1k_token || 0.001;
         return sum + (tokens / 1000) * costPer1k;
       }
@@ -76,7 +76,7 @@ export class AnalyticsService {
 
         const tokens = msg.token_usage
           ? (typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage)
-              .total || 0
+              .total_tokens || 0
           : 0;
         const costPer1k = msg.cost_per_1k_token || 0.001;
         const cost = (tokens / 1000) * costPer1k;
@@ -138,13 +138,13 @@ export class AnalyticsService {
         if (msg.token_usage) {
           const tokenUsage =
             typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage;
-          daily.tokens += tokenUsage.total || 0;
+          daily.tokens += tokenUsage.total_tokens || 0;
         }
         if (msg.model_key) {
           const costPer1k = msg.cost_per_1k_token || 0.001;
           const tokens = msg.token_usage
             ? (typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage)
-                .total || 0
+                .total_tokens || 0
             : 0;
           daily.cost += (tokens / 1000) * costPer1k;
         }

@@ -1,8 +1,11 @@
 <script lang="ts">
   import { slide, scale } from "svelte/transition";
   import { cubicOut, elasticOut } from "svelte/easing";
-  import { settingsStore, THEME_VARIANTS, THEME_MODES, LANGUAGES, FAVORITE_ICONS, FAVORITE_COLORS, ENHANCE_SEARCH_MODES } from "@/Store";
+  import { settingsStore, aiStore, THEME_VARIANTS, THEME_MODES, LANGUAGES, FAVORITE_ICONS, FAVORITE_COLORS, ENHANCE_SEARCH_MODES } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
+
+  // Get enabled models for enhance model selection
+  let enabledModels = $derived(aiStore.enabledModels);
 
   // Display name color options
   const DISPLAY_NAME_COLORS = [
@@ -28,6 +31,61 @@
   
   // Reset confirmation state for each tab
   let resetConfirmTab = $state<string | null>(null);
+
+  // Model selector dropdown state
+  let modelSearchQuery = $state('');
+  let isModelDropdownOpen = $state(false);
+  let modelDropdownRef = $state<HTMLDivElement | null>(null);
+
+  // Filter models based on search query
+  let filteredModels = $derived(
+    enabledModels
+      .filter(model =>
+        model.display_name.toLowerCase().includes(modelSearchQuery.toLowerCase()) ||
+        model.model_key.toLowerCase().includes(modelSearchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        // Sort free models first
+        const aIsFree = a.model_key.includes(':free') || a.cost_per_1k_token === 0;
+        const bIsFree = b.model_key.includes(':free') || b.cost_per_1k_token === 0;
+        if (aIsFree && !bIsFree) return -1;
+        if (!aIsFree && bIsFree) return 1;
+        return a.display_name.localeCompare(b.display_name);
+      })
+  );
+
+  // Get selected model display name
+  let selectedModelDisplay = $derived(
+    enabledModels.find(m => m.model_key === settingsStore.enhanceSearchModel)?.display_name ||
+    t.conversationSettings.selectEnhanceModel
+  );
+
+  // Check if model is free
+  function isFreeModel(model: typeof enabledModels[0]): boolean {
+    return model.model_key.includes(':free') || model.cost_per_1k_token === 0;
+  }
+
+  // Handle model selection
+  function selectModel(modelKey: string) {
+    settingsStore.setEnhanceSearchModel(modelKey);
+    isModelDropdownOpen = false;
+    modelSearchQuery = '';
+  }
+
+  // Close dropdown when clicking outside
+  function handleClickOutside(event: MouseEvent) {
+    if (modelDropdownRef && !modelDropdownRef.contains(event.target as Node)) {
+      isModelDropdownOpen = false;
+    }
+  }
+
+  // Add click outside listener
+  $effect(() => {
+    if (isModelDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  });
 
   function setActiveTab(tab: string) {
     activeTab = tab;
@@ -281,16 +339,79 @@
                     <span class="setting-label">{t.conversationSettings.enhanceSearchAbilityLabel}</span>
                     <span class="setting-desc">{t.conversationSettings.enhanceSearchAbilityDesc}</span>
                   </div>
-                  <select 
+                  <select
                     id="enhance-search-mode"
                     value={settingsStore.enhanceSearchMode}
                     onchange={(e) => settingsStore.setEnhanceSearchMode(e.currentTarget.value as any)}
                   >
                     <option value="disabled">{t.conversationSettings.enhanceSearchDisabled}</option>
                     <option value="server-default">{t.conversationSettings.enhanceSearchServerDefault}</option>
-                    <option value="current-model">{t.conversationSettings.enhanceSearchCurrentModel}</option>
+                    <option value="user-selected">{t.conversationSettings.enhanceSearchCurrentModel}</option>
                   </select>
                 </div>
+
+                <!-- Show model selector when user-selected mode is active -->
+                {#if settingsStore.enhanceSearchMode === "user-selected"}
+                  <div class="setting-item model-selector-wrapper" transition:slide={{ duration: 200, easing: cubicOut }}>
+                    <div class="setting-info">
+                      <span class="setting-label">{t.conversationSettings.enhanceSearchModelLabel}</span>
+                      <span class="setting-desc">{t.conversationSettings.enhanceSearchModelDesc}</span>
+                    </div>
+                    <!-- Custom Searchable Dropdown -->
+                    <div class="custom-dropdown" bind:this={modelDropdownRef}>
+                      <button
+                        type="button"
+                        class="dropdown-trigger"
+                        class:open={isModelDropdownOpen}
+                        onclick={() => isModelDropdownOpen = !isModelDropdownOpen}
+                      >
+                        <span class="selected-text" class:placeholder={!settingsStore.enhanceSearchModel}>
+                          {selectedModelDisplay}
+                        </span>
+                        <svg class="dropdown-arrow" class:open={isModelDropdownOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </button>
+                      
+                      {#if isModelDropdownOpen}
+                        <div class="dropdown-menu" transition:slide={{ duration: 150, easing: cubicOut }}>
+                          <div class="dropdown-search">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="11" cy="11" r="8"></circle>
+                              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input
+                              type="text"
+                              placeholder="Search models..."
+                              bind:value={modelSearchQuery}
+                              onclick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div class="dropdown-list">
+                            {#if filteredModels.length === 0}
+                              <div class="dropdown-empty">No models found</div>
+                            {:else}
+                              {#each filteredModels as model}
+                                <button
+                                  type="button"
+                                  class="dropdown-item"
+                                  class:selected={model.model_key === settingsStore.enhanceSearchModel}
+                                  class:free={isFreeModel(model)}
+                                  onclick={() => selectModel(model.model_key)}
+                                >
+                                  <span class="model-name">{model.display_name}</span>
+                                  {#if isFreeModel(model)}
+                                    <span class="free-tag">FREE</span>
+                                  {/if}
+                                </button>
+                              {/each}
+                            {/if}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                {/if}
               </div>
 
               <!-- Interface Settings -->
@@ -1129,6 +1250,176 @@
   }
 
   /* Responsive */
+  /* Custom Dropdown Styles */
+  .model-selector-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .custom-dropdown {
+    position: relative;
+    width: 100%;
+  }
+
+  .dropdown-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border-radius: 8px;
+    color: var(--text-primary, #fff);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dropdown-trigger:hover {
+    border-color: var(--border-hover, rgba(255, 255, 255, 0.25));
+    background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+  }
+
+  .dropdown-trigger.open {
+    border-color: var(--primary-color, #6366f1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+
+  .selected-text {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .selected-text.placeholder {
+    color: var(--text-secondary, #888);
+  }
+
+  .dropdown-arrow {
+    transition: transform 0.2s ease;
+    color: var(--text-secondary, #888);
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .dropdown-arrow.open {
+    transform: rotate(180deg);
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary, #1a1a1a);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    max-height: 320px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dropdown-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    color: var(--text-secondary, #888);
+  }
+
+  .dropdown-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary, #fff);
+    font-size: 14px;
+    outline: none;
+  }
+
+  .dropdown-search input::placeholder {
+    color: var(--text-secondary, #666);
+  }
+
+  .dropdown-list {
+    overflow-y: auto;
+    max-height: 240px;
+    padding: 4px;
+  }
+
+  .dropdown-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary, #888);
+    font-size: 13px;
+  }
+
+  .dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-primary, #fff);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+  }
+
+  .dropdown-item:hover {
+    background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  }
+
+  .dropdown-item.selected {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary-color, #6366f1);
+  }
+
+  .dropdown-item.free {
+    background: rgba(34, 197, 94, 0.05);
+  }
+
+  .dropdown-item.free:hover {
+    background: rgba(34, 197, 94, 0.1);
+  }
+
+  .dropdown-item.free.selected {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+  }
+
+  .model-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+
+  .free-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .dropdown-item.selected .free-tag {
+    background: rgba(34, 197, 94, 0.3);
+  }
+
   @media (max-width: 640px) {
     .modal-content {
       width: 100%;

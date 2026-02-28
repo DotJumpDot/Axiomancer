@@ -24,6 +24,7 @@ export interface CreateAiModelRequest {
   provider: string;
   model_key: string;
   display_name: string;
+  description?: string;
   context_length: number;
   cost_per_1k_token: number;
   capabilities: {
@@ -33,12 +34,16 @@ export interface CreateAiModelRequest {
     fast: boolean;
   };
   enabled?: boolean;
+  chat_type_to_type?: string;
+  created?: number;
+  expiration_date?: number | null;
 }
 
 export interface UpdateAiModelRequest {
   provider?: string;
   model_key?: string;
   display_name?: string;
+  description?: string;
   context_length?: number;
   cost_per_1k_token?: number;
   capabilities?: {
@@ -48,6 +53,9 @@ export interface UpdateAiModelRequest {
     fast: boolean;
   };
   enabled?: boolean;
+  chat_type_to_type?: string;
+  created?: number;
+  expiration_date?: number | null;
 }
 
 // OpenRouter API types

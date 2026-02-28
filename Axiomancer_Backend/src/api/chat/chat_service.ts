@@ -14,6 +14,7 @@ import type {
   CreateConversationRequest,
   UpdateConversationRequest,
   ChatAiRespond,
+  DecisionInfo,
 } from "./chat_type";
 import type { OpenRouterRequest } from "@/api/ai/ai_type";
 
@@ -231,7 +232,8 @@ export class ChatService {
       autoRouting?: boolean;
       memoryCount?: number;
       reasoningEffort?: string;
-      enhanceSearchMode?: "disabled" | "server-default" | "current-model";
+      enhanceSearchMode?: "disabled" | "server-default" | "user-selected";
+      enhanceSearchModel?: string;
     },
     userId?: number
   ): Promise<{
@@ -310,22 +312,35 @@ export class ChatService {
       let decisionPromptModel: string | null = null;
       let promptWebSearch: string | null = null;
       let promptPictureSearch: string | null = null;
+      let decisionInfo: DecisionInfo | null = null;
 
       if (
         options?.enhanceSearchMode &&
         options.enhanceSearchMode !== "disabled" &&
         (options?.webSearch || options?.imageSearch)
       ) {
+        const enhanceStartTime = Date.now();
         try {
           // Determine which model to use for enhanced search
           let enhanceModelKey: string;
           if (options.enhanceSearchMode === "server-default") {
             enhanceModelKey = process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
+          } else if (options.enhanceSearchMode === "user-selected") {
+            // user-selected: use the model specified by the user
+            enhanceModelKey =
+              options.enhanceSearchModel ||
+              process.env.SERVER_ANON_MODEL ||
+              "openai/gpt-oss-120b:free";
           } else {
-            // current-model
-            enhanceModelKey = actualModelKey || "openai/gpt-oss-120b:free";
+            // Fallback to server default
+            enhanceModelKey = process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
           }
           decisionPromptModel = enhanceModelKey;
+
+          // Get model info for decision_info
+          const enhanceModel = await getAiModelByModelKey(enhanceModelKey);
+          const isFreeModel =
+            enhanceModelKey.includes(":free") || enhanceModel?.cost_per_1k_token === 0;
 
           // Create prompt for extracting search keywords
           const enhancePrompt = `You are a search query optimizer. Extract the most relevant search keywords from the user's message.
@@ -349,12 +364,54 @@ Optimized search query:`;
           const optimizedQuery =
             enhanceResponse.choices[0]?.message?.content?.trim() || userMessage;
 
+          // Calculate latency and cost
+          const latencyMs = Date.now() - enhanceStartTime;
+          const tokenUsage = enhanceResponse.usage;
+          let costUsd = 0;
+          if (tokenUsage && enhanceModel) {
+            costUsd = (tokenUsage.total_tokens / 1000) * enhanceModel.cost_per_1k_token;
+          }
+
+          // Build decision info - ALWAYS create this for successful API calls
+          decisionInfo = {
+            model_key: enhanceModelKey,
+            display_name: enhanceModel?.display_name || enhanceModelKey,
+            provider: enhanceModel?.provider || "unknown",
+            token_usage: tokenUsage
+              ? {
+                  prompt_tokens: tokenUsage.prompt_tokens || 0,
+                  completion_tokens: tokenUsage.completion_tokens || 0,
+                  total_tokens: tokenUsage.total_tokens || 0,
+                }
+              : {
+                  // Even if no usage data, save zeros
+                  prompt_tokens: 0,
+                  completion_tokens: 0,
+                  total_tokens: 0,
+                },
+            cost_usd: costUsd,
+            latency_ms: latencyMs,
+            is_free: isFreeModel,
+            used_for:
+              options?.webSearch && options?.imageSearch
+                ? "both"
+                : options?.webSearch
+                  ? "web_search"
+                  : "image_search",
+            timestamp: new Date().toISOString(),
+          };
+
+          // Debug log to verify decision_info is being created
+          console.log(
+            `[EnhancedSearch] Created decision_info for model: ${enhanceModelKey}, free: ${isFreeModel}, tokens: ${tokenUsage?.total_tokens || 0}`
+          );
+
           // Use the optimized query for both searches
           enhancedWebQuery = optimizedQuery;
           enhancedImageQuery = optimizedQuery;
 
           console.log(
-            `[EnhancedSearch] Original: "${userMessage}" -> Optimized: "${optimizedQuery}"`
+            `[EnhancedSearch] Original: "${userMessage}" -> Optimized: "${optimizedQuery}" (${latencyMs}ms, $${costUsd.toFixed(6)})`
           );
         } catch (enhanceError) {
           console.error("Enhanced search optimization failed, using original query:", enhanceError);
@@ -443,6 +500,7 @@ Optimized search query:`;
         prompt_picture_search: promptPictureSearch,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
+        decision_info: decisionInfo,
       });
 
       // Update user message with search log UUID
@@ -719,7 +777,8 @@ After this system message, you will see the conversation history followed by the
       autoRouting?: boolean;
       memoryCount?: number;
       reasoningEffort?: string;
-      enhanceSearchMode?: "disabled" | "server-default" | "current-model";
+      enhanceSearchMode?: "disabled" | "server-default" | "user-selected";
+      enhanceSearchModel?: string;
     },
     userId?: number,
     onChunk?: (chunk: string, type?: "content" | "reasoning") => void
@@ -800,22 +859,35 @@ After this system message, you will see the conversation history followed by the
       let decisionPromptModel: string | null = null;
       let promptWebSearch: string | null = null;
       let promptPictureSearch: string | null = null;
+      let decisionInfo: DecisionInfo | null = null;
 
       if (
         options?.enhanceSearchMode &&
         options.enhanceSearchMode !== "disabled" &&
         (options?.webSearch || options?.imageSearch)
       ) {
+        const enhanceStartTime = Date.now();
         try {
           // Determine which model to use for enhanced search
           let enhanceModelKey: string;
           if (options.enhanceSearchMode === "server-default") {
             enhanceModelKey = process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
+          } else if (options.enhanceSearchMode === "user-selected") {
+            // user-selected: use the model specified by the user
+            enhanceModelKey =
+              options.enhanceSearchModel ||
+              process.env.SERVER_ANON_MODEL ||
+              "openai/gpt-oss-120b:free";
           } else {
-            // current-model
-            enhanceModelKey = actualModelKey || "openai/gpt-oss-120b:free";
+            // Fallback to server default
+            enhanceModelKey = process.env.SERVER_ANON_MODEL || "openai/gpt-oss-120b:free";
           }
           decisionPromptModel = enhanceModelKey;
+
+          // Get model info for decision_info
+          const enhanceModel = await getAiModelByModelKey(enhanceModelKey);
+          const isFreeModel =
+            enhanceModelKey.includes(":free") || enhanceModel?.cost_per_1k_token === 0;
 
           // Create prompt for extracting search keywords
           const enhancePrompt = `You are a search query optimizer. Extract the most relevant search keywords from the user's message.
@@ -839,12 +911,54 @@ Optimized search query:`;
           const optimizedQuery =
             enhanceResponse.choices[0]?.message?.content?.trim() || userMessage;
 
+          // Calculate latency and cost
+          const latencyMs = Date.now() - enhanceStartTime;
+          const tokenUsage = enhanceResponse.usage;
+          let costUsd = 0;
+          if (tokenUsage && enhanceModel) {
+            costUsd = (tokenUsage.total_tokens / 1000) * enhanceModel.cost_per_1k_token;
+          }
+
+          // Build decision info - ALWAYS create this for successful API calls
+          decisionInfo = {
+            model_key: enhanceModelKey,
+            display_name: enhanceModel?.display_name || enhanceModelKey,
+            provider: enhanceModel?.provider || "unknown",
+            token_usage: tokenUsage
+              ? {
+                  prompt_tokens: tokenUsage.prompt_tokens || 0,
+                  completion_tokens: tokenUsage.completion_tokens || 0,
+                  total_tokens: tokenUsage.total_tokens || 0,
+                }
+              : {
+                  // Even if no usage data, save zeros
+                  prompt_tokens: 0,
+                  completion_tokens: 0,
+                  total_tokens: 0,
+                },
+            cost_usd: costUsd,
+            latency_ms: latencyMs,
+            is_free: isFreeModel,
+            used_for:
+              options?.webSearch && options?.imageSearch
+                ? "both"
+                : options?.webSearch
+                  ? "web_search"
+                  : "image_search",
+            timestamp: new Date().toISOString(),
+          };
+
+          // Debug log to verify decision_info is being created
+          console.log(
+            `[EnhancedSearch-Stream] Created decision_info for model: ${enhanceModelKey}, free: ${isFreeModel}, tokens: ${tokenUsage?.total_tokens || 0}`
+          );
+
           // Use the optimized query for both searches
           enhancedWebQuery = optimizedQuery;
           enhancedImageQuery = optimizedQuery;
 
           console.log(
-            `[EnhancedSearch-Stream] Original: "${userMessage}" -> Optimized: "${optimizedQuery}"`
+            `[EnhancedSearch-Stream] Original: "${userMessage}" -> Optimized: "${optimizedQuery}" (${latencyMs}ms, $${costUsd.toFixed(6)})`
           );
         } catch (enhanceError) {
           console.error("Enhanced search optimization failed, using original query:", enhanceError);
@@ -929,6 +1043,7 @@ Optimized search query:`;
         prompt_picture_search: promptPictureSearch,
         search_context_web: searchContextWeb,
         search_context_picture: searchContextPicture,
+        decision_info: decisionInfo,
       });
 
       // Update user message with search log UUID

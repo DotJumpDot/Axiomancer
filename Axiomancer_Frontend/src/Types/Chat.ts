@@ -19,6 +19,23 @@ export interface SearchContext {
   query?: string;
 }
 
+export interface DecisionInfo {
+  model_key: string;
+  display_name?: string;
+  provider?: string;
+  token_usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  cost_usd?: number;
+  latency_ms?: number;
+  is_free: boolean;
+  used_for: "web_search" | "image_search" | "both";
+  timestamp: string;
+  error?: string;
+}
+
 export interface Chat {
   id: string;
   conversation_id: string;
@@ -53,6 +70,7 @@ export interface Chat {
     decision_prompt_model: string | null;
     prompt_web_search: string | null;
     prompt_picture_search: string | null;
+    decision_info: DecisionInfo | null;
   };
 }
 

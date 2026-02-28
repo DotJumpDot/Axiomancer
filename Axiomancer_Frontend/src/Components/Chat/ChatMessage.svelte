@@ -226,6 +226,33 @@
 
   const imageResultsCount = $derived(imageResults.length);
 
+  // Helper to get short model name for enhance status
+  const enhanceStatus = $derived.by(() => {
+    const hasSearch = message.search_log?.used_web_search || message.search_log?.used_image_search;
+    if (!hasSearch) return null;
+    
+    const modelKey = message.search_log?.decision_prompt_model;
+    
+    // Check if there was an error - no model used but search was attempted
+    if (!modelKey) {
+      // If search was used but no decision model, enhancement was skipped/off
+      return { state: "off" as const, label: "enhance: off" };
+    }
+    
+    // Check for error state - if decision_info exists but has error indication
+    // or if we can detect that the enhance API call failed
+    const decisionInfo = message.search_log?.decision_info;
+    if (decisionInfo && (decisionInfo as any).error) {
+      return { state: "error" as const, label: "enhance: error" };
+    }
+    
+    // Extract short name from model key (e.g., "openai/gpt-4o" -> "gpt-4o")
+    const shortName = modelKey.split('/').pop() || modelKey;
+    // Truncate to ~10 chars with ellipsis if longer (increased from 8)
+    const truncated = shortName.length > 30 ? shortName.slice(0, 30) + '..' : shortName;
+    return { state: "on" as const, label: `enhance: ${truncated}` };
+  });
+
   // State for expanded image modal
   let expandedImage = $state<any>(null);
   
@@ -467,6 +494,14 @@
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
           </svg>
           {message.search_log.memory_chat_include} msgs
+        </span>
+      {/if}
+      {#if enhanceStatus}
+        <span class="meta-item enhance" class:off={enhanceStatus.state === 'off'} class:error={enhanceStatus.state === 'error'}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          {enhanceStatus.label}
         </span>
       {/if}
     </div>
@@ -775,6 +810,23 @@
     display: flex;
     align-items: center;
     gap: 4px;
+  }
+
+  .meta-item.enhance {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    margin-left: auto;
+    font-weight: 500;
+  }
+
+  .meta-item.enhance.off {
+    color: #6b7280;
+    background: rgba(107, 114, 128, 0.1);
+  }
+
+  .meta-item.enhance.error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
   }
 
   /* Image Results Gallery */
