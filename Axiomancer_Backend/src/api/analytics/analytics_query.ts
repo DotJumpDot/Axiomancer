@@ -29,6 +29,7 @@ export const analyticsQuery = {
         sl.used_image_search,
         sl.used_steam,
         sl.reasoning_effort,
+        sl.decision_info,
         conv.title,
         conv.created_at as conversation_created_at
       FROM chat c

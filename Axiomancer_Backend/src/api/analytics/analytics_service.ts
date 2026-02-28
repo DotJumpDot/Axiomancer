@@ -5,6 +5,8 @@ import type {
   DailyUsage,
   SearchUsageStats,
   ReasoningUsageStats,
+  EnhanceUsageStats,
+  EnhanceModelUsage,
   PromptUsage,
   ConversationActivity,
 } from "./analytics_type";
@@ -46,6 +48,7 @@ export class AnalyticsService {
     const dailyUsage = this.calculateDailyUsage(messages, days);
     const searchUsage = this.calculateSearchUsage(messages);
     const reasoningUsage = this.calculateReasoningUsage(messages);
+    const enhanceUsage = this.calculateEnhanceUsage(messages);
     const promptUsage = this.calculatePromptUsage(messages);
     const conversationActivity = this.calculateConversationActivity(conversations, messages);
 
@@ -59,6 +62,7 @@ export class AnalyticsService {
       dailyUsage,
       searchUsage,
       reasoningUsage,
+      enhanceUsage,
       promptUsage,
       conversationActivity,
     };
@@ -213,6 +217,87 @@ export class AnalyticsService {
       medium,
       high,
       total: minimal + low + medium + high,
+    };
+  }
+
+  private static calculateEnhanceUsage(messages: any[]): EnhanceUsageStats {
+    let totalEnhances = 0;
+    let webSearchEnhances = 0;
+    let imageSearchEnhances = 0;
+    let freeModelEnhances = 0;
+    let paidModelEnhances = 0;
+    let totalTokensUsed = 0;
+    let totalCost = 0;
+    let totalLatency = 0;
+    const modelMap = new Map<string, EnhanceModelUsage>();
+
+    messages.forEach((msg) => {
+      if (msg.decision_info) {
+        const decisionInfo =
+          typeof msg.decision_info === "string"
+            ? JSON.parse(msg.decision_info)
+            : msg.decision_info;
+
+        totalEnhances++;
+
+        // Count by search type
+        const usedFor = decisionInfo.used_for || "both";
+        if (usedFor === "web_search" || usedFor === "both") {
+          webSearchEnhances++;
+        }
+        if (usedFor === "image_search" || usedFor === "both") {
+          imageSearchEnhances++;
+        }
+
+        // Count by free/paid
+        if (decisionInfo.is_free) {
+          freeModelEnhances++;
+        } else {
+          paidModelEnhances++;
+        }
+
+        // Tokens and cost
+        const tokens = decisionInfo.token_usage?.total_tokens || 0;
+        totalTokensUsed += tokens;
+        totalCost += decisionInfo.cost_usd || 0;
+        totalLatency += decisionInfo.latency_ms || 0;
+
+        // Track per-model usage
+        const modelKey = decisionInfo.model_key;
+        if (modelKey) {
+          const existing = modelMap.get(modelKey);
+          if (existing) {
+            existing.count++;
+            existing.tokensUsed += tokens;
+            existing.cost += decisionInfo.cost_usd || 0;
+          } else {
+            modelMap.set(modelKey, {
+              modelKey,
+              displayName: decisionInfo.display_name || modelKey,
+              count: 1,
+              tokensUsed: tokens,
+              cost: decisionInfo.cost_usd || 0,
+              isFree: decisionInfo.is_free || false,
+            });
+          }
+        }
+      }
+    });
+
+    const topModels = Array.from(modelMap.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return {
+      totalEnhances,
+      webSearchEnhances,
+      imageSearchEnhances,
+      freeModelEnhances,
+      paidModelEnhances,
+      totalTokensUsed,
+      totalCost,
+      averageLatency: totalEnhances > 0 ? totalLatency / totalEnhances : 0,
+      topModels,
     };
   }
 

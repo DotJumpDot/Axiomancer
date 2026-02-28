@@ -12,6 +12,7 @@
   import ModelUsageTable from "@/Components/Analytics/widgets/ModelUsageTable.svelte";
   import SearchUsageWidget from "@/Components/Analytics/widgets/SearchUsageWidget.svelte";
   import ReasoningUsageWidget from "@/Components/Analytics/widgets/ReasoningUsageWidget.svelte";
+  import EnhanceUsageWidget from "@/Components/Analytics/widgets/EnhanceUsageWidget.svelte";
   import PromptUsageWidget from "@/Components/Analytics/widgets/PromptUsageWidget.svelte";
   import ConversationActivityWidget from "@/Components/Analytics/widgets/ConversationActivityWidget.svelte";
   import TokenDistributionWidget from "@/Components/Analytics/widgets/TokenDistributionWidget.svelte";
@@ -38,10 +39,11 @@
     { id: "cost-breakdown", component: CostBreakdownWidget, x: 1, y: 5, width: 1, height: 1 },
     { id: "search-usage", component: SearchUsageWidget, x: 0, y: 6, width: 1, height: 1 },
     { id: "reasoning-usage", component: ReasoningUsageWidget, x: 1, y: 6, width: 1, height: 1 },
-    { id: "hourly-usage", component: HourlyUsageWidget, x: 0, y: 7, width: 1, height: 1 },
-    { id: "model-performance", component: ModelPerformanceWidget, x: 1, y: 7, width: 1, height: 1 },
-    { id: "prompt-usage", component: PromptUsageWidget, x: 0, y: 8, width: 1, height: 1 },
-    { id: "conversation-activity", component: ConversationActivityWidget, x: 1, y: 8, width: 1, height: 1 },
+    { id: "enhance-usage", component: EnhanceUsageWidget, x: 0, y: 7, width: 1, height: 1 },
+    { id: "hourly-usage", component: HourlyUsageWidget, x: 1, y: 7, width: 1, height: 1 },
+    { id: "model-performance", component: ModelPerformanceWidget, x: 0, y: 8, width: 1, height: 1 },
+    { id: "prompt-usage", component: PromptUsageWidget, x: 1, y: 8, width: 1, height: 1 },
+    { id: "conversation-activity", component: ConversationActivityWidget, x: 0, y: 9, width: 2, height: 1 },
   ]);
 
   interface WidgetConfig {
@@ -60,6 +62,7 @@
       "model-usage": t.analytics?.modelUsage || "Model Usage",
       "search-usage": t.analytics?.searchUsage || "Search Usage",
       "reasoning-usage": t.analytics?.reasoningUsage || "Reasoning Usage",
+      "enhance-usage": t.analytics?.enhanceUsage || "Enhance Usage",
       "prompt-usage": t.analytics?.promptUsage || "Prompt Usage",
       "conversation-activity": t.analytics?.conversationActivity || "Recent Activity",
       "token-distribution": t.analytics?.tokenDistribution || "Token Distribution",

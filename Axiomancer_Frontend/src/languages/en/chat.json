@@ -291,7 +291,17 @@
     "noData": "No data available",
     "noPromptData": "No prompt usage data",
     "noActivityData": "No recent activity",
-    "openInNewTab": "Open in new tab"
+    "openInNewTab": "Open in new tab",
+    "enhanceUsage": "Enhance Usage",
+    "totalEnhances": "Total Enhances",
+    "tokensUsed": "Tokens Used",
+    "avgLatency": "Avg Latency",
+    "enhanceBreakdown": "Enhance Breakdown",
+    "freeModels": "Free Models",
+    "paidModels": "Paid Models",
+    "topEnhanceModels": "Top Models",
+    "noEnhanceData": "No enhance usage yet",
+    "enableEnhanceSearch": "Enable enhance search in settings to see statistics"
   },
   "conversationSettings": {
     "title": "Conversation Settings",

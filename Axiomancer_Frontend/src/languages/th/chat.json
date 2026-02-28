@@ -291,7 +291,17 @@
     "noData": "ไม่มีข้อมูล",
     "noPromptData": "ไม่มีข้อมูลการใช้พรอมต์",
     "noActivityData": "ไม่มีกิจกรรมล่าสุด",
-    "openInNewTab": "เปิดในแท็บใหม่"
+    "openInNewTab": "เปิดในแท็บใหม่",
+    "enhanceUsage": "การใช้งาน Enhance",
+    "totalEnhances": "จำนวน Enhance ทั้งหมด",
+    "tokensUsed": "โทเค็นที่ใช้",
+    "avgLatency": "เวลาตอบกลับเฉลี่ย",
+    "enhanceBreakdown": "รายละเอียด Enhance",
+    "freeModels": "โมเดลฟรี",
+    "paidModels": "โมเดลเสียเงิน",
+    "topEnhanceModels": "โมเดลยอดนิยม",
+    "noEnhanceData": "ยังไม่มีการใช้งาน Enhance",
+    "enableEnhanceSearch": "เปิดใช้งาน enhance search ในการตั้งค่าเพื่อดูสถิติ"
   },
   "conversationSettings": {
     "title": "ตั้งค่าการสนทนา",

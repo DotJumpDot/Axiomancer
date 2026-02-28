@@ -8,6 +8,7 @@ export interface AnalyticsData {
   dailyUsage: DailyUsage[];
   searchUsage: SearchUsageStats;
   reasoningUsage: ReasoningUsageStats;
+  enhanceUsage: EnhanceUsageStats;
   promptUsage: PromptUsage[];
   conversationActivity: ConversationActivity[];
 }
@@ -41,6 +42,27 @@ export interface ReasoningUsageStats {
   medium: number;
   high: number;
   total: number;
+}
+
+export interface EnhanceUsageStats {
+  totalEnhances: number;
+  webSearchEnhances: number;
+  imageSearchEnhances: number;
+  freeModelEnhances: number;
+  paidModelEnhances: number;
+  totalTokensUsed: number;
+  totalCost: number;
+  averageLatency: number;
+  topModels: EnhanceModelUsage[];
+}
+
+export interface EnhanceModelUsage {
+  modelKey: string;
+  displayName: string;
+  count: number;
+  tokensUsed: number;
+  cost: number;
+  isFree: boolean;
 }
 
 export interface PromptUsage {
