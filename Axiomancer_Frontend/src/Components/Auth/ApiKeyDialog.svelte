@@ -26,7 +26,8 @@
 
   export function open() {
     isOpen = true;
-    apiKey = authStore.currentUser?.openrouter_api_key || "";
+    // Don't pre-fill with existing key for security - start empty
+    apiKey = "";
   }
 
   function close() {
@@ -53,8 +54,9 @@
 
       if (response.success) {
         // Update current user in store directly for immediate reactivity
+        // Set has_api_key based on whether a key was provided
         authStore.updateCurrentUser({
-          openrouter_api_key: apiKey || null
+          has_api_key: !!apiKey
         });
         close();
       } else {

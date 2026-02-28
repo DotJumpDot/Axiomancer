@@ -225,6 +225,9 @@ async function login(credentials: LoginRequest) {
       // Set up periodic token validity check
       setupTokenValidityCheck();
 
+      // Fetch complete user profile to get has_api_key status
+      await refreshProfile();
+
       return { success: true };
     } else {
       error = response.error || "Login failed";

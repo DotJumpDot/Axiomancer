@@ -325,6 +325,7 @@
               bind:value={loginData.username}
               placeholder="Enter your username"
               disabled={isLoading}
+              onkeydown={(e) => e.key === 'Enter' && handleLogin()}
             />
           </div>
 
@@ -336,6 +337,7 @@
               bind:value={loginData.password}
               placeholder="Enter your password"
               disabled={isLoading}
+              onkeydown={(e) => e.key === 'Enter' && handleLogin()}
             />
           </div>
         {:else}
@@ -399,6 +401,7 @@
               type="password"
               value={confirmPassword}
               oninput={handleConfirmPasswordInput}
+              onkeydown={(e) => e.key === 'Enter' && isRegisterFormValid() && handleRegister()}
               placeholder="Confirm your password"
               disabled={isLoading}
               class:error={validationErrors.confirmPassword}
