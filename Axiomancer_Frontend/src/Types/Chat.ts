@@ -55,6 +55,7 @@ export interface Chat {
   ai_token_usage?: TokenUsage;
   ai_latency_ms?: number;
   ai_finish_reason?: string;
+  ai_used_price?: number | null;
   // Decision model key (from auto-routing)
   decision_model_key?: string | null;
   // Joined fields from search_log (when available)
@@ -129,6 +130,7 @@ export interface ChatAiRespond {
   token_usage: TokenUsage | null;
   latency_ms: number | null;
   finish_reason: string | null;
+  used_price: number | null;
   created_at: Date | string;
   updated_at: Date | string;
 }

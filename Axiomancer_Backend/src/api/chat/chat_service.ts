@@ -694,6 +694,18 @@ After this system message, you will see the conversation history followed by the
       const tokenUsage = aiResponse.usage;
       const finishReason = aiResponse.choices[0]?.finish_reason;
 
+      let usedPrice = null;
+      if (tokenUsage && actualModelKey) {
+        const model = await getAiModelByModelKey(actualModelKey);
+        if (model) {
+          const promptTokens = tokenUsage.prompt_tokens || 0;
+          const completionTokens = tokenUsage.completion_tokens || 0;
+          const promptCost = parseFloat(model.pricing?.prompt || "0");
+          const completionCost = parseFloat(model.pricing?.completion || "0");
+          usedPrice = promptTokens * promptCost + completionTokens * completionCost;
+        }
+      }
+
       //* Create chat_ai_respond record
       const chatAiRespond = await ChatQuery.createChatAiRespond({
         ai_content: aiContent,
@@ -711,6 +723,7 @@ After this system message, you will see the conversation history followed by the
             : null,
         latency_ms: latencyMs,
         finish_reason: finishReason || null,
+        used_price: usedPrice,
       });
 
       // Update user message to link to AI response
@@ -1252,6 +1265,18 @@ After this system message, you will see the conversation history followed by the
       }
       const latencyMs = Date.now() - startTime;
 
+      let usedPrice = null;
+      if (tokenUsage && actualModelKey) {
+        const model = await getAiModelByModelKey(actualModelKey);
+        if (model) {
+          const promptTokens = tokenUsage.prompt_tokens || 0;
+          const completionTokens = tokenUsage.completion_tokens || 0;
+          const promptCost = parseFloat(model.pricing?.prompt || "0");
+          const completionCost = parseFloat(model.pricing?.completion || "0");
+          usedPrice = promptTokens * promptCost + completionTokens * completionCost;
+        }
+      }
+
       // Update search log with reasoning content if available
       if (reasoningContent && searchLog) {
         await ChatQuery.updateSearchLogReasoningContent(searchLog.id_uuid, reasoningContent);
@@ -1275,6 +1300,7 @@ After this system message, you will see the conversation history followed by the
             : null,
         latency_ms: latencyMs,
         finish_reason: "stop",
+        used_price: usedPrice,
       });
 
       // Update user message to link to AI response

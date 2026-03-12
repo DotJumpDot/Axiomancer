@@ -24,12 +24,12 @@ export class ChatQuery {
 
     const result = await sql`
       INSERT INTO chat_ai_respond (
-        id, ai_content, model_key, token_usage, latency_ms, finish_reason, created_at, updated_at
+        id, ai_content, model_key, token_usage, latency_ms, finish_reason, used_price, created_at, updated_at
       ) VALUES (
         ${id}, ${respond.ai_content}, ${respond.model_key || null},
         ${respond.token_usage ? sql.json(respond.token_usage) : null},
         ${respond.latency_ms || null}, ${respond.finish_reason || null},
-        ${now}, ${now}
+        ${respond.used_price ?? null}, ${now}, ${now}
       )
       RETURNING *
     `;
@@ -173,6 +173,7 @@ export class ChatQuery {
         car.token_usage as ai_token_usage,
         car.latency_ms as ai_latency_ms,
         car.finish_reason as ai_finish_reason,
+        car.used_price as ai_used_price,
         am.model_key as decision_model_key,
         sl.memory_chat_include,
         sl.used_web_search,
@@ -237,6 +238,7 @@ export class ChatQuery {
         car.token_usage as ai_token_usage,
         car.latency_ms as ai_latency_ms,
         car.finish_reason as ai_finish_reason,
+        car.used_price as ai_used_price,
         am.model_key as decision_model_key,
         sl.memory_chat_include,
         sl.used_web_search,

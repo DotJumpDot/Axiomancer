@@ -292,6 +292,9 @@
           </svg>
         </button>
       {/if}
+      {#if !isUser && message.ai_used_price !== null && message.ai_used_price !== undefined}
+        <span class="used-price">Used: ${(typeof message.ai_used_price === 'string' ? parseFloat(message.ai_used_price) : message.ai_used_price).toFixed(6).replace(/\.?0+$/, '')}$</span>
+      {/if}
       <button class="action-btn" onclick={handleCopy} title="Copy message">
         {#if copied}
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -575,6 +578,17 @@
     background: rgba(34, 197, 94, 0.15);
     color: #22c55e;
     border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .used-price {
+    font-size: 13px;
+    padding: 2px 8px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 4px;
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    font-weight: 500;
+    margin-right: 4px;
   }
 
   .message-actions {
