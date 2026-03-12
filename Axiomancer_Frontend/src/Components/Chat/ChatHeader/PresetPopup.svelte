@@ -37,7 +37,7 @@
   let showOnlySelected = $state(false);
   let showOnlyFree = $state(false);
   let showOnlyPricing = $state(false);
-  let sortBy = $state<'none' | 'price-low-to-high' | 'price-high-to-low' | 'name-a-z' | 'name-z-a' | 'provider-a-z' | 'provider-z-a'>('none');
+  let sortBy = $state<'none' | 'output-price-low-to-high' | 'output-price-high-to-low' | 'input-price-low-to-high' | 'input-price-high-to-low' | 'name-a-z' | 'name-z-a' | 'provider-a-z' | 'provider-z-a'>('none');
   let selectedCapability: 'none' | 'fast' | 'reasoning' | 'coding' | 'vision' = $state('none');
   let searchQuery = $state('');
   let hoveredCapability = $state<string | null>(null);
@@ -566,16 +566,28 @@
     }
 
     // Apply sorting
-    if (sortBy === 'price-low-to-high') {
+    if (sortBy === 'output-price-low-to-high') {
       models = models.sort((a, b) => {
-        const aPrice = parseFloat(a.pricing.prompt || "0") + parseFloat(a.pricing.completion || "0");
-        const bPrice = parseFloat(b.pricing.prompt || "0") + parseFloat(b.pricing.completion || "0");
+        const aPrice = parseFloat(a.pricing.completion || "0");
+        const bPrice = parseFloat(b.pricing.completion || "0");
         return aPrice - bPrice;
       });
-    } else if (sortBy === 'price-high-to-low') {
+    } else if (sortBy === 'output-price-high-to-low') {
       models = models.sort((a, b) => {
-        const aPrice = parseFloat(a.pricing.prompt || "0") + parseFloat(a.pricing.completion || "0");
-        const bPrice = parseFloat(b.pricing.prompt || "0") + parseFloat(b.pricing.completion || "0");
+        const aPrice = parseFloat(a.pricing.completion || "0");
+        const bPrice = parseFloat(b.pricing.completion || "0");
+        return bPrice - aPrice;
+      });
+    } else if (sortBy === 'input-price-low-to-high') {
+      models = models.sort((a, b) => {
+        const aPrice = parseFloat(a.pricing.prompt || "0");
+        const bPrice = parseFloat(b.pricing.prompt || "0");
+        return aPrice - bPrice;
+      });
+    } else if (sortBy === 'input-price-high-to-low') {
+      models = models.sort((a, b) => {
+        const aPrice = parseFloat(a.pricing.prompt || "0");
+        const bPrice = parseFloat(b.pricing.prompt || "0");
         return bPrice - aPrice;
       });
     } else if (sortBy === 'name-a-z') {
@@ -761,8 +773,10 @@
                   <option value="name-z-a">{t.modelSelector.nameZA}</option>
                   <option value="provider-a-z">{t.modelSelector.providerAZ}</option>
                   <option value="provider-z-a">{t.modelSelector.providerZA}</option>
-                  <option value="price-low-to-high">{t.modelSelector.priceLowToHigh}</option>
-                  <option value="price-high-to-low">{t.modelSelector.priceHighToLow}</option>
+                  <option value="output-price-low-to-high">Output Price (Low to High)</option>
+                  <option value="output-price-high-to-low">Output Price (High to Low)</option>
+                  <option value="input-price-low-to-high">Input Price (Low to High)</option>
+                  <option value="input-price-high-to-low">Input Price (High to Low)</option>
                 </select>
               </div>
             </div>
@@ -866,7 +880,8 @@
                   <!-- Grid 4: Price -->
                   <div class="grid-item">
                     <span class="item-price">
-                      ${(parseFloat(model.pricing.prompt || "0") + parseFloat(model.pricing.completion || "0")).toFixed(6)}/1K
+                      <span class="price-label input-label">Input/1M:</span> ${(parseFloat(model.pricing.prompt || "0") * 1000000).toFixed(4).replace(/\.?0+$/, '')}<br />
+                      <span class="price-label output-label">Output/1M:</span> ${(parseFloat(model.pricing.completion || "0") * 1000000).toFixed(4).replace(/\.?0+$/, '')}
                     </span>
                   </div>
                 </div>
@@ -1103,5 +1118,19 @@
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
+  }
+
+  .price-label {
+    display: inline-block;
+    margin-right: 4px;
+    font-weight: 500;
+  }
+
+  .input-label {
+    color: var(--accent-color, #ffc107);
+  }
+
+  .output-label {
+    color: var(--success-color, #4ade80);
   }
 </style>
