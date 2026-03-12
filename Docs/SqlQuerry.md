@@ -69,7 +69,7 @@ SELECT
     c.created_at,
     am.display_name as model_name,
     am.provider,
-    am.cost_per_1k_token,
+    am.pricing,
     car.token_usage
 FROM public.chat c
 LEFT JOIN public.ai_model am ON c.model_id = am.id
@@ -239,7 +239,7 @@ SELECT
     am.model_key,
     am.display_name,
     am.context_length,
-    am.cost_per_1k_token,
+    am.pricing,
     am.capabilities,
     am.enabled,
     COUNT(c.id) as usage_count,
@@ -249,7 +249,7 @@ SELECT
 FROM public.ai_model am
 LEFT JOIN public.chat c ON am.id = c.model_id
 LEFT JOIN public.chat_ai_respond car ON c.chat_ai_respond_id = car.id
-GROUP BY am.id, am.provider, am.model_key, am.display_name, am.context_length, am.cost_per_1k_token, am.capabilities, am.enabled
+GROUP BY am.id, am.provider, am.model_key, am.display_name, am.context_length, am.pricing, am.capabilities, am.enabled
 ORDER BY usage_count DESC, last_used DESC NULLS LAST;
 ```
 
@@ -259,16 +259,19 @@ ORDER BY usage_count DESC, last_used DESC NULLS LAST;
 SELECT
     am.display_name,
     am.provider,
-    am.cost_per_1k_token,
+    am.pricing,
     COUNT(c.id) as total_requests,
     SUM((car.token_usage->>'total')::int) as total_tokens,
-    SUM((car.token_usage->>'total')::int * am.cost_per_1k_token / 1000) as estimated_cost,
+    SUM(
+        ((car.token_usage->>'prompt_tokens')::int * (am.pricing->>'prompt')::numeric) +
+        ((car.token_usage->>'completion_tokens')::int * (am.pricing->>'completion')::numeric)
+    ) as estimated_cost,
     AVG(car.latency_ms) as avg_response_time
 FROM public.ai_model am
 LEFT JOIN public.chat c ON am.id = c.model_id
 LEFT JOIN public.chat_ai_respond car ON c.chat_ai_respond_id = car.id
 WHERE c.created_at >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY am.id, am.display_name, am.provider, am.cost_per_1k_token
+GROUP BY am.id, am.display_name, am.provider, am.pricing
 ORDER BY estimated_cost DESC;
 ```
 

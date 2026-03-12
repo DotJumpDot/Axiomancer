@@ -42,8 +42,8 @@ export class AiService {
     if (data.context_length <= 0) {
       throw new Error("Context length must be positive");
     }
-    if (data.cost_per_1k_token < 0) {
-      throw new Error("Cost per 1k token cannot be negative");
+    if (!data.pricing) {
+      throw new Error("Pricing information is required");
     }
 
     return await aiQuery.createAiModel(data);
@@ -59,9 +59,6 @@ export class AiService {
     if (data.context_length !== undefined && data.context_length <= 0) {
       throw new Error("Context length must be positive");
     }
-    if (data.cost_per_1k_token !== undefined && data.cost_per_1k_token < 0) {
-      throw new Error("Cost per 1k token cannot be negative");
-    }
 
     return await aiQuery.updateAiModel(id, data);
   }
@@ -75,18 +72,21 @@ export class AiService {
     // Extract provider from model ID (e.g., "anthropic/claude-3-haiku" -> "anthropic")
     const provider = openRouterModel.id.split("/")[0] || "unknown";
 
-    // Calculate cost per 1k tokens (pricing is already per token, multiply by 1000)
-    const promptCost = parseFloat(openRouterModel.pricing.prompt) || 0;
-    const completionCost = parseFloat(openRouterModel.pricing.completion) || 0;
-    const costPer1k = (promptCost + completionCost) * 1000;
+    // Use pricing directly from OpenRouter
+    const pricing = {
+      prompt: openRouterModel.pricing.prompt || "0",
+      completion: openRouterModel.pricing.completion || "0",
+      request: openRouterModel.pricing.request || "0",
+      image: openRouterModel.pricing.image || "0",
+    };
 
-    // Determine capabilities based on OpenRouter API data
+    // Use capabilities from OpenRouter API response if available, otherwise calculate locally
     const modelName = openRouterModel.id.toLowerCase();
     const description = openRouterModel.description.toLowerCase();
     const supportedParams = openRouterModel.supported_parameters || [];
     const inputModalities = openRouterModel.architecture?.input_modalities || [];
 
-    const capabilities = {
+    const capabilities = openRouterModel.capabilities || {
       reasoning:
         supportedParams.includes("reasoning") || supportedParams.includes("include_reasoning"),
       coding:
@@ -109,7 +109,7 @@ export class AiService {
       display_name: openRouterModel.name || openRouterModel.id,
       description: openRouterModel.description || "",
       context_length: openRouterModel.context_length,
-      cost_per_1k_token: costPer1k,
+      pricing,
       capabilities,
       enabled: true,
       chat_type_to_type: openRouterModel.architecture?.modality || "unknown",

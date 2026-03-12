@@ -34,8 +34,12 @@ export class AnalyticsService {
         const tokenUsage =
           typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage;
         const tokens = tokenUsage.total_tokens || 0;
-        const costPer1k = msg.cost_per_1k_token || 0.001;
-        return sum + (tokens / 1000) * costPer1k;
+        const promptTokens = tokenUsage.prompt_tokens || 0;
+        const completionTokens = tokenUsage.completion_tokens || 0;
+        const promptCost = parseFloat(msg.pricing?.prompt || "0");
+        const completionCost = parseFloat(msg.pricing?.completion || "0");
+        const cost = (promptTokens * promptCost) + (completionTokens * completionCost);
+        return sum + cost;
       }
       return sum;
     }, 0);
@@ -78,12 +82,15 @@ export class AnalyticsService {
         const key = msg.model_key;
         const existing = modelMap.get(key);
 
-        const tokens = msg.token_usage
+        const tokenUsage = msg.token_usage
           ? (typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage)
-              .total_tokens || 0
-          : 0;
-        const costPer1k = msg.cost_per_1k_token || 0.001;
-        const cost = (tokens / 1000) * costPer1k;
+          : null;
+        const tokens = tokenUsage?.total_tokens || 0;
+        const promptTokens = tokenUsage?.prompt_tokens || 0;
+        const completionTokens = tokenUsage?.completion_tokens || 0;
+        const promptCost = parseFloat(msg.pricing?.prompt || "0");
+        const completionCost = parseFloat(msg.pricing?.completion || "0");
+        const cost = (promptTokens * promptCost) + (completionTokens * completionCost);
 
         if (existing) {
           existing.count++;
@@ -144,13 +151,15 @@ export class AnalyticsService {
             typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage;
           daily.tokens += tokenUsage.total_tokens || 0;
         }
-        if (msg.model_key) {
-          const costPer1k = msg.cost_per_1k_token || 0.001;
-          const tokens = msg.token_usage
+        if (msg.model_key && msg.pricing) {
+          const tokenUsage = msg.token_usage
             ? (typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage)
-                .total_tokens || 0
-            : 0;
-          daily.cost += (tokens / 1000) * costPer1k;
+            : null;
+          const promptTokens = tokenUsage?.prompt_tokens || 0;
+          const completionTokens = tokenUsage?.completion_tokens || 0;
+          const promptCost = parseFloat(msg.pricing.prompt || "0");
+          const completionCost = parseFloat(msg.pricing.completion || "0");
+          daily.cost += (promptTokens * promptCost) + (completionTokens * completionCost);
         }
         daily.conversations.add(msg.conversation_id);
       }

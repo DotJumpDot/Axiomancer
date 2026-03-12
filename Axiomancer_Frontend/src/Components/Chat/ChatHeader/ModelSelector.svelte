@@ -45,9 +45,17 @@
     }
 
     if (sortBy === 'price-low-to-high') {
-      models = models.sort((a, b) => a.cost_per_1k_token - b.cost_per_1k_token);
+      models = models.sort((a, b) => {
+        const aPrice = parseFloat(a.pricing.prompt || "0") + parseFloat(a.pricing.completion || "0");
+        const bPrice = parseFloat(b.pricing.prompt || "0") + parseFloat(b.pricing.completion || "0");
+        return aPrice - bPrice;
+      });
     } else if (sortBy === 'price-high-to-low') {
-      models = models.sort((a, b) => b.cost_per_1k_token - a.cost_per_1k_token);
+      models = models.sort((a, b) => {
+        const aPrice = parseFloat(a.pricing.prompt || "0") + parseFloat(a.pricing.completion || "0");
+        const bPrice = parseFloat(b.pricing.prompt || "0") + parseFloat(b.pricing.completion || "0");
+        return bPrice - aPrice;
+      });
     } else if (sortBy === 'name-a-z') {
       models = models.sort((a, b) => a.display_name.localeCompare(b.display_name));
     } else if (sortBy === 'name-z-a') {
@@ -246,7 +254,9 @@
               <!-- Right: Context Length & Price -->
               <div class="grid-item right-section">
                 <span class="item-context">{formatContextLength(model.context_length)}</span>
-                <span class="item-price">${model.cost_per_1k_token.toFixed(5)}/1K</span>
+                <span class="item-price">
+                  ${(parseFloat(model.pricing.prompt || "0") + parseFloat(model.pricing.completion || "0")).toFixed(6)}/1K
+                </span>
               </div>
             </div>
           {/each}

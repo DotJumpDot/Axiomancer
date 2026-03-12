@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { cors } from "@elysiajs/cors";
 import * as dotenv from "dotenv";
@@ -16,6 +16,60 @@ import { favoriteApi } from "./api/favorite/favorite_api";
 import { folderApi } from "./api/folder/folder_api";
 import { analyticsApi } from "./api/analytics/analytics_api";
 import { requireDualAuth } from "./api/auth/auth_middleware";
+
+// Define security schemes for Swagger
+const swaggerConfig = {
+  path: "/w",
+  documentation: {
+    info: {
+      title: "Axiomancer API",
+      version: "1.0.0",
+      description: `
+## Authentication
+
+Axiomancer API uses **dual authentication** for protected endpoints:
+
+### Step 1: Get Your API Key
+Add your OpenRouter API key to your account via frontend or directly to database.
+
+### Step 2: Login
+Call \`POST /api/auth/login\` with your username/password (or just API key) to receive a JWT token.
+
+### Step 3: Use in Swagger
+1. Click on **Authorize** button (🔒) in Swagger UI
+2. Enter your **API Key** as: \`your-api-key-here\`
+3. The JWT token will be automatically included in Authorization header after login
+
+### Headers Required for Protected Routes:
+- \`X-API-KEY: your-openrouter-api-key\`
+- \`Authorization: Bearer your-jwt-token\`
+      `,
+    },
+    security: [
+      {
+        BearerAuth: [],
+        ApiKeyAuth: [],
+      },
+    ],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: "http" as const,
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "JWT token received from /api/auth/login. Format: Bearer {token}",
+        },
+        ApiKeyAuth: {
+          type: "apiKey" as const,
+          in: "header",
+          name: "X-API-KEY",
+          description:
+            "Your OpenRouter API key. Enter just the key value (without 'X-API-KEY:' prefix)",
+        },
+      },
+    },
+  },
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,7 +89,22 @@ const app = new Elysia()
       credentials: true,
     })
   )
-  .use(swagger({ path: "/w" }))
+  .use(swagger(swaggerConfig))
+  // Swagger auth helper endpoint
+  .get("/w/swagger-config", () => ({
+    title: "Axiomancer API - Authentication Guide",
+    message: "Use the /api/auth/login endpoint to get your JWT token, then use it here.",
+    loginUrl: "/api/auth/login",
+    instructions: `
+Step 1: Call POST /api/auth/login with your credentials
+Step 2: Copy the 'token' from response
+Step 3: Click Authorize button in Swagger (🔒)
+Step 4: Enter 'Bearer YOUR_TOKEN' (include 'Bearer ' prefix)
+Step 5: Also add your API key in the same authorize dialog:
+      - Key: X-API-KEY
+      - Value: your-openrouter-api-key
+    `,
+  }))
   // Auth API (no authentication required for login/register - they need API key only)
   .use(authApi)
   // Health check (public)

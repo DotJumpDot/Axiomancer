@@ -46,8 +46,10 @@
       )
       .sort((a, b) => {
         // Sort free models first
-        const aIsFree = a.model_key.includes(':free') || a.cost_per_1k_token === 0;
-        const bIsFree = b.model_key.includes(':free') || b.cost_per_1k_token === 0;
+        const aIsFree = a.model_key.includes(':free') || 
+          (parseFloat(a.pricing.prompt || "0") === 0 && parseFloat(a.pricing.completion || "0") === 0);
+        const bIsFree = b.model_key.includes(':free') || 
+          (parseFloat(b.pricing.prompt || "0") === 0 && parseFloat(b.pricing.completion || "0") === 0);
         if (aIsFree && !bIsFree) return -1;
         if (!aIsFree && bIsFree) return 1;
         return a.display_name.localeCompare(b.display_name);
@@ -62,7 +64,8 @@
 
   // Check if model is free
   function isFreeModel(model: typeof enabledModels[0]): boolean {
-    return model.model_key.includes(':free') || model.cost_per_1k_token === 0;
+    return model.model_key.includes(':free') || 
+      (parseFloat(model.pricing.prompt || "0") === 0 && parseFloat(model.pricing.completion || "0") === 0);
   }
 
   // Handle model selection

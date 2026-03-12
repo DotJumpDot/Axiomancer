@@ -1,3 +1,19 @@
+export interface Pricing {
+  prompt: string;
+  completion: string;
+  request: string;
+  image: string;
+  [key: string]: unknown;
+}
+
+export interface Capabilities {
+  reasoning: boolean;
+  coding: boolean;
+  vision: boolean;
+  fast: boolean;
+  [key: string]: unknown;
+}
+
 export interface AiModel {
   id: string;
   provider: string;
@@ -5,13 +21,8 @@ export interface AiModel {
   display_name: string;
   description: string;
   context_length: number;
-  cost_per_1k_token: number;
-  capabilities: {
-    reasoning: boolean;
-    coding: boolean;
-    vision: boolean;
-    fast: boolean;
-  };
+  pricing: Pricing;
+  capabilities: Capabilities;
   enabled: boolean;
   chat_type_to_type: string;
   created: number;
@@ -26,7 +37,7 @@ export interface CreateAiModelRequest {
   display_name: string;
   description?: string;
   context_length: number;
-  cost_per_1k_token: number;
+  pricing: Pricing;
   capabilities: {
     reasoning: boolean;
     coding: boolean;
@@ -45,7 +56,7 @@ export interface UpdateAiModelRequest {
   display_name?: string;
   description?: string;
   context_length?: number;
-  cost_per_1k_token?: number;
+  pricing?: Pricing;
   capabilities?: {
     reasoning: boolean;
     coding: boolean;
@@ -128,6 +139,12 @@ export interface OpenRouterModel {
   supported_parameters: string[];
   default_parameters: Record<string, any>;
   expiration_date: number | null;
+  capabilities?: {
+    reasoning: boolean;
+    coding: boolean;
+    vision: boolean;
+    fast: boolean;
+  };
 }
 
 export interface OpenRouterModelsResponse {

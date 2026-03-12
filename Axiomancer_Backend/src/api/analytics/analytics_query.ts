@@ -22,7 +22,7 @@ export const analyticsQuery = {
         car.token_usage,
         car.latency_ms,
         am.display_name as model_display_name,
-        am.cost_per_1k_token,
+        am.pricing,
         pp.name as prompt_name,
         pp.id as prompt_id,
         sl.used_web_search,

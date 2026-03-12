@@ -3,7 +3,7 @@ import type { AiModel, CreateAiModelRequest, UpdateAiModelRequest } from "./ai_t
 
 export async function getAiModels(): Promise<AiModel[]> {
   const result = await sql`
-    SELECT id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
+    SELECT id, provider, model_key, display_name, description, context_length, pricing, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
     FROM ai_model
     ORDER BY created_at DESC
   `;
@@ -12,7 +12,7 @@ export async function getAiModels(): Promise<AiModel[]> {
 
 export async function getAiModelById(id: string): Promise<AiModel | null> {
   const result = await sql`
-    SELECT id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
+    SELECT id, provider, model_key, display_name, description, context_length, pricing, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
     FROM ai_model
     WHERE id = ${id}
   `;
@@ -22,7 +22,7 @@ export async function getAiModelById(id: string): Promise<AiModel | null> {
 
 export async function getAiModelByModelKey(model_key: string): Promise<AiModel | null> {
   const result = await sql`
-    SELECT id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
+    SELECT id, provider, model_key, display_name, description, context_length, pricing, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
     FROM ai_model
     WHERE model_key = ${model_key}
     ORDER BY created_at DESC
@@ -34,14 +34,18 @@ export async function getAiModelByModelKey(model_key: string): Promise<AiModel |
 
 export async function createAiModel(data: CreateAiModelRequest): Promise<AiModel> {
   const id = crypto.randomUUID();
+  const expirationDateValue =
+    data.expiration_date === null || data.expiration_date === undefined
+      ? null
+      : data.expiration_date;
   const result = await sql`
-    INSERT INTO ai_model (id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at)
+    INSERT INTO ai_model (id, provider, model_key, display_name, description, context_length, pricing, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at)
     VALUES (${id}, ${data.provider}, ${data.model_key}, ${data.display_name}, ${data.description ?? ""}, ${
       data.context_length
-    }, ${data.cost_per_1k_token}, ${sql.json(data.capabilities)}, ${
+    }, ${sql.json(data.pricing as any)}::jsonb, ${sql.json(data.capabilities as any)}::jsonb, ${
       data.enabled ?? true
-    }, ${data.chat_type_to_type ?? "unknown"}, ${data.created ?? 0}, ${data.expiration_date ?? null}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    RETURNING id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
+    }, ${data.chat_type_to_type ?? "unknown"}, ${data.created ?? 0}, ${expirationDateValue}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING id, provider, model_key, display_name, description, context_length, pricing, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at
   `;
   return result[0] as unknown as AiModel;
 }
@@ -72,9 +76,9 @@ export async function updateAiModel(
     setParts.push("context_length = $" + (values.length + 1));
     values.push(data.context_length);
   }
-  if (data.cost_per_1k_token !== undefined) {
-    setParts.push("cost_per_1k_token = $" + (values.length + 1));
-    values.push(data.cost_per_1k_token);
+  if (data.pricing !== undefined) {
+    setParts.push("pricing = $" + (values.length + 1));
+    values.push(JSON.stringify(data.pricing));
   }
   if (data.capabilities !== undefined) {
     setParts.push("capabilities = $" + (values.length + 1));
@@ -94,14 +98,15 @@ export async function updateAiModel(
   }
   if (data.expiration_date !== undefined) {
     setParts.push("expiration_date = $" + (values.length + 1));
-    values.push(data.expiration_date);
+    const expirationDateValue = data.expiration_date === null ? null : data.expiration_date;
+    values.push(expirationDateValue);
   }
   if (setParts.length === 0) return getAiModelById(id);
 
   setParts.push("updated_at = CURRENT_TIMESTAMP");
   const query = `UPDATE ai_model SET ${setParts.join(", ")} WHERE id = $${
     values.length + 1
-  } RETURNING id, provider, model_key, display_name, description, context_length, cost_per_1k_token, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at`;
+  } RETURNING id, provider, model_key, display_name, description, context_length, pricing, capabilities, enabled, chat_type_to_type, created, expiration_date, created_at, updated_at`;
   values.push(id);
   const result = await sql.unsafe(query, values);
   if (result.length === 0) return null;
@@ -123,9 +128,28 @@ export async function getOrCreateAiModel(modelKey: string): Promise<AiModel> {
     return model;
   }
 
-  // Model doesn't exist, create a default entry
+  // Model doesn't exist, fetch from OpenRouter API to get full data
   // console.log(`[AI Query] Auto-creating missing model: ${modelKey}`);
 
+  try {
+    // Import here to avoid circular dependency
+    const { openRouterClient } = await import("./ai_openrouter");
+    if (openRouterClient) {
+      const response = await openRouterClient.getModels();
+      const openRouterModel = response.data.find((m) => m.id === modelKey);
+
+      if (openRouterModel) {
+        // Import AiService to use mapping function
+        const { AiService } = await import("./ai_service");
+        const modelData = (AiService as any).mapOpenRouterModelToAiModel(openRouterModel);
+        return await createAiModel(modelData);
+      }
+    }
+  } catch (error) {
+    console.warn(`[AI Query] Failed to fetch model from OpenRouter: ${error}`);
+  }
+
+  // Fallback: create model with default values
   // Extract provider from model key (e.g., "mistralai/devstral-2512:free" -> "mistralai")
   const provider = modelKey.split("/")[0] || "openrouter";
 
@@ -143,8 +167,14 @@ export async function getOrCreateAiModel(modelKey: string): Promise<AiModel> {
     provider,
     model_key: modelKey,
     display_name: displayName,
+    description: "",
     context_length: 32768, // Default context length
-    cost_per_1k_token: 0.001, // Default cost
+    pricing: {
+      prompt: "0.000001",
+      completion: "0.000002",
+      request: "0",
+      image: "0",
+    },
     capabilities: {
       reasoning: true,
       coding: true,
@@ -152,6 +182,9 @@ export async function getOrCreateAiModel(modelKey: string): Promise<AiModel> {
       fast: true,
     },
     enabled: true,
+    chat_type_to_type: "unknown",
+    created: 0,
+    expiration_date: null,
   };
 
   return await createAiModel(newModel);

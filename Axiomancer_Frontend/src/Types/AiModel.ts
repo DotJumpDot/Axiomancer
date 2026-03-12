@@ -6,6 +6,13 @@ export interface AiModelCapabilities {
   fast: boolean;
 }
 
+export interface Pricing {
+  prompt: string;
+  completion: string;
+  request: string;
+  image: string;
+}
+
 export interface AiModel {
   id: string;
   provider: string;
@@ -13,7 +20,7 @@ export interface AiModel {
   display_name: string;
   description: string;
   context_length: number;
-  cost_per_1k_token: number;
+  pricing: Pricing;
   capabilities: AiModelCapabilities;
   enabled: boolean;
   chat_type_to_type: string;
@@ -29,7 +36,7 @@ export interface CreateAiModelRequest {
   display_name: string;
   description?: string;
   context_length: number;
-  cost_per_1k_token: number;
+  pricing: Pricing;
   capabilities: AiModelCapabilities;
   enabled?: boolean;
   chat_type_to_type?: string;
@@ -43,7 +50,7 @@ export interface UpdateAiModelRequest {
   display_name?: string;
   description?: string;
   context_length?: number;
-  cost_per_1k_token?: number;
+  pricing?: Pricing;
   capabilities?: AiModelCapabilities;
   enabled?: boolean;
   chat_type_to_type?: string;

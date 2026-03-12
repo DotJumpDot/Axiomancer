@@ -123,7 +123,7 @@ The Axiomancer backend implements the following core entities:
 | **Model Registry** | Stores available OpenRouter AI models and their capabilities                                                                                                           |
 | **Routing Data**   | Model capabilities determine suitability for auto-routing decisions                                                                                                    |
 | **Cost Tracking**  | Records token costs for usage analytics                                                                                                                                |
-| **Fields**         | id (UUID), provider, model_key, display_name, context_length, cost_per_1k_token, capabilities (JSON: reasoning, coding, vision, fast), enabled, created_at, updated_at |
+| **Fields**         | id (UUID), provider, model_key, display_name, context_length, pricing (JSON: prompt, completion, request, image), capabilities (JSON: reasoning, coding, vision, fast), enabled, created_at, updated_at |
 | **Relationships**  | Referenced by Chat messages for routing decisions                                                                                                                      |
 
 #### **Prompt Profile**

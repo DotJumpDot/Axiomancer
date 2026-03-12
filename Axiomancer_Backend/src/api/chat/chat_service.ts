@@ -339,8 +339,10 @@ export class ChatService {
 
           // Get model info for decision_info
           const enhanceModel = await getAiModelByModelKey(enhanceModelKey);
+          const promptPrice = parseFloat(enhanceModel?.pricing?.prompt || "0");
+          const completionPrice = parseFloat(enhanceModel?.pricing?.completion || "0");
           const isFreeModel =
-            enhanceModelKey.includes(":free") || enhanceModel?.cost_per_1k_token === 0;
+            enhanceModelKey.includes(":free") || (promptPrice === 0 && completionPrice === 0);
 
           // Create prompt for extracting search keywords
           const enhancePrompt = `You are a search query optimizer. Extract the most relevant search keywords from the user's message.
@@ -369,7 +371,11 @@ Optimized search query:`;
           const tokenUsage = enhanceResponse.usage;
           let costUsd = 0;
           if (tokenUsage && enhanceModel) {
-            costUsd = (tokenUsage.total_tokens / 1000) * enhanceModel.cost_per_1k_token;
+            const promptTokens = tokenUsage.prompt_tokens || 0;
+            const completionTokens = tokenUsage.completion_tokens || 0;
+            const promptCost = parseFloat(enhanceModel.pricing?.prompt || "0");
+            const completionCost = parseFloat(enhanceModel.pricing?.completion || "0");
+            costUsd = promptTokens * promptCost + completionTokens * completionCost;
           }
 
           // Build decision info - ALWAYS create this for successful API calls
@@ -887,7 +893,9 @@ After this system message, you will see the conversation history followed by the
           // Get model info for decision_info
           const enhanceModel = await getAiModelByModelKey(enhanceModelKey);
           const isFreeModel =
-            enhanceModelKey.includes(":free") || enhanceModel?.cost_per_1k_token === 0;
+            enhanceModelKey.includes(":free") ||
+            (parseFloat(enhanceModel?.pricing?.prompt || "0") === 0 &&
+              parseFloat(enhanceModel?.pricing?.completion || "0") === 0);
 
           // Create prompt for extracting search keywords
           const enhancePrompt = `You are a search query optimizer. Extract the most relevant search keywords from the user's message.
@@ -916,7 +924,11 @@ Optimized search query:`;
           const tokenUsage = enhanceResponse.usage;
           let costUsd = 0;
           if (tokenUsage && enhanceModel) {
-            costUsd = (tokenUsage.total_tokens / 1000) * enhanceModel.cost_per_1k_token;
+            const promptTokens = tokenUsage.prompt_tokens || 0;
+            const completionTokens = tokenUsage.completion_tokens || 0;
+            const promptCost = parseFloat(enhanceModel.pricing?.prompt || "0");
+            const completionCost = parseFloat(enhanceModel.pricing?.completion || "0");
+            costUsd = promptTokens * promptCost + completionTokens * completionCost;
           }
 
           // Build decision info - ALWAYS create this for successful API calls

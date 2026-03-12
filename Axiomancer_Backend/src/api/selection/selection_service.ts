@@ -99,7 +99,12 @@ export class SelectionService {
             const updateData = {
               display_name: openRouterModel.name,
               context_length: openRouterModel.context_length,
-              cost_per_1k_token: parseFloat(openRouterModel.pricing.prompt),
+              pricing: {
+                prompt: openRouterModel.pricing.prompt || "0",
+                completion: openRouterModel.pricing.completion || "0",
+                request: openRouterModel.pricing.request || "0",
+                image: openRouterModel.pricing.image || "0",
+              },
               capabilities: {
                 reasoning: openRouterModel.architecture.modality.includes("text"),
                 coding: openRouterModel.architecture.modality.includes("text"),
@@ -133,12 +138,17 @@ export class SelectionService {
 
   // Check if model data has changed and needs update
   private static shouldUpdateModel(existingModel: any, openRouterModel: OpenRouterModel): boolean {
-    const newCost = parseFloat(openRouterModel.pricing.prompt);
+    const newPromptCost = parseFloat(openRouterModel.pricing.prompt || "0");
+    const newCompletionCost = parseFloat(openRouterModel.pricing.completion || "0");
     const newContextLength = openRouterModel.context_length;
+
+    const existingPromptCost = parseFloat(existingModel.pricing?.prompt || "0");
+    const existingCompletionCost = parseFloat(existingModel.pricing?.completion || "0");
 
     return (
       existingModel.context_length !== newContextLength ||
-      Math.abs(existingModel.cost_per_1k_token - newCost) > 0.0001
+      Math.abs(existingPromptCost - newPromptCost) > 0.0000001 ||
+      Math.abs(existingCompletionCost - newCompletionCost) > 0.0000001
     );
   }
 
@@ -149,18 +159,40 @@ export class SelectionService {
     const provider = openRouterModel.id.split("/")[0] || "unknown";
     const model_key = openRouterModel.id;
 
+    // Use capabilities from OpenRouter API response if available
+    const modelName = openRouterModel.id.toLowerCase();
+    const description = openRouterModel.description.toLowerCase();
+    const supportedParams = openRouterModel.supported_parameters || [];
+    const inputModalities = openRouterModel.architecture?.input_modalities || [];
+
+    const capabilities = openRouterModel.capabilities || {
+      reasoning:
+        supportedParams.includes("reasoning") || supportedParams.includes("include_reasoning"),
+      coding:
+        description.includes("code") ||
+        description.includes("programming") ||
+        modelName.includes("codellama") ||
+        modelName.includes("starcoder"),
+      vision: inputModalities.includes("image"),
+      fast:
+        description.includes("fast") ||
+        modelName.includes("haiku") ||
+        modelName.includes("mini") ||
+        openRouterModel.context_length < 8000,
+    };
+
     return {
       provider,
       model_key,
       display_name: openRouterModel.name,
       context_length: openRouterModel.context_length,
-      cost_per_1k_token: parseFloat(openRouterModel.pricing.prompt),
-      capabilities: {
-        reasoning: openRouterModel.architecture.modality.includes("text"),
-        coding: openRouterModel.architecture.modality.includes("text"),
-        vision: openRouterModel.architecture.modality.includes("image"),
-        fast: openRouterModel.top_provider.max_completion_tokens > 0,
+      pricing: {
+        prompt: openRouterModel.pricing.prompt || "0",
+        completion: openRouterModel.pricing.completion || "0",
+        request: openRouterModel.pricing.request || "0",
+        image: openRouterModel.pricing.image || "0",
       },
+      capabilities,
       enabled: true,
     };
   }
