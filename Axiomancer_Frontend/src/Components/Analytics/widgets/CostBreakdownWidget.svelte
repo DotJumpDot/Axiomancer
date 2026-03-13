@@ -10,7 +10,7 @@
   let t = $derived(getTranslations(settingsStore.language as LanguageCode));
 
   function formatCost(cost: number): string {
-    return `$${cost.toFixed(4)}`;
+    return `$${cost.toFixed(6).replace(/\.?0+$/, '')}`;
   }
 
   function formatNumber(num: number): string {
@@ -25,7 +25,9 @@
     const total = data.totalCost || 1;
     return data.mostUsedModels.slice(0, 5).map((model: any) => ({
       name: model.displayName || model.modelKey,
-      cost: model.cost || 0,
+      inputCost: model.inputCost || 0,
+      outputCost: model.outputCost || 0,
+      totalCost: model.cost || 0,
       percentage: ((model.cost || 0) / total) * 100,
       color: getColorForIndex(model.modelKey)
     }));
@@ -76,11 +78,16 @@
         <div class="breakdown-item">
           <div class="breakdown-header">
             <span class="model-name" title={item.name}>{item.name}</span>
-            <span class="cost-value">{formatCost(item.cost)}</span>
+            <div class="cost-values">
+              <span class="cost-label">In:</span>
+              <span class="cost-value">{formatCost(item.inputCost)}</span>
+              <span class="cost-label">Out:</span>
+              <span class="cost-value">{formatCost(item.outputCost)}</span>
+            </div>
           </div>
           <div class="progress-bar">
-            <div 
-              class="progress-fill" 
+            <div
+              class="progress-fill"
               style="width: {item.percentage}%; background-color: {item.color}"
             ></div>
           </div>
@@ -88,11 +95,11 @@
         </div>
       {/each}
     </div>
-  {:else}
+    {:else}
     <div class="no-data">
       <p>{t.analytics?.noData || "No data available"}</p>
     </div>
-  {/if}
+    {/if}
 </div>
 
 <style>
@@ -193,6 +200,17 @@
     font-weight: 600;
     color: var(--accent-primary);
     flex-shrink: 0;
+  }
+
+  .cost-values {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .cost-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
   }
 
   .progress-bar {

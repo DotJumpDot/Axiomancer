@@ -14,7 +14,7 @@
   }
 
   function formatCost(cost: number): string {
-    return `$${cost.toFixed(4)}`;
+    return `$${cost.toFixed(6).replace(/\.?0+$/, '')}`;
   }
 
   function getPercentage(count: number, total: number): string {
@@ -33,7 +33,9 @@
         <th>{t.analytics?.model || "Model"}</th>
         <th>{t.analytics?.usage || "Usage"}</th>
         <th>{t.analytics?.tokens || "Tokens"}</th>
-        <th>{t.analytics?.cost || "Cost"}</th>
+        <th>Input Cost</th>
+        <th>Output Cost</th>
+        <th>{t.analytics?.cost || "Total Cost"}</th>
       </tr>
     </thead>
     <tbody>
@@ -54,7 +56,9 @@
             </div>
           </td>
           <td>{formatNumber(model.tokensUsed)}</td>
-          <td>{formatCost(model.cost)}</td>
+          <td class="cost-cell input-cost">{formatCost(model.inputCost || 0)}</td>
+          <td class="cost-cell output-cost">{formatCost(model.outputCost || 0)}</td>
+          <td class="cost-cell total-cost">{formatCost(model.cost)}</td>
         </tr>
       {/each}
     </tbody>
@@ -146,6 +150,22 @@
   .usage-text .percent {
     font-size: 0.8rem;
     color: var(--text-tertiary);
+  }
+
+  .cost-cell {
+    font-weight: 600;
+  }
+
+  .input-cost {
+    color: var(--accent-color, #ffc107);
+  }
+
+  .output-cost {
+    color: var(--success-color, #4ade80);
+  }
+
+  .total-cost {
+    color: var(--accent-primary);
   }
 
   @media (max-width: 640px) {

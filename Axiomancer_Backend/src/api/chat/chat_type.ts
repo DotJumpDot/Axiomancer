@@ -11,6 +11,13 @@ export interface ChatAiRespond {
   latency_ms: number | null;
   finish_reason: string | null;
   used_price: number | null;
+  used_token_detail: {
+    inputCost: number;
+    outputCost: number;
+    requestCost: number;
+    imageCost: number;
+    totalCost: number;
+  } | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -26,6 +33,13 @@ export interface CreateChatAiRespondRequest {
   latency_ms?: number | null;
   finish_reason?: string | null;
   used_price?: number | null;
+  used_token_detail?: {
+    inputCost: number;
+    outputCost: number;
+    requestCost: number;
+    imageCost: number;
+    totalCost: number;
+  } | null;
 }
 
 export interface Chat {
@@ -52,6 +66,13 @@ export interface Chat {
   ai_latency_ms?: number;
   ai_finish_reason?: string;
   ai_used_price?: number | null;
+  ai_used_token_detail?: {
+    inputCost: number;
+    outputCost: number;
+    requestCost: number;
+    imageCost: number;
+    totalCost: number;
+  } | null;
   // Decision model key (from auto-routing)
   decision_model_key?: string | null;
   // Joined fields from search_log (when available)

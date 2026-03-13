@@ -21,6 +21,8 @@ export interface ModelUsage {
   count: number;
   tokensUsed: number;
   cost: number;
+  inputCost: number;
+  outputCost: number;
 }
 
 export interface DailyUsage {

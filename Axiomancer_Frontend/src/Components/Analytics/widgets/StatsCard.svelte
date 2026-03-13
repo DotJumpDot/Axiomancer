@@ -14,7 +14,7 @@
   }
 
   function formatCost(cost: number): string {
-    return `$${cost.toFixed(4)}`;
+    return `$${cost.toFixed(6).replace(/\.?0+$/, '')}`;
   }
 
   function formatTime(ms: number): string {

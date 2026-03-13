@@ -38,7 +38,7 @@ export class AnalyticsService {
         const completionTokens = tokenUsage.completion_tokens || 0;
         const promptCost = parseFloat(msg.pricing?.prompt || "0");
         const completionCost = parseFloat(msg.pricing?.completion || "0");
-        const cost = (promptTokens * promptCost) + (completionTokens * completionCost);
+        const cost = promptTokens * promptCost + completionTokens * completionCost;
         return sum + cost;
       }
       return sum;
@@ -83,19 +83,32 @@ export class AnalyticsService {
         const existing = modelMap.get(key);
 
         const tokenUsage = msg.token_usage
-          ? (typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage)
+          ? typeof msg.token_usage === "string"
+            ? JSON.parse(msg.token_usage)
+            : msg.token_usage
           : null;
+
+        const pricing = msg.pricing
+          ? typeof msg.pricing === "string"
+            ? JSON.parse(msg.pricing)
+            : msg.pricing
+          : null;
+
         const tokens = tokenUsage?.total_tokens || 0;
         const promptTokens = tokenUsage?.prompt_tokens || 0;
         const completionTokens = tokenUsage?.completion_tokens || 0;
-        const promptCost = parseFloat(msg.pricing?.prompt || "0");
-        const completionCost = parseFloat(msg.pricing?.completion || "0");
-        const cost = (promptTokens * promptCost) + (completionTokens * completionCost);
+        const promptCost = parseFloat(pricing?.prompt || "0");
+        const completionCost = parseFloat(pricing?.completion || "0");
+        const cost = promptTokens * promptCost + completionTokens * completionCost;
+        const inputCost = promptTokens * promptCost;
+        const outputCost = completionTokens * completionCost;
 
         if (existing) {
           existing.count++;
           existing.tokensUsed += tokens;
           existing.cost += cost;
+          existing.inputCost += inputCost;
+          existing.outputCost += outputCost;
         } else {
           const displayName = msg.model_display_name || key;
           modelMap.set(key, {
@@ -104,6 +117,8 @@ export class AnalyticsService {
             count: 1,
             tokensUsed: tokens,
             cost: cost,
+            inputCost: inputCost,
+            outputCost: outputCost,
           });
         }
       }
@@ -153,13 +168,15 @@ export class AnalyticsService {
         }
         if (msg.model_key && msg.pricing) {
           const tokenUsage = msg.token_usage
-            ? (typeof msg.token_usage === "string" ? JSON.parse(msg.token_usage) : msg.token_usage)
+            ? typeof msg.token_usage === "string"
+              ? JSON.parse(msg.token_usage)
+              : msg.token_usage
             : null;
           const promptTokens = tokenUsage?.prompt_tokens || 0;
           const completionTokens = tokenUsage?.completion_tokens || 0;
           const promptCost = parseFloat(msg.pricing.prompt || "0");
           const completionCost = parseFloat(msg.pricing.completion || "0");
-          daily.cost += (promptTokens * promptCost) + (completionTokens * completionCost);
+          daily.cost += promptTokens * promptCost + completionTokens * completionCost;
         }
         daily.conversations.add(msg.conversation_id);
       }
@@ -243,9 +260,7 @@ export class AnalyticsService {
     messages.forEach((msg) => {
       if (msg.decision_info) {
         const decisionInfo =
-          typeof msg.decision_info === "string"
-            ? JSON.parse(msg.decision_info)
-            : msg.decision_info;
+          typeof msg.decision_info === "string" ? JSON.parse(msg.decision_info) : msg.decision_info;
 
         totalEnhances++;
 

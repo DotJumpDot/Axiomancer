@@ -176,8 +176,22 @@ This document describes the complete database schema for the Axiomancer AI chat 
 | token_usage   | json     | Yes      | Token usage (prompt, completion, total)      |
 | latency_ms    | int      | Yes      | Response generation latency in milliseconds  |
 | finish_reason | str      | Yes      | Completion finish reason (stop, length, etc) |
+| used_price    | numeric  | Yes      | Total cost of the API call                  |
+| used_token_detail | jsonb | Yes | Detailed cost breakdown                      |
 | created_at    | datetime | No       | Record creation timestamp                    |
 | updated_at    | datetime | No       | Record last update timestamp                 |
+
+**used_token_detail JSON Structure:**
+
+```json
+{
+  "inputCost": 0.00045,
+  "outputCost": 0.0009,
+  "requestCost": 0,
+  "imageCost": 0,
+  "totalCost": 0.00135
+}
+```
 
 ### User Selected Models
 
@@ -328,6 +342,8 @@ CREATE TABLE chat_ai_respond (
     token_usage JSONB,
     latency_ms INTEGER,
     finish_reason TEXT,
+    used_price NUMERIC,
+    used_token_detail JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -488,4 +504,5 @@ When deploying to production:
 2. Add proper UUID generation in application code
 3. Implement database migrations for schema changes
 4. Add database constraints and triggers as needed
-5. For the `prompt_id` addition to `user_selected_models`: Run `ALTER TABLE user_selected_models ADD COLUMN prompt_id TEXT REFERENCES prompt_profile(id);`
+5. For `prompt_id` addition to `user_selected_models`: Run `ALTER TABLE user_selected_models ADD COLUMN prompt_id TEXT REFERENCES prompt_profile(id);`
+6. For `used_token_detail` and `used_price` addition to `chat_ai_respond`: See `Migration_AddUsedTokenDetail.sql`

@@ -8,6 +8,14 @@ export interface TokenUsage {
   total_tokens: number;
 }
 
+export interface UsedTokenDetail {
+  inputCost: number;
+  outputCost: number;
+  requestCost: number;
+  imageCost: number;
+  totalCost: number;
+}
+
 export interface SearchContext {
   web_search?: {
     query: string;
@@ -56,6 +64,7 @@ export interface Chat {
   ai_latency_ms?: number;
   ai_finish_reason?: string;
   ai_used_price?: number | null;
+  ai_used_token_detail?: UsedTokenDetail | null;
   // Decision model key (from auto-routing)
   decision_model_key?: string | null;
   // Joined fields from search_log (when available)
@@ -131,6 +140,7 @@ export interface ChatAiRespond {
   latency_ms: number | null;
   finish_reason: string | null;
   used_price: number | null;
+  used_token_detail: UsedTokenDetail | null;
   created_at: Date | string;
   updated_at: Date | string;
 }
@@ -177,8 +187,12 @@ export interface SearchLog {
   used_steam: boolean;
   reasoning_effort: string | null;
   reasoning_content: string | null;
+  decision_prompt_model: string | null;
+  prompt_web_search: string | null;
+  prompt_picture_search: string | null;
   search_context_web: any | null;
   search_context_picture: any | null;
+  decision_info: DecisionInfo | null;
   created_at: Date;
 }
 

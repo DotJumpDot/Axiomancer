@@ -695,6 +695,7 @@ After this system message, you will see the conversation history followed by the
       const finishReason = aiResponse.choices[0]?.finish_reason;
 
       let usedPrice = null;
+      let usedTokenDetail = null;
       if (tokenUsage && actualModelKey) {
         const model = await getAiModelByModelKey(actualModelKey);
         if (model) {
@@ -702,7 +703,19 @@ After this system message, you will see the conversation history followed by the
           const completionTokens = tokenUsage.completion_tokens || 0;
           const promptCost = parseFloat(model.pricing?.prompt || "0");
           const completionCost = parseFloat(model.pricing?.completion || "0");
-          usedPrice = promptTokens * promptCost + completionTokens * completionCost;
+          const requestCost = parseFloat(model.pricing?.request || "0");
+          
+          const inputCost = promptTokens * promptCost;
+          const outputCost = completionTokens * completionCost;
+          usedPrice = inputCost + outputCost;
+          
+          usedTokenDetail = {
+            inputCost: inputCost,
+            outputCost: outputCost,
+            requestCost: requestCost,
+            imageCost: 0,
+            totalCost: usedPrice,
+          };
         }
       }
 
@@ -724,6 +737,7 @@ After this system message, you will see the conversation history followed by the
         latency_ms: latencyMs,
         finish_reason: finishReason || null,
         used_price: usedPrice,
+        used_token_detail: usedTokenDetail,
       });
 
       // Update user message to link to AI response
@@ -1266,6 +1280,7 @@ After this system message, you will see the conversation history followed by the
       const latencyMs = Date.now() - startTime;
 
       let usedPrice = null;
+      let usedTokenDetail = null;
       if (tokenUsage && actualModelKey) {
         const model = await getAiModelByModelKey(actualModelKey);
         if (model) {
@@ -1273,7 +1288,19 @@ After this system message, you will see the conversation history followed by the
           const completionTokens = tokenUsage.completion_tokens || 0;
           const promptCost = parseFloat(model.pricing?.prompt || "0");
           const completionCost = parseFloat(model.pricing?.completion || "0");
-          usedPrice = promptTokens * promptCost + completionTokens * completionCost;
+          const requestCost = parseFloat(model.pricing?.request || "0");
+          
+          const inputCost = promptTokens * promptCost;
+          const outputCost = completionTokens * completionCost;
+          usedPrice = inputCost + outputCost;
+          
+          usedTokenDetail = {
+            inputCost: inputCost,
+            outputCost: outputCost,
+            requestCost: requestCost,
+            imageCost: 0,
+            totalCost: usedPrice,
+          };
         }
       }
 
@@ -1301,6 +1328,7 @@ After this system message, you will see the conversation history followed by the
         latency_ms: latencyMs,
         finish_reason: "stop",
         used_price: usedPrice,
+        used_token_detail: usedTokenDetail,
       });
 
       // Update user message to link to AI response

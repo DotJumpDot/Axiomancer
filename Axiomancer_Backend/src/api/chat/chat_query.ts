@@ -24,12 +24,14 @@ export class ChatQuery {
 
     const result = await sql`
       INSERT INTO chat_ai_respond (
-        id, ai_content, model_key, token_usage, latency_ms, finish_reason, used_price, created_at, updated_at
+        id, ai_content, model_key, token_usage, latency_ms, finish_reason, used_price, used_token_detail, created_at, updated_at
       ) VALUES (
         ${id}, ${respond.ai_content}, ${respond.model_key || null},
         ${respond.token_usage ? sql.json(respond.token_usage) : null},
         ${respond.latency_ms || null}, ${respond.finish_reason || null},
-        ${respond.used_price ?? null}, ${now}, ${now}
+        ${respond.used_price ?? null},
+        ${respond.used_token_detail ? sql.json(respond.used_token_detail) : null},
+        ${now}, ${now}
       )
       RETURNING *
     `;
@@ -174,6 +176,7 @@ export class ChatQuery {
         car.latency_ms as ai_latency_ms,
         car.finish_reason as ai_finish_reason,
         car.used_price as ai_used_price,
+        car.used_token_detail as ai_used_token_detail,
         am.model_key as decision_model_key,
         sl.memory_chat_include,
         sl.used_web_search,
@@ -185,7 +188,8 @@ export class ChatQuery {
         sl.prompt_web_search,
         sl.prompt_picture_search,
         sl.search_context_web,
-        sl.search_context_picture
+        sl.search_context_picture,
+        sl.decision_info
       FROM chat c
       LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
       LEFT JOIN ai_model am ON c.model_id = am.id
@@ -210,6 +214,7 @@ export class ChatQuery {
           prompt_picture_search: row.prompt_picture_search,
           search_context_web: row.search_context_web,
           search_context_picture: row.search_context_picture,
+          decision_info: row.decision_info,
         };
       }
       // Clean up direct properties
@@ -224,6 +229,7 @@ export class ChatQuery {
       delete chat.prompt_picture_search;
       delete chat.search_context_web;
       delete chat.search_context_picture;
+      delete chat.decision_info;
       return chat as Chat;
     });
   }
@@ -239,6 +245,7 @@ export class ChatQuery {
         car.latency_ms as ai_latency_ms,
         car.finish_reason as ai_finish_reason,
         car.used_price as ai_used_price,
+        car.used_token_detail as ai_used_token_detail,
         am.model_key as decision_model_key,
         sl.memory_chat_include,
         sl.used_web_search,
@@ -250,7 +257,8 @@ export class ChatQuery {
         sl.prompt_web_search,
         sl.prompt_picture_search,
         sl.search_context_web,
-        sl.search_context_picture
+        sl.search_context_picture,
+        sl.decision_info
       FROM chat c
       LEFT JOIN chat_ai_respond car ON c.chat_ai_respond_id = car.id
       LEFT JOIN ai_model am ON c.model_id = am.id
@@ -277,6 +285,7 @@ export class ChatQuery {
         prompt_picture_search: row.prompt_picture_search,
         search_context_web: row.search_context_web,
         search_context_picture: row.search_context_picture,
+        decision_info: row.decision_info,
       };
     }
 
@@ -292,6 +301,7 @@ export class ChatQuery {
     delete chat.prompt_picture_search;
     delete chat.search_context_web;
     delete chat.search_context_picture;
+    delete chat.decision_info;
 
     return chat as Chat;
   }
