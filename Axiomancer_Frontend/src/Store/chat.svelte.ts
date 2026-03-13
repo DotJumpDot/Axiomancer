@@ -140,6 +140,11 @@ async function loadMessages(conversationId: string) {
             // Preserve both model_id (decision model) and ai_model_key (active model)
             model_id: chat.model_id,
             ai_model_key: chat.ai_model_key,
+            ai_token_usage: chat.ai_token_usage,
+            ai_latency_ms: chat.ai_latency_ms,
+            ai_finish_reason: chat.ai_finish_reason,
+            ai_used_price: chat.ai_used_price,
+            ai_used_token_detail: chat.ai_used_token_detail,
             search_log: chat.search_log, // Preserve search_log data
           });
         }
@@ -408,6 +413,8 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
               ai_token_usage: result.aiResponse.token_usage,
               ai_latency_ms: result.aiResponse.latency_ms,
               ai_finish_reason: result.aiResponse.finish_reason,
+              ai_used_price: result.aiResponse.used_price,
+              ai_used_token_detail: result.aiResponse.used_token_detail,
               search_log: result.userMessage.search_log,
             };
             messages = [...messages, aiMessage];
@@ -502,6 +509,8 @@ async function sendMessage(content: string, modelKey: string, options?: SendMess
             ai_token_usage: response.data.aiResponse.token_usage,
             ai_latency_ms: response.data.aiResponse.latency_ms,
             ai_finish_reason: response.data.aiResponse.finish_reason,
+            ai_used_price: response.data.aiResponse.used_price,
+            ai_used_token_detail: response.data.aiResponse.used_token_detail,
             search_log: response.data.userMessage.search_log, // Include search_log from user message
           };
           messages = [...messages, aiMessage];

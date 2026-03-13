@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { navigate } from "svelte-routing";
-  import { Sidebar, ChatHeader, MessageList, ChatInput } from "@/Components";
+  import { Sidebar, ChatHeader, MessageList, ChatInput, ConversationStats } from "@/Components";
   import { authStore, chatStore, aiStore, promptStore, settingsStore, favoriteStore } from "@/Store";
   import { getTranslations, type LanguageCode } from "@/Function";
 
@@ -82,6 +82,9 @@
     <MessageList />
     <ChatInput />
   </main>
+
+  <!-- Conversation Stats Tooltip -->
+  <ConversationStats />
 </div>
 
 <style>
